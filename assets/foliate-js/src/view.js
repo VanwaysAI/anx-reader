@@ -178,7 +178,9 @@ export class View extends HTMLElement {
     const tocItem = this.#tocProgress?.getProgress(index, range)
     const pageItem = this.#pageProgress?.getProgress(index, range)
     const cfi = this.getCFI(index, range)
-    const totalPages = this.renderer.pages ? this.renderer.pages - 2 : progress.section.total
+    const totalPages = this.renderer.pages && this.renderer.pages > 2
+      ? this.renderer.pages - 2
+      : progress.section.total
     const currentPage = this.renderer.page ?? progress.section.current
     const chapterLocation = {
       current: currentPage,
@@ -560,7 +562,11 @@ export class View extends HTMLElement {
     if (stop)
       return this.#getOverlayer(this.#index)?.overlayer.remove(this.oldValue)
 
-    const doc = this.renderer.getContents()[0].doc;
+    const contents = this.renderer.getContents()
+    const active = contents.find(item => item.index === this.#index)
+      ?? contents[0]
+    const doc = active?.doc
+    if (!doc) return
     if (this.tts && this.tts.doc === doc) return;
     this.tts = new TTS(
       doc,
@@ -584,7 +590,11 @@ export class View extends HTMLElement {
     );
   }
   startMediaOverlay() {
-    const { index } = this.renderer.getContents()[0]
+    const contents = this.renderer.getContents()
+    const active = contents.find(item => item.index === this.#index)
+      ?? contents[0]
+    const index = active?.index
+    if (index == null) return
     return this.mediaOverlay.start(index)
   }
   
