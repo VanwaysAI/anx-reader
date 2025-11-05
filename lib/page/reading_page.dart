@@ -21,7 +21,6 @@ import 'package:anx_reader/utils/ui/status_bar.dart';
 import 'package:anx_reader/widgets/ai/ai_chat_stream.dart';
 import 'package:anx_reader/widgets/ai/ai_stream.dart';
 import 'package:anx_reader/widgets/reading_page/notes_widget.dart';
-import 'package:anx_reader/models/reading_time.dart';
 import 'package:anx_reader/widgets/reading_page/progress_widget.dart';
 import 'package:anx_reader/widgets/reading_page/tts_widget.dart';
 import 'package:anx_reader/widgets/reading_page/style_widget.dart';
@@ -29,8 +28,6 @@ import 'package:anx_reader/widgets/reading_page/toc_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// import 'package:flutter/foundation.dart'
-// show debugPrint, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:icons_plus/icons_plus.dart';
@@ -123,14 +120,7 @@ class ReadingPageState extends ConsumerState<ReadingPage>
     WakelockPlus.disable();
     showStatusBar();
     WidgetsBinding.instance.removeObserver(this);
-    readingTimeDao.insertReadingTime(
-      ReadingTime(
-        bookId: _book.id,
-        readingTime: _readTimeWatch.elapsed.inSeconds,
-      ),
-      startedAt: _sessionStart,
-    );
-    _sessionStart = null;
+    _recordReadingSession();
     audioHandler.stop();
     // if (_volumeKeyListenerAttached) {
     //   unawaited(_volumeKeyBoard.removeListener());
@@ -243,17 +233,27 @@ class ReadingPageState extends ConsumerState<ReadingPage>
             state == AppLifecycleState.hidden ||
             state == AppLifecycleState.detached) {
           epubPlayerKey.currentState?.saveReadingProgress();
-          readingTimeDao.insertReadingTime(
-            ReadingTime(
-              bookId: _book.id,
-              readingTime: _readTimeWatch.elapsed.inSeconds,
-            ),
-            startedAt: _sessionStart,
-          );
-          _sessionStart = null;
+          _recordReadingSession();
         }
         break;
     }
+  }
+
+  void _recordReadingSession() {
+    final seconds = _readTimeWatch.elapsed.inSeconds;
+    if (seconds <= 0) {
+      _sessionStart = null;
+      return;
+    }
+
+    readingTimeDao.insertReadingSession(
+      bookId: _book.id,
+      readingTime: seconds,
+      startedAt: _sessionStart,
+    );
+
+    _readTimeWatch.reset();
+    _sessionStart = null;
   }
 
   Future<void> setAwakeTimer(int minutes) async {

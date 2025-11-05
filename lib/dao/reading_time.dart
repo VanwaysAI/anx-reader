@@ -15,39 +15,19 @@ class ReadingTimeDao extends BaseDao {
     ReadingTime readingTime, {
     DateTime? startedAt,
   }) async {
+    if (readingTime.readingTime <= 0) {
+      return;
+    }
+
     final db = await database;
-    final resolvedDay = _resolveDayString(readingTime, startedAt);
+    final timestamp = _resolveTimestamp(readingTime, startedAt);
+    final mapped = {
+      'book_id': readingTime.bookId,
+      'date': timestamp.toIso8601String(),
+      'reading_time': readingTime.readingTime,
+    };
 
-    readingTime.date ??= resolvedDay;
-
-    await db.transaction((txn) async {
-      final existing = await txn.rawQuery(
-        'SELECT id, reading_time FROM $table WHERE book_id = ? AND DATE(date) = DATE(?) LIMIT 1',
-        [readingTime.bookId, resolvedDay],
-      );
-
-      if (existing.isNotEmpty) {
-        final current = existing.first['reading_time'] as int? ?? 0;
-        await txn.update(
-          table,
-          {
-            'reading_time': current + readingTime.readingTime,
-            // keep legacy date value unchanged to avoid churn
-          },
-          where: 'id = ?',
-          whereArgs: [existing.first['id']],
-        );
-      } else {
-        await txn.insert(
-          table,
-          {
-            'book_id': readingTime.bookId,
-            'date': resolvedDay,
-            'reading_time': readingTime.readingTime,
-          },
-        );
-      }
-    });
+    await db.insert(table, mapped);
   }
 
   Future<void> insertReadingSession({
@@ -55,6 +35,9 @@ class ReadingTimeDao extends BaseDao {
     required int readingTime,
     DateTime? startedAt,
   }) async {
+    if (readingTime <= 0) {
+      return;
+    }
     final session = ReadingTime(
       bookId: bookId,
       readingTime: readingTime,
@@ -64,26 +47,27 @@ class ReadingTimeDao extends BaseDao {
     await insertReadingTime(session, startedAt: startedAt);
   }
 
-  String _resolveDayString(ReadingTime readingTime, DateTime? startedAt) {
+  DateTime _resolveTimestamp(ReadingTime readingTime, DateTime? startedAt) {
     final fromModel = readingTime.startedAt;
     if (fromModel != null) {
-      return _dayKey(fromModel);
+      return fromModel;
     }
 
     if (startedAt != null) {
-      return _dayKey(startedAt);
+      return startedAt;
     }
 
     final raw = readingTime.date;
-    if (raw != null && raw.length >= 10) {
-      return raw.substring(0, 10);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        return DateTime.parse(raw);
+      } catch (_) {
+        // fall through to now
+      }
     }
 
-    return _dayKey(DateTime.now());
+    return DateTime.now();
   }
-
-  String _dayKey(DateTime dateTime) =>
-      dateTime.toIso8601String().substring(0, 10);
 
   Future<List<ReadingTime>> selectAllReadingTime() async {
     return queryList(

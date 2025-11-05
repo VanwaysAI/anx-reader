@@ -37,6 +37,17 @@ class _BookDetailState extends ConsumerState<BookDetail> {
   late Book _book;
   bool _isCollapsed = false;
 
+  String _formatReadingTimestamp(ReadingTime record) {
+    final startedAt = record.startedAt;
+    if (startedAt != null) {
+      final local = startedAt.toLocal();
+      final text = local.toString();
+      final dotIndex = text.indexOf('.');
+      return dotIndex == -1 ? text : text.substring(0, dotIndex);
+    }
+    return record.dateOnly ?? record.date ?? '';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -469,9 +480,7 @@ class _BookDetailState extends ConsumerState<BookDetail> {
                   return Row(
                     children: [
                       Text(
-                        readingTimes[index].dateOnly ??
-                            readingTimes[index].date ??
-                            '',
+                        _formatReadingTimestamp(readingTimes[index]),
                         style: const TextStyle(
                           fontSize: 15,
                         ),

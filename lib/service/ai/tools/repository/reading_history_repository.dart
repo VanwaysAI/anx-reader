@@ -18,7 +18,7 @@ class ReadingHistoryRecord {
       'bookId': book.id,
       'bookTitle': book.title,
       'author': book.author,
-      'date': entry.date,
+      'date': entry.startedAt?.toIso8601String() ?? entry.date,
       'readingDuration': convertSeconds(entry.readingTime),
       'groupId': book.groupId,
     };
