@@ -836,9 +836,20 @@ export class Paginator extends HTMLElement {
   async #ensureScrolledNeighbors(index) {
     if (!this.scrolled || index == null) return
     const keep = new Set([index])
-    this.#getVisibleViewIndices().forEach(i => keep.add(i))
-    for (const prev of this.#collectAdjacentIndices(index, -1, this.#scrolledBuffer.prev)) keep.add(prev)
-    for (const next of this.#collectAdjacentIndices(index, 1, this.#scrolledBuffer.next)) keep.add(next)
+    // When many short sections fit on screen, expand buffers so that
+    // newly loaded neighbors are not trimmed before they can appear.
+    const visibleIndices = this.#getVisibleViewIndices()
+    let visibleBefore = 0
+    let visibleAfter = 0
+    for (const i of visibleIndices) {
+      keep.add(i)
+      if (i < index) visibleBefore += 1
+      else if (i > index) visibleAfter += 1
+    }
+    const prevBuffer = this.#scrolledBuffer.prev + visibleBefore
+    const nextBuffer = this.#scrolledBuffer.next + visibleAfter
+    for (const prev of this.#collectAdjacentIndices(index, -1, prevBuffer)) keep.add(prev)
+    for (const next of this.#collectAdjacentIndices(index, 1, nextBuffer)) keep.add(next)
     const pending = Array.from(keep).map(i => this.#ensureViewForSection(i, { emitLoad: true }))
     await Promise.all(pending)
     this.#trimScrolledBuffer(keep)
