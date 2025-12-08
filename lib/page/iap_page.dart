@@ -6,7 +6,7 @@ import 'package:anx_reader/service/iap/iap_service.dart';
 import 'package:anx_reader/providers/iap.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:anx_reader/widgets/common/container/filled_container.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
+// import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -277,7 +277,7 @@ class IAPPage extends ConsumerWidget {
 
     return FilledContainer(
       color:
-          cardColor.blend(Theme.of(context).colorScheme.surfaceContainer, 85),
+          cardColor.withAlpha(30),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -1,6 +1,5 @@
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:chinese_font_library/chinese_font_library.dart';
-import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
 ThemeData colorSchema(
@@ -56,30 +55,16 @@ ThemeData colorSchema(
             ),
         };
 
-  ThemeData themeData = isEinkMode
-      ? FlexThemeData.light(
-          useMaterial3: true,
-          swapLegacyOnMaterial3: true,
-          colorScheme: colorScheme)
-      : switch (brightness) {
-          Brightness.light => FlexThemeData.light(
-              useMaterial3: true,
-              swapLegacyOnMaterial3: true,
-              colorScheme: colorScheme,
-            ),
-          Brightness.dark => FlexThemeData.dark(
-              useMaterial3: true,
-              swapLegacyOnMaterial3: true,
-              darkIsTrueBlack: prefsNotifier.trueDarkMode,
-              colorScheme: colorScheme,
-            )
-        };
+  ThemeData themeData = ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+  );
 
   return themeData
       .copyWith(
-          sliderTheme: const SliderThemeData(year2023: false),
-          progressIndicatorTheme:
-              const ProgressIndicatorThemeData(year2023: false),
+          // sliderTheme: const SliderThemeData(year2023: false),
+          // progressIndicatorTheme:
+          //     const ProgressIndicatorThemeData(year2023: false),
           scaffoldBackgroundColor: gropedBackgroundColor,
           bottomSheetTheme: BottomSheetThemeData()
               .copyWith(backgroundColor: gropedBackgroundColor),
