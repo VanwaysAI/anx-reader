@@ -128,21 +128,21 @@ class DatabaseSyncManager {
       try {
         // Platform-specific database opening
         // if (io.Platform.isWindows) {
-          // sqfliteFfiInit();
-          // db = await databaseFactoryFfi.openDatabase(
-          //   dbPath,
-          //   options: OpenDatabaseOptions(
-          //     readOnly: true,
-          //     singleInstance: false,
-          //   ),
-          // );
+        // sqfliteFfiInit();
+        // db = await databaseFactoryFfi.openDatabase(
+        //   dbPath,
+        //   options: OpenDatabaseOptions(
+        //     readOnly: true,
+        //     singleInstance: false,
+        //   ),
+        // );
         // } else {
-          // Android/iOS
-          db = await openDatabase(
-            dbPath,
-            readOnly: true,
-            singleInstance: false,
-          );
+        // Android/iOS
+        db = await openDatabase(
+          dbPath,
+          readOnly: true,
+          singleInstance: false,
+        );
         // }
 
         // Basic integrity check
