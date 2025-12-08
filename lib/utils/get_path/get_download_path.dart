@@ -19,6 +19,7 @@ Future<String> getDownloadPath() async {
     case TargetPlatform.macOS:
     case TargetPlatform.windows:
     case TargetPlatform.fuchsia:
+    case TargetPlatform.ohos:
       var downloadDir = await path.getDownloadsDirectory();
       if (downloadDir == null) {
         if (defaultTargetPlatform == TargetPlatform.windows) {

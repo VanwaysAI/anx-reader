@@ -3,7 +3,8 @@ import 'package:anx_reader/models/bookmark.dart';
 import 'package:anx_reader/page/reading_page.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
+// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 part 'bookmark.g.dart';
 
@@ -75,7 +76,7 @@ class Bookmark extends _$Bookmark {
       }
 
       final db = DBHelper().database;
-      db.then((database) {
+      db.then((Database database) {
         database.delete(
           'tb_notes',
           where: 'id = ?',

@@ -301,7 +301,7 @@ class EdgeTts extends BaseTts {
       await audioPlayer.setVolume(volume);
       if (_shouldStop) return;
 
-      final source = BytesSource(segment.audio!, mimeType: 'audio/mp3');
+      final source = BytesSource(segment.audio!);
       Future<bool> playWith(AudioPlayer target, {required bool isRetry}) async {
         try {
           await target.play(source).timeout(const Duration(seconds: 10));

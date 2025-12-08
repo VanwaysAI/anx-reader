@@ -88,8 +88,8 @@ class Sync extends _$Sync {
     }
 
     if (Prefs().onlySyncWhenWifi &&
-        !(await Connectivity().checkConnectivity())
-            .contains(ConnectivityResult.wifi)) {
+        !(await Connectivity().checkConnectivity()).name
+            .contains(ConnectivityResult.wifi.name)) {
       if (Prefs().syncCompletedToast) {
         AnxToast.show(L10n.of(navigatorKey.currentContext!).webdavOnlyWifi);
       }

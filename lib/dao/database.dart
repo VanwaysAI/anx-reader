@@ -9,7 +9,8 @@ import 'package:anx_reader/utils/get_path/databases_path.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
+// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // Current app database version
 const int currentDbVersion = 7;
@@ -130,24 +131,24 @@ class DBHelper {
         );
       case TargetPlatform.iOS:
       case TargetPlatform.linux:
-      case TargetPlatform.windows:
-        sqfliteFfiInit();
-        var databaseFactory = databaseFactoryFfi;
+      // case TargetPlatform.windows:
+      //   sqfliteFfiInit();
+      //   var databaseFactory = databaseFactoryFfi;
 
-        final databasePath = await getAnxDataBasesPath();
-        AnxLog.info('Database: database path: $databasePath');
-        final path = join(databasePath, 'app_database.db');
+      //   final databasePath = await getAnxDataBasesPath();
+      //   AnxLog.info('Database: database path: $databasePath');
+      //   final path = join(databasePath, 'app_database.db');
 
-        return await databaseFactory.openDatabase(
-          path,
-          options: OpenDatabaseOptions(
-            version: dbVersion,
-            onCreate: (db, version) async {
-              onUpgradeDatabase(db, 0, version);
-            },
-            onUpgrade: onUpgradeDatabase,
-          ),
-        );
+      //   return await databaseFactory.openDatabase(
+      //     path,
+      //     options: OpenDatabaseOptions(
+      //       version: dbVersion,
+      //       onCreate: (db, version) async {
+      //         onUpgradeDatabase(db, 0, version);
+      //       },
+      //       onUpgrade: onUpgradeDatabase,
+      //     ),
+      //   );
       default:
         throw Exception('Unsupported platform');
     }
