@@ -65,7 +65,6 @@ dependencies:
     git:
       url: https://github.com/Anxcye/flutter_file_dialog.git
       ref: 5638def9696a5bb8a785f493704439833777611a
-  
   contentsize_tabbarview:
     git:
       url: https://github.com/Anxcye/contentsize_tabbarview.git
