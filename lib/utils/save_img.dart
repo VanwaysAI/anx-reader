@@ -170,6 +170,7 @@ class SaveImg {
       case TargetPlatform.macOS:
         return await windowsImgSaver(img, extension, picName);
       case TargetPlatform.iOS:
+      case TargetPlatform.ohos:
         return await iosImgSaver(img, extension, name);
       default:
         throw Exception('Unsupported platform');
