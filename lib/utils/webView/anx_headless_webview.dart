@@ -9,17 +9,27 @@ class AnxHeadlessWebView {
   OverlayEntry? _overlayEntry;
 
   final URLRequest initialUrlRequest;
+  final InAppWebViewSettings? initialSettings;
+  final void Function(InAppWebViewController controller)? onWebViewCreated;
   final void Function(InAppWebViewController controller, WebUri? url)?
       onLoadStop;
   final void Function(
           InAppWebViewController controller, ConsoleMessage consoleMessage)?
       onConsoleMessage;
+  final void Function(InAppWebViewController controller, WebUri? url, int code,
+      String message)? onLoadError;
+  final void Function(InAppWebViewController controller, WebUri? url,
+      int statusCode, String description)? onLoadHttpError;
   final WebViewEnvironment? webViewEnvironment;
 
   AnxHeadlessWebView({
     required this.initialUrlRequest,
+    this.initialSettings,
+    this.onWebViewCreated,
     this.onLoadStop,
     this.onConsoleMessage,
+    this.onLoadError,
+    this.onLoadHttpError,
     this.webViewEnvironment,
   });
 
@@ -39,8 +49,12 @@ class AnxHeadlessWebView {
       _headlessWebView = HeadlessInAppWebView(
         webViewEnvironment: webViewEnvironment,
         initialUrlRequest: initialUrlRequest,
+        initialSettings: initialSettings,
+        onWebViewCreated: onWebViewCreated,
         onLoadStop: onLoadStop,
         onConsoleMessage: onConsoleMessage,
+        onLoadError: onLoadError,
+        onLoadHttpError: onLoadHttpError,
       );
       try {
         await _headlessWebView?.run();
@@ -68,10 +82,13 @@ class AnxHeadlessWebView {
           height: 1,
           child: InAppWebView(
             initialUrlRequest: initialUrlRequest,
+            initialSettings: initialSettings,
             onLoadStop: onLoadStop,
             onConsoleMessage: onConsoleMessage,
+            onLoadError: onLoadError,
+            onLoadHttpError: onLoadHttpError,
             onWebViewCreated: (controller) {
-              // Controller is available here if needed
+              onWebViewCreated?.call(controller);
             },
           ),
         ),

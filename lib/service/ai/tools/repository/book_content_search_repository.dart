@@ -9,6 +9,7 @@ import 'package:anx_reader/service/book_player/book_player_server.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:anx_reader/utils/webView/gererate_url.dart';
 import 'package:anx_reader/utils/webView/webview_console_message.dart';
+import 'package:anx_reader/utils/webView/anx_headless_webview.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -121,7 +122,7 @@ class _HeadlessSearchSession {
   final Book book;
   final VoidCallback idleCallback;
 
-  HeadlessInAppWebView? _webView;
+  AnxHeadlessWebView? _webView;
   InAppWebViewController? _controller;
   final _AsyncLock _lock = _AsyncLock();
   Completer<void>? _readyCompleter;
@@ -144,7 +145,7 @@ class _HeadlessSearchSession {
     final loadCompleter = Completer<void>();
     _readyCompleter = Completer<void>();
 
-    final headless = HeadlessInAppWebView(
+    final headless = AnxHeadlessWebView(
       webViewEnvironment: webViewEnvironment,
       initialUrlRequest: URLRequest(url: WebUri(url)),
       initialSettings: InAppWebViewSettings(
