@@ -41,8 +41,8 @@ dependencies:
   archive: ^3.6.1
   flutter_inappwebview: 
     git:
-      url: https://github.com/Anxcye/flutter_inappwebview.git
-      ref: 4a275c3
+      url: https://gitcode.com/openharmony-sig/flutter_inappwebview
+      ref: br_v6.1.5_ohos
       path: flutter_inappwebview
   shelf: ^1.4.1
   fl_chart: ^0.70.2
@@ -196,11 +196,21 @@ dependency_overrides:
   audio_session:
     git:
       url: https://gitcode.com/openharmony-sig/flutter_audio_session
-
+  flutter_inappwebview_platform_interface:
+    git:
+      url: https://gitcode.com/openharmony-sig/flutter_inappwebview
+      ref: br_v6.1.5_ohos
+      path: flutter_inappwebview_platform_interface
+  flutter_inappwebview_web: 
+    git:
+      url: https://gitcode.com/openharmony-sig/flutter_inappwebview
+      ref: br_v6.1.5_ohos
+      path: flutter_inappwebview_web
   flutter_math_fork:
     git:
       url: https://github.com/Anxcye/flutter_math.git
   web: 1.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
