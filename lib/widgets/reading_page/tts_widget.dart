@@ -7,6 +7,7 @@ import 'package:anx_reader/service/tts/tts_handler.dart';
 import 'package:anx_reader/widgets/reading_page/widget_title.dart';
 import 'package:anx_reader/page/book_player/epub_player.dart';
 import 'package:anx_reader/widgets/reading_page/more_settings/more_settings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'dart:async';
@@ -126,35 +127,36 @@ class _TtsWidgetState extends State<TtsWidget> {
                   volume(),
                   pitch(),
                   rate(),
-                  Row(
-                    children: [
-                      Text(L10n.of(context).ttsType),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          Text(L10n.of(context).ttsTypeInternal),
-                          Switch(
-                            value: Prefs().isSystemTts,
-                            onChanged: (value) async {
-                              if (TtsHandler().isPlaying) {
-                                await TtsHandler().stop();
-                              }
+                  if (defaultTargetPlatform != TargetPlatform.ohos)
+                    Row(
+                      children: [
+                        Text(L10n.of(context).ttsType),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Text(L10n.of(context).ttsTypeInternal),
+                            Switch(
+                              value: Prefs().isSystemTts,
+                              onChanged: (value) async {
+                                if (TtsHandler().isPlaying) {
+                                  await TtsHandler().stop();
+                                }
 
-                              await TtsHandler().switchTtsType(value);
+                                await TtsHandler().switchTtsType(value);
 
-                              await TtsHandler().init(
-                                  widget.epubPlayerKey.currentState!.initTts,
-                                  widget.epubPlayerKey.currentState!.ttsNext,
-                                  widget.epubPlayerKey.currentState!.ttsPrev);
+                                await TtsHandler().init(
+                                    widget.epubPlayerKey.currentState!.initTts,
+                                    widget.epubPlayerKey.currentState!.ttsNext,
+                                    widget.epubPlayerKey.currentState!.ttsPrev);
 
-                              setState(() {});
-                            },
-                          ),
-                          Text(L10n.of(context).ttsTypeSystem),
-                        ],
-                      ),
-                    ],
-                  ),
+                                setState(() {});
+                              },
+                            ),
+                            Text(L10n.of(context).ttsTypeSystem),
+                          ],
+                        ),
+                      ],
+                    ),
                 ],
               ),
             );

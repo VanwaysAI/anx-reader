@@ -5,6 +5,7 @@ import 'package:anx_reader/service/tts/tts_handler.dart';
 import 'package:anx_reader/utils/tts_model_list.dart';
 import 'package:anx_reader/widgets/settings/settings_section.dart';
 import 'package:anx_reader/widgets/settings/settings_tile.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -307,13 +308,14 @@ class _NarrateSettingsState extends ConsumerState<NarrateSettings>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SettingsSection(title: Text(L10n.of(context).ttsType), tiles: [
-          SettingsTile.switchTile(
-              title: Text(L10n.of(context).ttsTypeSystem),
-              initialValue: Prefs().isSystemTts,
-              onToggle: (value) async {
-                await TtsHandler().switchTtsType(value);
-                setState(() {});
-              }),
+          if (defaultTargetPlatform != TargetPlatform.ohos)
+            SettingsTile.switchTile(
+                title: Text(L10n.of(context).ttsTypeSystem),
+                initialValue: Prefs().isSystemTts,
+                onToggle: (value) async {
+                  await TtsHandler().switchTtsType(value);
+                  setState(() {});
+                }),
           SettingsTile.switchTile(
               title: Text(L10n.of(context).allowMixing),
               description: Text(L10n.of(context).enableMixTip),
