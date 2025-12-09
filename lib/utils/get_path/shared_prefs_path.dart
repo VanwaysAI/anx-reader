@@ -55,8 +55,7 @@ Future<File> getAnxShredPrefsFile() async {
       return File("$baseDir/${getSharedPrefsFileName()}");
     case TargetPlatform.ohos:
       final docPath = await getAnxDocumentsPath();
-            final sharedPrefsDirPath =
-          '${docPath.split('/base')[0]}/preferences';
+      final sharedPrefsDirPath = '${docPath.split('/base')[0]}/preferences';
       return File('$sharedPrefsDirPath/${getSharedPrefsFileName()}');
     default:
       throw Exception('Unsupported platform');
