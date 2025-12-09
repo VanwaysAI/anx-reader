@@ -61,7 +61,11 @@ dependencies:
   dio: ^5.4.3+1
   pubspec_parse: ^1.2.3
   logging: ^1.2.0
-  flutter_file_dialog: ^3.0.2
+  flutter_file_dialog:
+    git:
+      url: https://github.com/Anxcye/flutter_file_dialog.git
+      ref: 5638def9696a5bb8a785f493704439833777611a
+  
   contentsize_tabbarview:
     git:
       url: https://github.com/Anxcye/contentsize_tabbarview.git

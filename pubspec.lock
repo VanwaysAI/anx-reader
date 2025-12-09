@@ -648,10 +648,11 @@ packages:
   flutter_file_dialog:
     dependency: "direct main"
     description:
-      name: flutter_file_dialog
-      sha256: ec904d15e7da3691bb60442a762b0a09afa37ded7265b9fc2088ec202b7d844f
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "5638def9696a5bb8a785f493704439833777611a"
+      resolved-ref: "5638def9696a5bb8a785f493704439833777611a"
+      url: "https://github.com/Anxcye/flutter_file_dialog.git"
+    source: git
     version: "3.0.3"
   flutter_floating_bottom_bar:
     dependency: "direct main"
