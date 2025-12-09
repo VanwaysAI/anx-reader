@@ -8,6 +8,7 @@ import 'get_base_path.dart';
 Future<String> getAnxDataBasesPath() async {
   switch (defaultTargetPlatform) {
     case TargetPlatform.android:
+    case TargetPlatform.ohos:
       final path = await getDatabasesPath();
       return path;
     case TargetPlatform.linux:

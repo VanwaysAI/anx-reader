@@ -27,6 +27,8 @@ String getSharedPrefsFileName() {
     case TargetPlatform.macOS:
     case TargetPlatform.iOS:
       return 'com.anxcye.anxReader.plist';
+    case TargetPlatform.ohos:
+      return 'FlutterSharedPreferences';
     default:
       throw Exception('Unsupported platform');
   }
@@ -51,6 +53,11 @@ Future<File> getAnxShredPrefsFile() async {
       final baseDir =
           '${((await getApplicationDocumentsDirectory()).path).split('Documents')[0]}Library/Preferences';
       return File("$baseDir/${getSharedPrefsFileName()}");
+    case TargetPlatform.ohos:
+      final docPath = await getAnxDocumentsPath();
+            final sharedPrefsDirPath =
+          '${docPath.split('/base')[0]}/preferences';
+      return File('$sharedPrefsDirPath/${getSharedPrefsFileName()}');
     default:
       throw Exception('Unsupported platform');
   }

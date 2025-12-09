@@ -16,6 +16,7 @@ Future<String?> saveFileToDownload(
   switch (defaultTargetPlatform) {
     case TargetPlatform.android:
     case TargetPlatform.iOS:
+    case TargetPlatform.ohos:
       SaveFileDialogParams params = SaveFileDialogParams(
         sourceFilePath: sourceFilePath,
         data: bytes,

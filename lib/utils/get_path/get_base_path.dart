@@ -19,6 +19,7 @@ Future<String> getAnxDocumentsPath() async {
     case TargetPlatform.macOS:
       return directory.path;
     case TargetPlatform.iOS:
+    case TargetPlatform.ohos:
       return (await getApplicationSupportDirectory()).path;
     default:
       throw Exception('Unsupported platform');

@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 Future<Directory> getAnxTempDir() async {
   switch (defaultTargetPlatform) {
     case TargetPlatform.android:
+    case TargetPlatform.ohos:
     case TargetPlatform.windows:
     case TargetPlatform.macOS:
     case TargetPlatform.iOS:

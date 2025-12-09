@@ -119,6 +119,7 @@ class DBHelper {
     switch (defaultTargetPlatform) {
       case TargetPlatform.macOS:
       case TargetPlatform.android:
+      case TargetPlatform.ohos:
         final databasePath = await getAnxDataBasesPath();
         final path = join(databasePath, 'app_database.db');
         return await openDatabase(
