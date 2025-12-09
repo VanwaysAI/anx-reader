@@ -14,7 +14,10 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.6
-  file_picker: ^9.0.2
+  file_picker:
+    git:
+      url: https://gitcode.com/openharmony-sig/fluttertpc_file_picker
+      ref: br_v8.0.7_ohos
   path_provider:
     git:
       url: https://gitcode.com/openharmony-tpc/flutter_packages
@@ -63,7 +66,10 @@ dependencies:
     git:
       url: https://github.com/Anxcye/contentsize_tabbarview.git
       ref: feat/animation
-  wakelock_plus: ^1.2.5
+  wakelock_plus:
+    git:
+      url: https://gitcode.com/openharmony-sig/fluttertpc_wakelock_plus
+      path: wakelock_plus
   icons_plus: ^5.0.0
   url_launcher:
     git:
@@ -194,7 +200,7 @@ dependency_overrides:
   flutter_math_fork:
     git:
       url: https://github.com/Anxcye/flutter_math.git
-
+  web: 1.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
