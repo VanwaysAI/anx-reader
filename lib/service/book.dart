@@ -19,6 +19,7 @@ import 'package:anx_reader/providers/book_list.dart';
 import 'package:anx_reader/providers/toc_search.dart';
 import 'package:anx_reader/service/convert_to_epub/txt/convert_from_txt.dart';
 import 'package:anx_reader/service/md5_service.dart';
+import 'package:anx_reader/utils/anx_headless_webview.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/utils/get_path/get_base_path.dart';
 import 'package:anx_reader/page/reading_page.dart';
@@ -34,7 +35,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'book_player/book_player_server.dart';
 
-HeadlessInAppWebView? headlessInAppWebView;
+AnxHeadlessWebView? headlessInAppWebView;
 final allowBookExtensions = ["epub", "mobi", "azw3", "fb2", "txt", "pdf"];
 
 /// import book list and **delete file**
@@ -493,7 +494,7 @@ Future<void> saveBook(
 
   book.id = await bookDao.insertBook(book);
   AnxToast.show(L10n.of(navigatorKey.currentContext!).serviceImportSuccess);
-  headlessInAppWebView?.dispose();
+  await headlessInAppWebView?.dispose();
   headlessInAppWebView = null;
   return;
 }
@@ -511,7 +512,7 @@ Future<void> getBookMetadata(
   String bookUrl = "http://127.0.0.1:${Server().port}/$serverFileName";
   AnxLog.info("import start: book url: $bookUrl");
 
-  HeadlessInAppWebView webview = HeadlessInAppWebView(
+  AnxHeadlessWebView webview = AnxHeadlessWebView(
     webViewEnvironment: webViewEnvironment,
     initialUrlRequest: URLRequest(
         url: WebUri(generateUrl(
@@ -560,7 +561,6 @@ Future<void> getBookMetadata(
     },
   );
 
-  await webview.dispose();
   await webview.run();
   headlessInAppWebView = webview;
   // max 30s
@@ -572,7 +572,7 @@ Future<void> getBookMetadata(
     await Future.delayed(const Duration(milliseconds: 100));
     count++;
   }
-  headlessInAppWebView?.dispose();
+  await headlessInAppWebView?.dispose();
   headlessInAppWebView = null;
   throw Exception('Import: Get book metadata timeout');
 }
