@@ -66,10 +66,11 @@ dependencies:
     git:
       url: https://github.com/Anxcye/contentsize_tabbarview.git
       ref: feat/animation
-  wakelock_plus:
+  wakelock_plus_ohos:
     git:
-      url: https://gitcode.com/openharmony-sig/fluttertpc_wakelock_plus
-      path: wakelock_plus
+      url: https://gitcode.com/openharmony-sig/fluttertpc_wakelock_plus.git
+      path: wakelock_plus/ohos
+      ref: br_wakelock_plus_1.2.8_ohos
   icons_plus: ^5.0.0
   url_launcher:
     git:
