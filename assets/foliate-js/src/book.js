@@ -285,6 +285,19 @@ const setSelectionHandler = (view, doc, index) => {
       handleSelection(view, doc, index);
       // }
     });
+
+    if (navigator.userAgent.includes('Phone; OpenHarmony')) {
+      let debounceTimerId;
+      doc.addEventListener('selectionchange', () => {
+        const selRange = getSelectionRange(doc.getSelection());
+        if (!selRange) return;
+
+        clearTimeout(debounceTimerId);
+        debounceTimerId = setTimeout(() => {
+          handleSelection(view, doc, index);
+        }, 500);
+      });
+    }
   }
   // doc.addEventListener('selectionchange', () => handleSelection(view, doc, index));
 
