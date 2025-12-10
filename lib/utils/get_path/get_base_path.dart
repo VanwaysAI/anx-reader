@@ -9,6 +9,7 @@ Future<String> getAnxDocumentsPath() async {
   final directory = await getApplicationDocumentsDirectory();
   switch (defaultTargetPlatform) {
     case TargetPlatform.android:
+    case TargetPlatform.ohos:
       return directory.path;
     case TargetPlatform.windows:
       // return '${directory.path}\\AnxReader';
@@ -19,7 +20,6 @@ Future<String> getAnxDocumentsPath() async {
     case TargetPlatform.macOS:
       return directory.path;
     case TargetPlatform.iOS:
-    case TargetPlatform.ohos:
       return (await getApplicationSupportDirectory()).path;
     default:
       throw Exception('Unsupported platform');
