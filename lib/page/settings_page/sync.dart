@@ -287,7 +287,7 @@ Future<String> createZipFile(Map<String, dynamic> params) async {
     getCoverDir(path: docPath),
     getFontDir(path: docPath),
     getBgimgDir(path: docPath),
-    await getAnxDataBasesDir(),
+    // await getAnxDataBasesDir(),
     // await getAnxSharedPrefsDir(),
     // await getAnxShredPrefsFile(),
     prefsBackupFile,
@@ -297,6 +297,18 @@ Future<String> createZipFile(Map<String, dynamic> params) async {
 
   final encoder = ZipFileEncoder();
   encoder.create(zipPath);
+
+  if (defaultTargetPlatform == TargetPlatform.ohos) {
+    final dbDir = await getAnxDataBasesDir();
+    final dbFile = File('${dbDir.path}/app_database.db');
+    if (await dbFile.exists()) {
+      await encoder.addFile(dbFile, 'databases/app_database.db');
+    }
+  } else {
+    final dbDir = await getAnxDataBasesDir();
+    await encoder.addDirectory(dbDir);
+  }
+
   for (final dir in directoryList) {
     if (dir is Directory) {
       await encoder.addDirectory(dir);
