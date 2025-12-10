@@ -130,8 +130,8 @@ class DBHelper {
           },
           onUpgrade: onUpgradeDatabase,
         );
-      case TargetPlatform.iOS:
-      case TargetPlatform.linux:
+      // case TargetPlatform.iOS:
+      // case TargetPlatform.linux:
       // case TargetPlatform.windows:
       //   sqfliteFfiInit();
       //   var databaseFactory = databaseFactoryFfi;
