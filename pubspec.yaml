@@ -25,7 +25,8 @@ dependencies:
   image: ^4.3.0
   sqflite:
     git:
-      url: https://gitcode.com/openharmony-sig/flutter_sqflite
+      url: https://gitcode.com/Anxcye/flutter_sqflite
+      ref: 9b387fc8c84ff182d24131b9ab2fdd106d09c42c
       path: sqflite
   path: ^1.9.0
   shared_preferences: 
@@ -198,7 +199,8 @@ dependency_overrides:
       path: packages/device_info_plus/device_info_plus
   sqflite:
     git:
-      url: https://gitcode.com/openharmony-sig/flutter_sqflite
+      url: https://gitcode.com/Anxcye/flutter_sqflite
+      ref: 9b387fc8c84ff182d24131b9ab2fdd106d09c42c
       path: sqflite
   file: ^7.0.0
   audio_session:

@@ -1951,9 +1951,9 @@ packages:
     dependency: "direct main"
     description:
       path: sqflite
-      ref: HEAD
-      resolved-ref: ccc14e92e319fe65d199a5bb13a0b5e71bf2dfaf
-      url: "https://gitcode.com/openharmony-sig/flutter_sqflite"
+      ref: "9b387fc8c84ff182d24131b9ab2fdd106d09c42c"
+      resolved-ref: "9b387fc8c84ff182d24131b9ab2fdd106d09c42c"
+      url: "https://gitcode.com/Anxcye/flutter_sqflite"
     source: git
     version: "2.2.8+3"
   sqflite_common:
