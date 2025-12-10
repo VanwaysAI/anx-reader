@@ -6,7 +6,7 @@ import 'package:anx_reader/utils/get_path/databases_path.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter/material.dart';
@@ -33,14 +33,16 @@ class DatabaseSyncManager {
     required String remoteDbFileName,
     void Function(int received, int total)? onProgress,
   }) async {
-    final cacheDir = await getAnxCacheDir();
     final databasesPath = await getAnxDataBasesPath();
+    final cacheDir = defaultTargetPlatform == TargetPlatform.ohos
+        ? '${await getAnxDataBasesPath()}/cache'
+        : (await getAnxCacheDir()).path;
     final localDbPath = join(databasesPath, 'app_database.db');
 
     // Generate temp file name (use timestamp to ensure uniqueness)
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final tempDbName = '$_tempDbPrefix$timestamp.db';
-    final tempDbPath = join(cacheDir.path, tempDbName);
+    final tempDbPath = join(cacheDir, tempDbName);
 
     try {
       AnxLog.info('DatabaseSync: Starting safe database download');
