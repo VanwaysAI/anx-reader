@@ -534,6 +534,8 @@
   "hints": "Dicas",
   "showAllHintsAgain": "Mostre todas as dicas de novo",
   "allHintsWillBeShownAgain": "Todas as dicas serão mostradas novamente",
+  "viewChangelog": "Ver registro de alterações",
+  "viewOnboarding": "Ver onboarding",
   "close": "Fechar",
   "dragAndDropToCreateFolderHint": "Pressione e segure, depois arraste para outro livro para criar uma pasta",
   "statisticsSwipeToDeleteHint": "Deslize para a esquerda para excluir registros de leitura. Você pode desfazer nesta página, mas as alterações são permanentes depois de sair.",

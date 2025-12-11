@@ -534,6 +534,8 @@
   "hints": "Hints",
   "showAllHintsAgain": "Show all hints again",
   "allHintsWillBeShownAgain": "All hints will be shown again",
+  "viewChangelog": "View changelog",
+  "viewOnboarding": "View onboarding",
   "close": "Close",
   "dragAndDropToCreateFolderHint": "Long press and drag to another book to create a folder",
   "statisticsSwipeToDeleteHint": "Swipe left to delete reading records. You can undo within this page, but changes are permanent once you leave.",

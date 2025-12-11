@@ -534,6 +534,8 @@
   "hints": "İpucu",
   "showAllHintsAgain": "Tüm ipuçlarını tekrar göster",
   "allHintsWillBeShownAgain": "Tüm ipuçları tekrar gösterilecek",
+  "viewChangelog": "Değişiklik günlüğünü görüntüle",
+  "viewOnboarding": "Onboarding'i görüntüle",
   "close": "Kapat",
   "dragAndDropToCreateFolderHint": "Klasör oluşturmak için uzun basın ve başka bir kitaba sürükleyin",
   "statisticsSwipeToDeleteHint": "Okuma kayıtlarını silmek için sola kaydırın. Bu sayfada geri alabilirsiniz, ancak sayfadan çıktıktan sonra değişiklikler kalıcı olur.",

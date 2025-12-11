@@ -534,6 +534,8 @@
   "hints": "Suggerimenti",
   "showAllHintsAgain": "Mostra di nuovo tutti i suggerimenti",
   "allHintsWillBeShownAgain": "Tutti i suggerimenti verranno mostrati di nuovo",
+  "viewChangelog": "Visualizza registro delle modifiche",
+  "viewOnboarding": "Visualizza onboarding",
   "close": "Chiudi",
   "dragAndDropToCreateFolderHint": "Tieni premuto e trascina su un altro libro per creare una cartella",
   "statisticsSwipeToDeleteHint": "Scorri a sinistra per eliminare i record di lettura. Puoi annullare in questa pagina, ma le modifiche sono permanenti una volta che esci.",

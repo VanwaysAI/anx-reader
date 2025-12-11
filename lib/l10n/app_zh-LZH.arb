@@ -534,6 +534,8 @@
   "hints": "提示",
   "showAllHintsAgain": "再示諸提示",
   "allHintsWillBeShownAgain": "諸提示將復示",
+  "viewChangelog": "觀覽更新誌",
+  "viewOnboarding": "重覽引導頁",
   "close": "閉",
   "dragAndDropToCreateFolderHint": "長按並拖至他書以創文件夾",
   "statisticsSwipeToDeleteHint": "左滑以刪讀記錄。可於此頁撤銷，然離此頁後更改永存。",

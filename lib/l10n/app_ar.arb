@@ -534,6 +534,8 @@
   "hints": "تلميحات",
   "showAllHintsAgain": "أظهر جميع التلميحات مرة أخرى",
   "allHintsWillBeShownAgain": "سيتم عرض جميع التلميحات مرة أخرى",
+  "viewChangelog": "عرض سجل التحديثات",
+  "viewOnboarding": "عرض صفحة الإرشاد",
   "close": "إغلاق",
   "dragAndDropToCreateFolderHint": "اضغط مطولاً واسحب إلى كتاب آخر لإنشاء مجلد",
   "statisticsSwipeToDeleteHint": "اسحب يساراً لحذف سجلات القراءة. يمكنك التراجع في هذه الصفحة، ولكن التغييرات دائمة بمجرد المغادرة.",
