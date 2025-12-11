@@ -77,7 +77,7 @@ packages:
     dependency: "direct main"
     description:
       path: audio_service
-      ref: HEAD
+      ref: "43be9f21"
       resolved-ref: "43be9f21aa33cde5a7855691a00ce52aa06014a7"
       url: "https://gitcode.com/openharmony-sig/fluttertpc_audio_service"
     source: git
@@ -111,7 +111,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
+      ref: d2ff09df
       resolved-ref: d2ff09dfe4df3b366c19cca27562bdb413de20c7
       url: "https://gitcode.com/openharmony-sig/flutter_audio_session"
     source: git
@@ -120,7 +120,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/audioplayers"
-      ref: HEAD
+      ref: "5b1f0f97"
       resolved-ref: "5b1f0f972b200b543b5ac27c46f8efba63662e12"
       url: "https://gitcode.com/openharmony-sig/flutter_audioplayers.git"
     source: git
@@ -376,7 +376,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/connectivity_plus/connectivity_plus"
-      ref: HEAD
+      ref: "0eb41c70"
       resolved-ref: "0eb41c70f961f124a987b8de59c9a26ca919af17"
       url: "https://gitcode.com/openharmony-sig/flutter_plus_plugins"
     source: git
@@ -506,7 +506,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/device_info_plus/device_info_plus"
-      ref: HEAD
+      ref: "0eb41c70"
       resolved-ref: "0eb41c70f961f124a987b8de59c9a26ca919af17"
       url: "https://gitcode.com/openharmony-sig/flutter_plus_plugins"
     source: git
@@ -603,7 +603,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "br_v8.0.7_ohos"
+      ref: b0379814
       resolved-ref: b0379814d24abf242bbd9cf74c6d97d2dedc6d2a
       url: "https://gitcode.com/openharmony-sig/fluttertpc_file_picker"
     source: git
@@ -924,7 +924,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: HEAD
+      ref: b904d500
       resolved-ref: b904d5000b30d31d0d67fbd96ac53e3320d2e222
       url: "https://gitcode.com/openharmony-sig/flutter_fluttertoast"
     source: git
@@ -1432,7 +1432,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/path_provider/path_provider"
-      ref: HEAD
+      ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
       resolved-ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
       url: "https://gitcode.com/openharmony-tpc/flutter_packages"
     source: git
@@ -1490,7 +1490,7 @@ packages:
     dependency: "direct main"
     description:
       path: permission_handler
-      ref: HEAD
+      ref: "453788b37d0ac41b5f8ed77ffcf1732c4849a883"
       resolved-ref: "453788b37d0ac41b5f8ed77ffcf1732c4849a883"
       url: "https://gitcode.com/openharmony-sig/flutter_permission_handler"
     source: git
@@ -1782,7 +1782,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/share_plus/share_plus"
-      ref: HEAD
+      ref: "0eb41c70"
       resolved-ref: "0eb41c70f961f124a987b8de59c9a26ca919af17"
       url: "https://gitcode.com/openharmony-sig/flutter_plus_plugins"
     source: git
@@ -1800,7 +1800,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/shared_preferences/shared_preferences"
-      ref: HEAD
+      ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
       resolved-ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
       url: "https://gitcode.com/openharmony-tpc/flutter_packages"
     source: git
@@ -2114,7 +2114,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/url_launcher/url_launcher"
-      ref: HEAD
+      ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
       resolved-ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
       url: "https://gitcode.com/openharmony-tpc/flutter_packages"
     source: git
@@ -2260,7 +2260,7 @@ packages:
     dependency: "direct main"
     description:
       path: "wakelock_plus/ohos"
-      ref: "br_wakelock_plus_1.2.8_ohos"
+      ref: "38ef06d4"
       resolved-ref: "38ef06d4678dbfdeed1619c00abca2a68e27c98c"
       url: "https://gitcode.com/openharmony-sig/fluttertpc_wakelock_plus.git"
     source: git
