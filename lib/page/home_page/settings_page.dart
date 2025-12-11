@@ -1,5 +1,6 @@
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/iap_page.dart';
+import 'package:anx_reader/page/iap_placeholder_page.dart';
 import 'package:anx_reader/page/settings_page/more_settings_page.dart';
 import 'package:anx_reader/providers/iap.dart';
 import 'package:anx_reader/service/iap/iap_service.dart';
@@ -63,6 +64,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               const Divider(),
               const MoreSettings(),
+              if (EnvVar.showIapPlaceHolder)
+                ListTile(
+                  title: const Text('激活高级版'),
+                  leading: const Icon(Icons.info_outline),
+                  subtitle: const Text('试用中，了解高级版计划'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const IapPlaceholderPage(),
+                      ),
+                    );
+                  },
+                ),
               if (EnvVar.enableInAppPurchase)
                 ListTile(
                   title: Text(L10n.of(context).iapPageTitle),

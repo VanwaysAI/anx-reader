@@ -1,8 +1,10 @@
-import 'package:anx_reader/page/settings_page/appearance.dart';
-import 'package:flutter/material.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/page/iap_placeholder_page.dart';
+import 'package:anx_reader/page/settings_page/appearance.dart';
+import 'package:anx_reader/utils/env_var.dart';
+import 'package:flutter/material.dart';
+import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 
 /// Onboarding screen for first-time users
@@ -45,6 +47,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _buildSyncPage(),
         _buildAIPage(),
         _buildCompletePage(),
+        if (EnvVar.showIapPlaceHolder) _buildIapPlanPage(),
       ],
       onDone: _onIntroEnd,
       onSkip: _onIntroEnd,
@@ -134,6 +137,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         L10n.of(context).onboardingAiTip,
       ),
       image: _buildIconPage(Icons.auto_awesome_outlined),
+      decoration: _getPageDecoration(),
+    );
+  }
+
+  PageViewModel _buildIapPlanPage() {
+    return PageViewModel(
+      title: '',
+      bodyWidget: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: const IapPlaceholderContent(),
+        ),
+      ),
       decoration: _getPageDecoration(),
     );
   }
