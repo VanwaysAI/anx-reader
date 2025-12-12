@@ -18,6 +18,8 @@
         "name": "EntryAbility",
         "srcEntry": "./ets/entryability/EntryAbility.ets",
         "description": "$string:EntryAbility_desc",
+        "icon": "$media:app_layered_image",
+        "label": "$string:app_name",
         "startWindowIcon": "$media:icon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
@@ -27,7 +29,22 @@
               "entity.system.home"
             ],
             "actions": [
-              "action.system.home"
+              "action.system.home",
+              "ohos.want.action.sendData",
+              "ohos.want.action.sendMultipleData",
+              "ohos.want.action.viewData"
+            ],
+           "uris": [
+              {
+                "scheme": "file",
+                "utd": "general.entity",
+                "maxFileSupported": 15
+              },
+              {
+                "scheme": "file",
+                "utd": "general.object",
+                "maxFileSupported": 15
+              },
             ]
           }
         ]
@@ -35,6 +52,12 @@
     ],
     "requestPermissions": [
       {"name" :  "ohos.permission.INTERNET"},
+    ],
+    "metadata": [
+      {
+        "name": "client_id",
+        "value": "1837050159716940928"
+      }
     ]
   }
 }

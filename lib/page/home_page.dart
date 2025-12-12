@@ -120,7 +120,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       await _checkWindowsWebview();
     }
 
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (Platform.isAndroid || Platform.isIOS || Platform.isOhos) {
       receiveShareIntent(ref);
     }
 
