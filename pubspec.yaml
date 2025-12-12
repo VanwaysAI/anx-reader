@@ -243,6 +243,13 @@ dependency_overrides:
       url: "https://gitcode.com/openharmony-sig/fluttertpc_receive_sharing_intent.git"
       # path: ohos
       ref: a84746b4
+  audio_service: 
+    git:
+      url: https://gitcode.com/openharmony-sig/fluttertpc_audio_service
+      path: audio_service
+      ref: 43be9f21
+
+  
 
 dev_dependencies:
   flutter_test:
