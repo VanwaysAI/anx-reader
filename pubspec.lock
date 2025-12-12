@@ -1640,6 +1640,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
+  receive_sharing_intent:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: a84746b4
+      resolved-ref: a84746b45b69bb861335cd3708a188956cb5c415
+      url: "https://gitcode.com/openharmony-sig/fluttertpc_receive_sharing_intent.git"
+    source: git
+    version: "1.8.1"
   retry:
     dependency: transitive
     description:
@@ -1744,40 +1753,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.8"
-  share_handler:
-    dependency: "direct main"
-    description:
-      path: share_handler
-      ref: eeaa04d22e7e70babb55b6825b9ca7016e89c89a
-      resolved-ref: eeaa04d22e7e70babb55b6825b9ca7016e89c89a
-      url: "https://github.com/Anxcye/share_handler.git"
-    source: git
-    version: "0.0.25"
-  share_handler_android:
-    dependency: transitive
-    description:
-      path: share_handler_android
-      ref: eeaa04d22e7e70babb55b6825b9ca7016e89c89a
-      resolved-ref: eeaa04d22e7e70babb55b6825b9ca7016e89c89a
-      url: "https://github.com/Anxcye/share_handler.git"
-    source: git
-    version: "0.0.11"
-  share_handler_ios:
-    dependency: transitive
-    description:
-      name: share_handler_ios
-      sha256: cdc21f88f336a944157a8e9ceb191525cee3b082d6eb6c2082488e4f09dc3ece
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.15"
-  share_handler_platform_interface:
-    dependency: transitive
-    description:
-      name: share_handler_platform_interface
-      sha256: "7a4df95a87b326b2f07458d937f2281874567c364b7b7ebe4e7d50efaae5f106"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.6"
   share_plus:
     dependency: "direct main"
     description:

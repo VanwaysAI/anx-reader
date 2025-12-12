@@ -2,7 +2,7 @@ name: anx_reader
 description: "An e-book reader."
 publish_to: 'none'
 
-version: 1.10.1+6281
+version: 1.10.1+6282
 
 environment:
   sdk: '>=3.5.2 <4.0.0'
@@ -176,12 +176,10 @@ dependencies:
   skeletonizer: ^2.1.0+1
   scrollable_positioned_list: ^0.3.8
   math_expressions: ^2.5.0
-  # share_handler: ^0.0.25
-  share_handler:
+  receive_sharing_intent:
     git:
-      url: https://github.com/Anxcye/share_handler.git
-      path: share_handler
-      ref: eeaa04d22e7e70babb55b6825b9ca7016e89c89a
+      url: "https://gitcode.com/openharmony-sig/fluttertpc_receive_sharing_intent.git"
+      ref: a84746b4
   heroine: ^0.5.0+2
   vibration: ^3.1.4
   staggered_reorderable:
@@ -240,6 +238,11 @@ dependency_overrides:
     git:
       url: https://github.com/Anxcye/flutter_math.git
   web: 1.0.0
+  receive_sharing_intent:
+    git: 
+      url: "https://gitcode.com/openharmony-sig/fluttertpc_receive_sharing_intent.git"
+      # path: ohos
+      ref: a84746b4
 
 dev_dependencies:
   flutter_test:
