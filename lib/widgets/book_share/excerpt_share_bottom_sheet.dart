@@ -13,6 +13,7 @@ import 'package:anx_reader/utils/share_file.dart';
 import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/book_share/excerpt_share_card.dart';
 import 'package:anx_reader/widgets/icon_and_text.dart';
+import 'package:anx_reader/widgets/show_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -131,7 +132,9 @@ class _ExcerptShareBottomSheetState
   }
 
   Future<void> _saveAsImage() async {
+    showLoading();
     final imageData = await _captureCard();
+    SmartDialog.dismiss();
     if (imageData == null) return;
 
     final fileName = 'AnxReader_${widget.bookTitle.replaceAll(' ', '_')}';
