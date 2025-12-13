@@ -38,7 +38,6 @@ Widget settingsSections({
 }) {
   // return SettingsList(sections: sections);
   return ListView.builder(
-    padding: EdgeInsets.all(0),
     itemCount: sections.length,
     itemBuilder: (context, index) {
       return sections[index];
