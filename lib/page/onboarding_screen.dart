@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/iap_placeholder_page.dart';
@@ -5,6 +7,7 @@ import 'package:anx_reader/page/settings_page/appearance.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -168,7 +171,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: baseStyle,
             children: [
               const TextSpan(
-                text: '本应用不会收集或存储您的任何个人信息，更多细节请阅读并同意',
+                text: '本应用不会收集或存储您的任何用户信息，更多细节请阅读并同意',
               ),
               TextSpan(
                 text: '用户协议',
@@ -187,6 +190,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               const TextSpan(text: '。'),
             ],
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: () {
+              exit(0);
+            },
+            child: const Text('拒绝并退出'),
           ),
         ),
       ],
