@@ -1,11 +1,13 @@
-import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/iap_placeholder_page.dart';
 import 'package:anx_reader/page/settings_page/appearance.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Onboarding screen for first-time users
 /// Shows introduction pages covering key features and settings
@@ -24,6 +26,8 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final GlobalKey<IntroductionScreenState> _introKey =
       GlobalKey<IntroductionScreenState>();
+  bool _hasAcceptedPolicy = false;
+  int _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -32,15 +36,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       globalBackgroundColor: Theme.of(context).scaffoldBackgroundColor,
       allowImplicitScrolling: true,
       infiniteAutoScroll: false,
-      globalHeader: Align(
-        alignment: Alignment.topRight,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16, right: 16),
-            child: _buildSkipButton(),
-          ),
-        ),
-      ),
       pages: [
         _buildWelcomePage(),
         _buildAppearancePage(),
@@ -50,13 +45,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (EnvVar.showIapPlaceHolder) _buildIapPlanPage(),
       ],
       onDone: _onIntroEnd,
-      onSkip: _onIntroEnd,
-      showSkipButton: false, // We handle skip in globalHeader
+      onChange: (index) => setState(() => _currentPage = index),
+      canProgress: (page) => _hasAcceptedPolicy || page == 0,
+      isProgressTap: _hasAcceptedPolicy,
+      scrollPhysics: _hasAcceptedPolicy
+          ? const BouncingScrollPhysics()
+          : const NeverScrollableScrollPhysics(),
+      showSkipButton: false,
       showBackButton: true,
       showNextButton: true,
       skipOrBackFlex: 0,
       nextFlex: 0,
       showBottomPart: true,
+      overrideNext: _buildNextButton(),
       curve: Curves.fastLinearToSlowEaseIn,
       controlsMargin: const EdgeInsets.all(16),
       controlsPadding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
@@ -87,25 +88,108 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildSkipButton() {
+  Widget _buildNextButton() {
+    final bool isFirstPage = _currentPage == 0;
+    final Widget child = isFirstPage
+        ? const Text('同意')
+        : Icon(
+            Icons.arrow_forward,
+            color: Theme.of(context).colorScheme.primary,
+          );
+
     return TextButton(
-      onPressed: _onIntroEnd,
-      child: Text(
-        L10n.of(context).onboardingSkip,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withAlpha(150),
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      onPressed: () {
+        if (isFirstPage && !_hasAcceptedPolicy) {
+          setState(() {
+            _hasAcceptedPolicy = true;
+          });
+        }
+        _introKey.currentState?.next();
+      },
+      child: child,
     );
   }
 
   PageViewModel _buildWelcomePage() {
     return PageViewModel(
-      title: L10n.of(context).onboardingWelcomeTitle,
-      body: L10n.of(context).onboardingWelcomeBody,
-      image: _buildIconPage(Icons.book_outlined),
+      title: '',
+      bodyWidget: _buildWelcomeContent(),
+      // image: ,
       decoration: _getPageDecoration(),
+    );
+  }
+
+  Widget _buildWelcomeContent() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildIconPage(Icons.book_outlined, size: 80),
+        SizedBox(height: 24),
+        Text(
+          L10n.of(context).onboardingWelcomeTitle,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          L10n.of(context).onboardingWelcomeBody,
+          style: TextStyle(
+            fontSize: 19.0,
+            color: Theme.of(context).colorScheme.onSurface.withAlpha(200),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: 150),
+        _buildAgreementSection(),
+      ],
+    );
+  }
+
+  Widget _buildAgreementSection() {
+    final theme = Theme.of(context);
+    final baseStyle = TextStyle(
+      fontSize: 14,
+      color: theme.colorScheme.onSurface,
+    );
+    final linkStyle = baseStyle.copyWith(
+      color: theme.colorScheme.primary,
+      decoration: TextDecoration.underline,
+    );
+
+    return Column(
+      children: [
+        RichText(
+          textAlign: TextAlign.start,
+          text: TextSpan(
+            style: baseStyle,
+            children: [
+              const TextSpan(
+                text: '本应用不会收集或存储您的任何个人信息，更多细节请阅读并同意',
+              ),
+              TextSpan(
+                text: '用户协议',
+                style: linkStyle,
+                recognizer: TapGestureRecognizer()
+                  ..onTap =
+                      () => _openExternalLink('https://anx.anxcye.com/terms'),
+              ),
+              const TextSpan(text: '和'),
+              TextSpan(
+                text: '隐私政策',
+                style: linkStyle,
+                recognizer: TapGestureRecognizer()
+                  ..onTap =
+                      () => _openExternalLink('https://anx.anxcye.com/privacy'),
+              ),
+              const TextSpan(text: '。'),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -163,7 +247,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildIconPage(IconData icon) {
+  Widget _buildIconPage(IconData icon, {double size = 120}) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer.withAlpha(50),
@@ -172,7 +256,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       padding: const EdgeInsets.all(40),
       child: Icon(
         icon,
-        size: 120,
+        size: size,
         color: Theme.of(context).colorScheme.primary,
       ),
     );
@@ -557,5 +641,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _onIntroEnd() async {
     widget.onComplete();
+  }
+
+  Future<void> _openExternalLink(String url) async {
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
   }
 }

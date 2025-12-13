@@ -58,6 +58,7 @@ class InitializationCheck {
     // wait 0.8 seconds to ensure the app is ready
     Future.delayed(const Duration(milliseconds: 800), () {
       showCupertinoSheet(
+        enableDrag: false,
         context: navigatorKey.currentContext!,
         pageBuilder: (context) => Scaffold(
           body: OnboardingScreen(
