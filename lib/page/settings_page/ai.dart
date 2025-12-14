@@ -145,12 +145,6 @@ class _AISettingsState extends ConsumerState<AISettings> {
                 },
               ),
             ),
-          Text(
-            'AI 服务由用户自行配置并使用，生成内容及相关合规责任由对应第三方 AI 服务提供商承担。',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).hintColor,
-                ),
-          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -286,6 +280,12 @@ class _AISettingsState extends ConsumerState<AISettings> {
                   );
                 },
               ),
+            ),
+            Text(
+              'App内不提供内容合成服务，此处仅为接口。AI 服务由用户自行配置并使用，实名认证、生成内容及相关合规责任由对应第三方 AI 服务提供商承担。',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
             ),
             !showSettings ? const SizedBox() : aiConfig(),
           ],

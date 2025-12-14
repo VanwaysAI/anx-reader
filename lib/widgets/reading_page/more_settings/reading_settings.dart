@@ -520,8 +520,8 @@ class _ReadingMoreSettingsState extends State<ReadingMoreSettings> {
       padding: const EdgeInsets.all(18.0),
       child: Column(
         children: [
-          // downloadFonts(),
-          // const Divider(height: 20),
+          downloadFonts(),
+          const Divider(height: 20),
           writingMode(),
           translationMode(),
           columnCount(),

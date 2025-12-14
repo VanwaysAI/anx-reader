@@ -23,7 +23,8 @@ class EnvVar {
   static bool get enableDonation => !isStoreBuild && !isOhosStore;
   static bool get enableInAppPurchase => isStoreBuild;
 
-  static bool get showBeian => isAppStore && _isChineseMainlandLocale;
+  static bool get showBeian =>
+      (isAppStore && _isChineseMainlandLocale) || isOhosStore;
   static bool get enableOpenAiConfig => !showBeian;
   static bool get showTelegramLink => !showBeian;
 }
