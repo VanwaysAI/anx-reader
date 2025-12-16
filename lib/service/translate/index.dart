@@ -14,8 +14,8 @@ import 'package:flutter/services.dart';
 enum TranslateService {
   google('Google'),
   microsoft('Microsoft'),
-  deepl('DeepL'),
-  ai('AI');
+  deepl('DeepL');
+  // ai('AI');
 
   const TranslateService(this.label);
 
@@ -179,8 +179,8 @@ class TranslateFactory {
         return MicrosoftTranslateProvider();
       case TranslateService.deepl:
         return DeepLTranslateProvider();
-      case TranslateService.ai:
-        return AiTranslateProvider();
+      // case TranslateService.ai:
+      //   return AiTranslateProvider();
     }
   }
 }

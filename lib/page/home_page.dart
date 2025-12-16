@@ -140,7 +140,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         BookshelfPage(controller: controller),
         if (Prefs().bottomNavigatorShowStatistics)
           StatisticPage(controller: controller),
-        if (Prefs().bottomNavigatorShowAI) AiChatStream(),
+        if (Prefs().bottomNavigatorShowAI && EnvVar.enableAIFeature)
+          AiChatStream(),
         if (Prefs().bottomNavigatorShowNote) NotesPage(controller: controller),
         SettingsPage(controller: controller),
       ];
@@ -159,7 +160,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           'label': L10n.of(context).navBarStatistics,
           'identifier': 'statistics'
         },
-      if (Prefs().bottomNavigatorShowAI)
+      if (Prefs().bottomNavigatorShowAI && EnvVar.enableAIFeature)
         {
           'icon': Icons.auto_awesome,
           'label': L10n.of(context).navBarAI,
