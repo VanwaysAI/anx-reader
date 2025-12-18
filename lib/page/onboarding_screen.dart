@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _buildWelcomePage(),
         _buildAppearancePage(),
         _buildSyncPage(),
-        _buildAIPage(),
+        if (EnvVar.enableAIFeature) _buildAIPage(),
         _buildCompletePage(),
         if (EnvVar.showIapPlaceHolder) _buildIapPlanPage(),
       ],
