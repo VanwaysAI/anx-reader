@@ -139,7 +139,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          L10n.of(context).onboardingWelcomeBody,
+          EnvVar.enableAIFeature
+              ? L10n.of(context).onboardingWelcomeBody
+              : '一款功能强大的电子书阅读器，支持多种格式，提供跨平台同步能力',
           style: TextStyle(
             fontSize: 19.0,
             color: Theme.of(context).colorScheme.onSurface.withAlpha(200),
