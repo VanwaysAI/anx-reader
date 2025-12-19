@@ -301,6 +301,7 @@ class ExcerptMenuState extends State<ExcerptMenu> {
           if (!widget.footnote)
             InkWell(
               onTap: () async {
+                epubPlayerKey.currentState?.setSelectionClearLocked(true);
                 await onColorSelected(annoColor, close: false);
                 final targetId = noteId ?? widget.id;
                 if (targetId != null) {

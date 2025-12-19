@@ -288,6 +288,7 @@ class _ContextMenuOverlayState extends State<_ContextMenuOverlay>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    epubPlayerKey.currentState?.setSelectionClearLocked(false);
     super.dispose();
   }
 
@@ -403,6 +404,7 @@ class _ContextMenuOverlayState extends State<_ContextMenuOverlay>
 
   void _toggleReaderNoteMenu({bool? show}) {
     final target = show ?? !_showReaderNoteMenu;
+    epubPlayerKey.currentState?.setSelectionClearLocked(target);
     setState(() {
       _showReaderNoteMenu = target;
     });
@@ -432,6 +434,7 @@ class _ContextMenuOverlayState extends State<_ContextMenuOverlay>
   }
 
   void _handleReaderNoteVisibilityChange(bool visible) {
+    epubPlayerKey.currentState?.setSelectionClearLocked(visible);
     if (_showReaderNoteMenu == visible) {
       return;
     }
