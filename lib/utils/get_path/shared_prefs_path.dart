@@ -29,7 +29,7 @@ String getSharedPrefsFileName() {
       return 'com.anxcye.anxReader.plist';
     case AnxPlatformEnum.ohos:
       return 'FlutterSharedPreferences';
-   }
+  }
 }
 
 Future<File> getAnxShredPrefsFile() async {
