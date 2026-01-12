@@ -1167,7 +1167,22 @@ class Reader {
   }
 
   #onTouchEnd = ({ detail: e }) => {
-    if (this.#ignoreTouch()) return;
+    if (this.#ignoreTouch()) {
+      if (e.touchState.direction === 'vertical') {
+        const renderer = this.view.renderer;
+        const scrollTop = renderer.shadowRoot.querySelector('#container').scrollTop;
+        const deltaY = e.touchState.delta.y;
+        const swipeThreshold = 60;
+
+        if (deltaY > swipeThreshold && scrollTop <= 1) {
+          renderer.shadowRoot.querySelector('#container').scrollTop = 0;
+          prevPage();
+        } else if (deltaY < -swipeThreshold && renderer.viewSize - renderer.end <= 1) {
+          nextPage();
+        }
+        return;
+      }
+    }
 
     const mainView = this.view.shadowRoot.children[0]
     if (e.touchState.direction === 'vertical') {
@@ -1272,6 +1287,7 @@ class Reader {
     const totalPages = currentSectionPages / (nextSectionStart - currentSectionStart)
 
     const getFractionByHref = (href) => {
+      if (!href) return 0;
       href = href.split('#')[0]
       const section = sectionFractions.find(s => s.href === href)
       return section ? section.fraction : 0
