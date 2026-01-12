@@ -35,7 +35,7 @@ class DatabaseSyncManager {
     void Function(int received, int total)? onProgress,
   }) async {
     final databasesPath = await getAnxDataBasesPath();
-    final cacheDir = defaultTargetPlatform == TargetPlatform.ohos
+    final cacheDir = AnxPlatform.isOhos
         ? '${await getAnxDataBasesPath()}/cache'
         : (await getAnxCacheDir()).path;
     final localDbPath = join(databasesPath, 'app_database.db');

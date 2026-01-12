@@ -7,6 +7,7 @@ import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
 import 'package:anx_reader/providers/sync.dart';
 import 'package:anx_reader/service/sync/sync_client_factory.dart';
+import 'package:anx_reader/utils/platform_utils.dart';
 import 'package:anx_reader/utils/save_file_to_download.dart';
 import 'package:anx_reader/utils/get_path/get_temp_dir.dart';
 import 'package:anx_reader/utils/get_path/databases_path.dart';
@@ -287,7 +288,7 @@ Future<String> createZipFile(Map<String, dynamic> params) async {
     getCoverDir(path: docPath),
     getFontDir(path: docPath),
     getBgimgDir(path: docPath),
-    // await getAnxDataBasesDir(),
+    if (!AnxPlatform.isOhos) await getAnxDataBasesDir(),
     // await getAnxSharedPrefsDir(),
     // await getAnxShredPrefsFile(),
     prefsBackupFile,
@@ -298,7 +299,7 @@ Future<String> createZipFile(Map<String, dynamic> params) async {
   final encoder = ZipFileEncoder();
   encoder.create(zipPath);
 
-  if (defaultTargetPlatform == TargetPlatform.ohos) {
+  if (AnxPlatform.isOhos) {
     final dbDir = await getAnxDataBasesDir();
     final dbFile = File('${dbDir.path}/app_database.db');
     if (await dbFile.exists()) {
