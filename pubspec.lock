@@ -1932,14 +1932,30 @@ packages:
     source: git
     version: "2.2.8+3"
   sqflite_common:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: sqflite_common
-      ref: HEAD
-      resolved-ref: ccc14e92e319fe65d199a5bb13a0b5e71bf2dfaf
-      url: "https://gitcode.com/openharmony-sig/flutter_sqflite.git"
+      ref: "9b387fc8c84ff182d24131b9ab2fdd106d09c42c"
+      resolved-ref: "9b387fc8c84ff182d24131b9ab2fdd106d09c42c"
+      url: "https://gitcode.com/Anxcye/flutter_sqflite"
     source: git
     version: "2.4.5+1"
+  sqflite_common_ffi:
+    dependency: "direct main"
+    description:
+      name: sqflite_common_ffi
+      sha256: "9faa2fedc5385ef238ce772589f7718c24cdddd27419b609bb9c6f703ea27988"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.6"
+  sqlite3:
+    dependency: transitive
+    description:
+      name: sqlite3
+      sha256: "3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.4"
   sqlite3_flutter_libs:
     dependency: "direct main"
     description:

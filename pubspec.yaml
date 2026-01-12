@@ -85,7 +85,7 @@ dependencies:
       url: https://gitcode.com/openharmony-tpc/flutter_packages 
       path: packages/url_launcher/url_launcher
       ref: c616a4054ea1fff0154d0e79d19847a4af42d6d3
-  # sqflite_common_ffi: ^2.3.3
+  sqflite_common_ffi: ^2.3.3
   battery_plus: ^6.2.1
   flutter_tts:
     git:
@@ -213,6 +213,11 @@ dependency_overrides:
       url: https://gitcode.com/Anxcye/flutter_sqflite
       ref: 9b387fc8c84ff182d24131b9ab2fdd106d09c42c
       path: sqflite
+  sqflite_common:
+    git:
+      url: https://gitcode.com/Anxcye/flutter_sqflite
+      ref: 9b387fc8c84ff182d24131b9ab2fdd106d09c42c
+      path: sqflite_common
   file: ^7.0.0
   audio_session:
     git:

@@ -1,4 +1,5 @@
 import 'dart:io' as io;
+import 'package:anx_reader/utils/platform_utils.dart';
 import 'package:anx_reader/dao/database.dart';
 import 'package:anx_reader/service/sync/sync_client_base.dart';
 import 'package:anx_reader/utils/get_path/get_cache_dir.dart';
@@ -11,7 +12,7 @@ import 'package:path/path.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Database safe sync manager
 /// Provides safe database download, validation and recovery mechanisms
@@ -129,23 +130,23 @@ class DatabaseSyncManager {
       Database? db;
       try {
         // Platform-specific database opening
-        // if (io.Platform.isWindows) {
-        // sqfliteFfiInit();
-        // db = await databaseFactoryFfi.openDatabase(
-        //   dbPath,
-        //   options: OpenDatabaseOptions(
-        //     readOnly: true,
-        //     singleInstance: false,
-        //   ),
-        // );
-        // } else {
-        // Android/iOS
-        db = await openDatabase(
-          dbPath,
-          readOnly: true,
-          singleInstance: false,
-        );
-        // }
+        if (AnxPlatform.isWindows) {
+          sqfliteFfiInit();
+          db = await databaseFactoryFfi.openDatabase(
+            dbPath,
+            options: OpenDatabaseOptions(
+              readOnly: true,
+              singleInstance: false,
+            ),
+          );
+        } else {
+          // Android/iOS
+          db = await openDatabase(
+            dbPath,
+            readOnly: true,
+            singleInstance: false,
+          );
+        }
 
         // Basic integrity check
         final integrityResult = await db.rawQuery('PRAGMA integrity_check');

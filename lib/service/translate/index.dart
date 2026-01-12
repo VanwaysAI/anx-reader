@@ -3,7 +3,6 @@ import 'dart:core';
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/enums/lang_list.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
-import 'package:anx_reader/service/translate/ai.dart';
 import 'package:anx_reader/service/translate/deepl.dart';
 import 'package:anx_reader/service/translate/google.dart';
 import 'package:anx_reader/service/translate/microsoft.dart';
