@@ -23,6 +23,7 @@
   "settingsAppearanceLanguage": "Idioma",
   "settingsAppearanceOpenBookAnimation": "Animación de Apertura del Libro",
   "settingsAppearanceBottomNavigatorShow": "Navegador Inferior",
+  "settingsAdvancedAutoHideBottomBar": "Ocultar automáticamente la barra de navegación inferior",
   "readingContents": "Contenidos",
   "statisticToPresent": "Al Presente",
   "statisticBooksRead": "{count, plural, =0{Ningún libro leído} =1{1 libro leído} other{{count} libros leídos} }",
@@ -725,5 +726,15 @@
   "bookshelfFilterFinished": "Terminado",
   "bookshelfFilterReading": "Leyendo",
   "bookshelfFilterNotStarted": "No iniciado",
-  "bookshelfFilterTagsTooltip": "Filtrar etiquetas"
+  "bookshelfFilterTagsTooltip": "Filtrar etiquetas",
+  "settingsNarrateTtsService": "TTS Service",
+  "settingsNarrateAzureTts": "Microsoft Azure",
+  "settingsNarrateSystemTts": "System TTS",
+  "settingsNarrateTtsVoiceModels": "TTS Voice Models",
+  "settingsNarrateGetVoiceList": "Get Voice List",
+  "settingsNarrateNoVoicesFound": "No voices found. Check your configuration.",
+  "settingsNarrateTestText": "Test Text",
+  "settingsNarrateUseVoice": "Use",
+  "settingsNarrateClickForHelp": "Click here for help",
+  "settingsNarrateAzureHelpText": "Microsoft Azure provides 500,000 characters of free TTS usage per month. You need to apply for a Microsoft Azure TTS resource key to use this service."
 }

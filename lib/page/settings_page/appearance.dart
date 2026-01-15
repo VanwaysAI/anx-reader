@@ -28,6 +28,7 @@ const List<Map<String, String>> languageOptions = [
   {'Português': 'pt'},
   {'日本語': 'ja'},
   {'한국어': 'ko'},
+  {'Română': 'ro'},
 ];
 
 class AppearanceSetting extends StatefulWidget {
@@ -112,6 +113,15 @@ class _AppearanceSettingState extends State<AppearanceSetting> {
                   setState(() {
                     Prefs().openBookAnimation = value;
                   });
+                },
+              ),
+              SettingsTile.switchTile(
+                title: Text(L10n.of(context).settingsAdvancedAutoHideBottomBar),
+                leading: const Icon(Icons.vertical_align_bottom),
+                initialValue: Prefs().autoHideBottomBar,
+                onToggle: (value) {
+                  Prefs().autoHideBottomBar = value;
+                  setState(() {});
                 },
               ),
               SettingsTile.switchTile(

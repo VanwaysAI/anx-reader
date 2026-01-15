@@ -1,11 +1,12 @@
+import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 // import 'package:anx_reader/main.dart';
-import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/main.dart';
 import 'package:anx_reader/service/tts/base_tts.dart';
 import 'package:anx_reader/service/tts/tts_handler.dart';
 import 'package:anx_reader/widgets/reading_page/widget_title.dart';
 import 'package:anx_reader/page/book_player/epub_player.dart';
+import 'package:anx_reader/page/settings_page/narrate.dart';
 import 'package:anx_reader/widgets/reading_page/more_settings/more_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -127,36 +128,51 @@ class _TtsWidgetState extends State<TtsWidget> {
                   volume(),
                   pitch(),
                   rate(),
-                  if (defaultTargetPlatform != TargetPlatform.ohos)
-                    Row(
-                      children: [
-                        Text(L10n.of(context).ttsType),
-                        const Spacer(),
-                        Row(
+                  Row(
+                    children: [
+                      Text(L10n.of(context).ttsType),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (context) {
+                              return FractionallySizedBox(
+                                heightFactor: 0.7,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 16.0),
+                                  child: const NarrateSettings(),
+                                ),
+                              );
+                            },
+                          ).then((_) {
+                            // Refresh state if needed when sheet closes
+                            setState(() {});
+                          });
+                        },
+                        child: Row(
                           children: [
-                            Text(L10n.of(context).ttsTypeInternal),
-                            Switch(
-                              value: Prefs().isSystemTts,
-                              onChanged: (value) async {
-                                if (TtsHandler().isPlaying) {
-                                  await TtsHandler().stop();
-                                }
-
-                                await TtsHandler().switchTtsType(value);
-
-                                await TtsHandler().init(
-                                    widget.epubPlayerKey.currentState!.initTts,
-                                    widget.epubPlayerKey.currentState!.ttsNext,
-                                    widget.epubPlayerKey.currentState!.ttsPrev);
-
-                                setState(() {});
-                              },
+                            Text(
+                              Prefs().ttsService == 'system'
+                                  ? L10n.of(context).ttsTypeSystem
+                                  : 'Microsoft Azure', // Or map generic ID to name
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            Text(L10n.of(context).ttsTypeSystem),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             );
