@@ -333,7 +333,7 @@ class OnlineTts extends BaseTts {
 
         // Play audio
         _playbackCompleter = Completer<void>();
-        final source = BytesSource(segment.audio!, mimeType: 'audio/mp3');
+        final source = BytesSource(segment.audio!);
 
         try {
           await audioPlayer.play(source);
@@ -441,7 +441,7 @@ class OnlineTts extends BaseTts {
     try {
       final bytes = await backend.speak(content, voice, rate, pitch);
       if (bytes.isNotEmpty) {
-        final source = BytesSource(bytes, mimeType: 'audio/mp3');
+        final source = BytesSource(bytes);
         await audioPlayer.play(source);
       }
     } catch (e) {
