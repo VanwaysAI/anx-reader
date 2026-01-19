@@ -9,7 +9,8 @@ import 'package:anx_reader/utils/get_path/get_base_path.dart';
 import 'package:anx_reader/utils/get_path/databases_path.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:path/path.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
+// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // Current app database version
 const int currentDbVersion = 7;
@@ -131,8 +132,8 @@ class DBHelper {
         );
       case AnxPlatformEnum.ios:
       case AnxPlatformEnum.windows:
-        sqfliteFfiInit();
-        var databaseFactory = databaseFactoryFfi;
+        // sqfliteFfiInit();
+        // var databaseFactory = databaseFactoryFfi;
 
         final databasePath = await getAnxDataBasesPath();
         AnxLog.info('Database: database path: $databasePath');

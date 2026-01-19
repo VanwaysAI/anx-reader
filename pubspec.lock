@@ -909,11 +909,9 @@ packages:
   flutter_tts:
     dependency: "direct main"
     description:
-      path: "."
-      ref: master
-      resolved-ref: "464b871cb9360c620eeca32a1aada0afb376bb97"
-      url: "https://github.com/Anxcye/flutter_tts.git"
-    source: git
+      path: "/Users/anxc/project/flutter_tts"
+      relative: false
+    source: path
     version: "4.2.3"
   flutter_web_plugins:
     dependency: transitive
@@ -1940,22 +1938,6 @@ packages:
       url: "https://gitcode.com/Anxcye/flutter_sqflite"
     source: git
     version: "2.4.5+1"
-  sqflite_common_ffi:
-    dependency: "direct main"
-    description:
-      name: sqflite_common_ffi
-      sha256: "9faa2fedc5385ef238ce772589f7718c24cdddd27419b609bb9c6f703ea27988"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.3.6"
-  sqlite3:
-    dependency: transitive
-    description:
-      name: sqlite3
-      sha256: "3145bd74dcdb4fd6f5c6dda4d4e4490a8087d7f286a14dee5d37087290f0f8a2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.9.4"
   sqlite3_flutter_libs:
     dependency: "direct main"
     description:
