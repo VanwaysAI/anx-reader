@@ -909,9 +909,11 @@ packages:
   flutter_tts:
     dependency: "direct main"
     description:
-      path: "/Users/anxc/project/flutter_tts"
-      relative: false
-    source: path
+      path: "."
+      ref: master
+      resolved-ref: bf1532ecd42cfaf7d6e31e258b855ccbe6b30c73
+      url: "https://github.com/Anxcye/flutter_tts.git"
+    source: git
     version: "4.2.3"
   flutter_web_plugins:
     dependency: transitive
