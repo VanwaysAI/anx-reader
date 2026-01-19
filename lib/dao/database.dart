@@ -157,6 +157,75 @@ class DBHelper {
     _database = null;
   }
 
+  /// Checkpoint WAL to merge data into main database file
+  /// On OHOS, this closes and reopens the database since PRAGMA is not supported
+  /// Returns true if checkpoint was successful or not needed
+  static Future<bool> checkpointWal() async {
+    if (AnxPlatform.isOhos) {
+      // OHOS doesn't support PRAGMA commands via execute()
+      // Close and reopen the database to flush WAL data
+      await close();
+      await DBHelper().initDB();
+      AnxLog.info('Database: WAL flushed by reopening (OHOS)');
+      return true;
+    }
+
+    try {
+      final db = await DBHelper().database;
+      await db.execute('PRAGMA wal_checkpoint(TRUNCATE)');
+      AnxLog.info('Database: WAL checkpoint completed');
+      return true;
+    } catch (e) {
+      AnxLog.warning('Database: WAL checkpoint failed: $e');
+      return false;
+    }
+  }
+
+  /// Get the path to the WAL file for a database
+  static String getWalPath(String dbPath) => '$dbPath-wal';
+
+  /// Get the path to the SHM file for a database
+  static String getShmPath(String dbPath) => '$dbPath-shm';
+
+  /// Check if WAL files exist for a database and have content
+  static bool hasWalFiles(String dbPath) {
+    final walFile = File(getWalPath(dbPath));
+    return walFile.existsSync() && walFile.lengthSync() > 0;
+  }
+
+  /// Delete WAL auxiliary files
+  static Future<void> cleanupWalFiles(String dbPath) async {
+    try {
+      final walFile = File(getWalPath(dbPath));
+      final shmFile = File(getShmPath(dbPath));
+      if (walFile.existsSync()) await walFile.delete();
+      if (shmFile.existsSync()) await shmFile.delete();
+      AnxLog.info('Database: WAL files cleaned up');
+    } catch (e) {
+      AnxLog.warning('Database: Failed to cleanup WAL files: $e');
+    }
+  }
+
+  /// Get the latest modification time including WAL file
+  /// This ensures we detect changes even if they're only in the WAL
+  static DateTime getLatestModTime(String dbPath) {
+    final dbFile = File(dbPath);
+    final walFile = File(getWalPath(dbPath));
+
+    DateTime dbTime = dbFile.existsSync()
+        ? dbFile.lastModifiedSync()
+        : DateTime.fromMillisecondsSinceEpoch(0);
+
+    if (walFile.existsSync()) {
+      DateTime walTime = walFile.lastModifiedSync();
+      if (walTime.isAfter(dbTime)) {
+        return walTime;
+      }
+    }
+
+    return dbTime;
+  }
+
   Future<void> onUpgradeDatabase(
       Database db, int oldVersion, int newVersion) async {
     AnxLog.info('Database: upgrade database from $oldVersion to $newVersion');
