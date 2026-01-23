@@ -148,6 +148,17 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     }
   }
 
+  String get bgimgUrl {
+    if (Prefs().autoAdjustReadingTheme) {
+      final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+      final bgimg = Prefs().bgimg;
+      if (isDarkMode && bgimg.nightUrl != null) {
+        return bgimg.nightUrl!;
+      }
+    }
+    return Prefs().bgimg.url;
+  }
+
   void changeTheme(ReadTheme readTheme) {
     textColor = readTheme.textColor;
     backgroundColor = readTheme.backgroundColor;
@@ -166,6 +177,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   void changeStyle(BookStyle? bookStyle) {
     styleTimer?.cancel();
     styleTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
       BookStyle style = bookStyle ?? Prefs().bookStyle;
       webViewController.evaluateJavascript(source: '''
       changeStyle({
@@ -181,7 +193,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         maxColumnCount: ${style.maxColumnCount},
         writingMode: '${Prefs().writingMode.code}',
         textAlign: '${Prefs().textAlignment.code}',
-        backgroundImage: '${Prefs().bgimg.url}',
+        backgroundImage: '$bgimgUrl',
         customCSS: `${Prefs().customCSS.replaceAll('`', '\\`')}`,
         customCSSEnabled: ${Prefs().customCSSEnabled},
       })
@@ -795,8 +807,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           final from = Prefs().fullTextTranslateFrom;
           final to = Prefs().fullTextTranslateTo;
 
-          return await TranslateFactory.getProvider(service)
-              .translateTextOnly(text, from, to);
+          return await service.provider.translateTextOnly(text, from, to);
         } catch (e) {
           AnxLog.severe('Translation error: $e');
           return 'Translation error: $e';

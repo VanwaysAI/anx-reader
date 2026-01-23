@@ -565,7 +565,7 @@ class Prefs extends ChangeNotifier {
 
   TranslateService get translateService {
     return getTranslateService(
-        prefs.getString('translateService') ?? 'microsoft');
+        prefs.getString('translateService') ?? 'bingWeb');
   }
 
   set translateFrom(LangListEnum from) {
@@ -773,6 +773,18 @@ class Prefs extends ChangeNotifier {
       return const WindowInfo(x: 0, y: 0, width: 0, height: 0);
     }
     return WindowInfo.fromJson(jsonDecode(windowInfoJson));
+  }
+
+  /// Custom storage path for Windows/macOS
+  String? get customStoragePath => prefs.getString('customStoragePath');
+
+  set customStoragePath(String? value) {
+    if (value == null) {
+      prefs.remove('customStoragePath');
+    } else {
+      prefs.setString('customStoragePath', value);
+    }
+    notifyListeners();
   }
 
   void saveAiConfig(String identifier, Map<String, String> config) {

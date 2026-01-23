@@ -9,6 +9,7 @@ import 'package:anx_reader/widgets/settings/settings_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:anx_reader/widgets/settings/settings_section.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TranslateSetting extends StatefulWidget {
   const TranslateSetting({super.key});
@@ -156,7 +157,7 @@ class TranslationConfig extends StatelessWidget {
                 });
               },
               child: Text(
-                Prefs().translateService.label,
+                Prefs().translateService.getLabel(context),
                 style: currentServiceTextStyle,
               ),
             ),
@@ -233,7 +234,7 @@ class FullTextTranslationConfig extends StatelessWidget {
                 });
               },
               child: Text(
-                Prefs().fullTextTranslateService.label,
+                Prefs().fullTextTranslateService.getLabel(context),
                 style: currentServiceTextStyle,
               ),
             ),
@@ -291,7 +292,7 @@ class TranslateServicePicker extends StatelessWidget {
     return ListView.builder(
       itemCount: TranslateService.values.length,
       itemBuilder: (context, index) => ListTile(
-        title: Text(TranslateService.values[index].label),
+        title: Text(TranslateService.values[index].getLabel(context)),
         onTap: () {
           Prefs().translateService = TranslateService.values[index];
           Navigator.pop(context);
@@ -306,12 +307,15 @@ class FullTextTranslateServicePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final services =
+        TranslateService.values.where((s) => !s.isWebView).toList();
+
     return ListView.builder(
-      itemCount: TranslateService.values.length,
+      itemCount: services.length,
       itemBuilder: (context, index) => ListTile(
-        title: Text(TranslateService.values[index].label),
+        title: Text(services[index].getLabel(context)),
         onTap: () {
-          Prefs().fullTextTranslateService = TranslateService.values[index];
+          Prefs().fullTextTranslateService = services[index];
           Navigator.pop(context);
         },
       ),
@@ -529,16 +533,38 @@ class _TranslateSettingItemState extends State<TranslateSettingItem> {
       case ConfigItemType.tip:
         return Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.info_outline,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      item.defaultValue.toString(),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: Text(
-                  item.defaultValue.toString(),
+              if (item.link != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 28.0, top: 4.0),
+                  child: GestureDetector(
+                    onTap: () => launchUrl(Uri.parse(item.link!),
+                        mode: LaunchMode.externalApplication),
+                    child: Text(
+                      L10n.of(context).settingsNarrateClickForHelp,
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        decoration: TextDecoration.underline,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -556,7 +582,7 @@ class _TranslateSettingItemState extends State<TranslateSettingItem> {
 
   @override
   Widget build(BuildContext context) {
-    final configItems = getTranslateServiceConfigItems(widget.service);
+    final configItems = getTranslateServiceConfigItems(context, widget.service);
 
     return Card(
       margin: const EdgeInsets.all(10),
@@ -569,7 +595,7 @@ class _TranslateSettingItemState extends State<TranslateSettingItem> {
         children: [
           ListTile(
             leading: const Icon(Icons.translate_outlined),
-            title: Text(widget.service.label),
+            title: Text(widget.service.getLabel(context)),
             onTap: () {
               setState(() {
                 isExpanded = !isExpanded;
