@@ -120,6 +120,8 @@
   "notesTips_2": "在书中划线，记录你的思绪！",
   "readingPageChapterPages": "本章页数",
   "readingPageCurrentPage": "当前页",
+  "readingPageAutoMarkSelection": "选中即标注",
+  "readingPageAutoMarkSelectionTips": "开启后选择一段文本直接按上次的样式划线",
   "readingPageAutoTranslateSelection": "自动翻译选中的内容",
   "translateError": "翻译错误",
   "readingPageSummaryTheChapter": "总结本章内容",
@@ -316,6 +318,7 @@
   "updateCurrentVersion": "当前版本：",
   "aboutPrivacyPolicy": "隐私政策",
   "aboutTermsOfUse": "用户服务条款",
+  "aboutHelp": "帮助文档",
   "ttsVolume": "音量",
   "ttsRate": "语速",
   "ttsPitch": "音调",
@@ -720,6 +723,7 @@
   "bookDetailEditHint": "点击编辑按钮可修改封面、标题、标签等信息",
   "tagsSectionTitle": "标签",
   "tagsEmptyHint": "暂无标签",
+  "noTagFilter": "无标签",
   "tagsEditHint": "点击编辑按钮添加标签",
   "tagNewPlaceholder": "新标签",
   "tagAddButton": "添加",
@@ -770,5 +774,11 @@
   "storageMigrationSuccess": "迁移完成，请重启应用。",
   "storageMigrationFailed": "迁移失败，数据仍在原位置。",
   "storagePathPermissionLost": "自定义存储路径已不可访问，数据已重置到默认位置。",
-  "storagePathNoPermission": "所选文件夹无写入权限"
+  "storagePathNoPermission": "所选文件夹无写入权限",
+  "bookBottomSheetReplaceFile": "替换文件",
+  "bookBottomSheetOriginalFileSize": "原文件大小: {size}",
+  "bookBottomSheetNewFileSize": "新文件大小: {size}",
+  "bookBottomSheetReplaceWarning": "替换后由于书籍内容可能不同划线可能错位或者消失",
+  "bookBottomSheetUnsupportedFileFormat": "不支持的文件格式: {extension}",
+  "bookBottomSheetReplaceFailed": "替换失败: {error}"
 }

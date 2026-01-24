@@ -120,6 +120,8 @@
   "notesTips_2": "Okurken bir not ekleyin!",
   "readingPageChapterPages": "Bölüm Sayfaları",
   "readingPageCurrentPage": "Geçerli Sayfa",
+  "readingPageAutoMarkSelection": "Auto-mark selection",
+  "readingPageAutoMarkSelectionTips": "Automatically highlight selected text with the last used style",
   "readingPageAutoTranslateSelection": "Otomatik Çeviri Seçimi",
   "translateError": "Çeviri Hatası",
   "readingPageSummaryTheChapter": "Bölümü özetle",
@@ -316,6 +318,7 @@
   "updateCurrentVersion": "Mevcut sürüm: ",
   "aboutPrivacyPolicy": "Gizlilik Politikası",
   "aboutTermsOfUse": "Kullanım Şartları",
+  "aboutHelp": "Yardım Belgeleri",
   "ttsVolume": "Ses Seviyesi",
   "ttsRate": "Hız",
   "ttsPitch": "Perde",
@@ -720,6 +723,7 @@
   "bookDetailEditHint": "Kapak, başlık, etiketler ve daha fazlası için Düzenle’ye dokunun",
   "tagsSectionTitle": "Etiketler",
   "tagsEmptyHint": "Etiket yok",
+  "noTagFilter": "Etiketsiz",
   "tagsEditHint": "Etiket eklemek için Düzenle’ye tıklayın",
   "tagNewPlaceholder": "Yeni etiket",
   "tagAddButton": "Ekle",
@@ -770,5 +774,11 @@
   "storageMigrationSuccess": "Migrasyon tamamlandı. Lütfen uygulamayı yeniden başlatın.",
   "storageMigrationFailed": "Migrasyon başarısız oldu. Veriler orijinal konumda kaldı.",
   "storagePathPermissionLost": "Özel depolama yoluna artık erişilemiyor. Veriler varsayılan konuma sıfırlandı.",
-  "storagePathNoPermission": "Seçilen klasör için yazma izni yok"
+  "storagePathNoPermission": "Seçilen klasör için yazma izni yok",
+  "bookBottomSheetReplaceFile": "Dosyayı Değiştir",
+  "bookBottomSheetOriginalFileSize": "Orijinal dosya boyutu: {size}",
+  "bookBottomSheetNewFileSize": "Yeni dosya boyutu: {size}",
+  "bookBottomSheetReplaceWarning": "Dosyayı değiştirmek, kitap içeriği farklı olabileceğinden vurgulamaların kaymasına veya kaybolmasına neden olabilir",
+  "bookBottomSheetUnsupportedFileFormat": "Desteklenmeyen dosya formatı: {extension}",
+  "bookBottomSheetReplaceFailed": "Değiştirme başarısız: {error}"
 }

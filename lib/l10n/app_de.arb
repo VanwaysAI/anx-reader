@@ -120,6 +120,8 @@
   "notesTips_2": "Fügen Sie beim Lesen eine Notiz hinzu!",
   "readingPageChapterPages": "Kapitelseiten",
   "readingPageCurrentPage": "Aktuelle Seite",
+  "readingPageAutoMarkSelection": "Auto-mark selection",
+  "readingPageAutoMarkSelectionTips": "Automatically highlight selected text with the last used style",
   "readingPageAutoTranslateSelection": "Auswahl automatisch übersetzen",
   "translateError": "Übersetzungsfehler",
   "readingPageSummaryTheChapter": "Kapitel zusammenfassen",
@@ -316,6 +318,7 @@
   "updateCurrentVersion": "Aktuelle Version: ",
   "aboutPrivacyPolicy": "Datenschutzrichtlinie",
   "aboutTermsOfUse": "Nutzungsbedingungen",
+  "aboutHelp": "Hilfedokumentation",
   "ttsVolume": "Lautstärke",
   "ttsRate": "Geschwindigkeit",
   "ttsPitch": "Tonhöhe",
@@ -720,6 +723,7 @@
   "bookDetailEditHint": "Tippe auf Bearbeiten, um Cover, Titel, Tags usw. zu ändern",
   "tagsSectionTitle": "Tags",
   "tagsEmptyHint": "Keine Tags",
+  "noTagFilter": "Ohne Tags",
   "tagsEditHint": "Drücke Bearbeiten, um Tags hinzuzufügen",
   "tagNewPlaceholder": "Neuer Tag",
   "tagAddButton": "Hinzufügen",
@@ -770,5 +774,11 @@
   "storageMigrationSuccess": "Migration abgeschlossen. Bitte starten Sie die App neu.",
   "storageMigrationFailed": "Migration fehlgeschlagen. Die Daten verbleiben am ursprünglichen Speicherort.",
   "storagePathPermissionLost": "Der benutzerdefinierte Speicherpfad ist nicht mehr zugänglich. Die Daten wurden auf den Standardspeicherort zurückgesetzt.",
-  "storagePathNoPermission": "Keine Schreibberechtigung für den ausgewählten Ordner"
+  "storagePathNoPermission": "Keine Schreibberechtigung für den ausgewählten Ordner",
+  "bookBottomSheetReplaceFile": "Datei ersetzen",
+  "bookBottomSheetOriginalFileSize": "Original-Dateigröße: {size}",
+  "bookBottomSheetNewFileSize": "Neue Dateigröße: {size}",
+  "bookBottomSheetReplaceWarning": "Das Ersetzen der Datei kann dazu führen, dass Markierungen verschoben werden oder verloren gehen, da der Buchinhalt unterschiedlich sein kann",
+  "bookBottomSheetUnsupportedFileFormat": "Nicht unterstütztes Dateiformat: {extension}",
+  "bookBottomSheetReplaceFailed": "Ersetzen fehlgeschlagen: {error}"
 }

@@ -120,6 +120,8 @@
   "notesTips_2": "¡Añade una nota mientras lees!",
   "readingPageChapterPages": "Páginas del Capítulo",
   "readingPageCurrentPage": "Página Actual",
+  "readingPageAutoMarkSelection": "Auto-mark selection",
+  "readingPageAutoMarkSelectionTips": "Automatically highlight selected text with the last used style",
   "readingPageAutoTranslateSelection": "Traducción Automática de Selección",
   "translateError": "Error de Traducción",
   "readingPageSummaryTheChapter": "Resumir el capítulo",
@@ -316,6 +318,7 @@
   "updateCurrentVersion": "Versión actual: ",
   "aboutPrivacyPolicy": "Política de Privacidad",
   "aboutTermsOfUse": "Términos de Uso",
+  "aboutHelp": "Documentación de ayuda",
   "ttsVolume": "Volumen",
   "ttsRate": "Velocidad",
   "ttsPitch": "Tono",
@@ -720,6 +723,7 @@
   "bookDetailEditHint": "Pulsa Editar para cambiar portada, título, etiquetas y más",
   "tagsSectionTitle": "Etiquetas",
   "tagsEmptyHint": "Sin etiquetas",
+  "noTagFilter": "Sin etiqueta",
   "tagsEditHint": "Pulsa Editar para añadir etiquetas",
   "tagNewPlaceholder": "Etiqueta nueva",
   "tagAddButton": "Añadir",
@@ -770,5 +774,11 @@
   "storageMigrationSuccess": "Migración completada. Por favor, reinicia la aplicación.",
   "storageMigrationFailed": "Migración fallida. Los datos permanecen en la ubicación original.",
   "storagePathPermissionLost": "La ruta de almacenamiento personalizada ya no es accesible. Los datos se han restablecido a la ubicación predeterminada.",
-  "storagePathNoPermission": "Sin permiso de escritura para la carpeta seleccionada"
+  "storagePathNoPermission": "Sin permiso de escritura para la carpeta seleccionada",
+  "bookBottomSheetReplaceFile": "Reemplazar archivo",
+  "bookBottomSheetOriginalFileSize": "Tamaño del archivo original: {size}",
+  "bookBottomSheetNewFileSize": "Tamaño del archivo nuevo: {size}",
+  "bookBottomSheetReplaceWarning": "Reemplazar el archivo puede causar que los resaltados se desplacen o se pierdan porque el contenido del libro puede ser diferente",
+  "bookBottomSheetUnsupportedFileFormat": "Formato de archivo no soportado: {extension}",
+  "bookBottomSheetReplaceFailed": "Error al reemplazar: {error}"
 }
