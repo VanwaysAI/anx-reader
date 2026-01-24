@@ -8,6 +8,7 @@ import 'package:anx_reader/service/translate/google_api.dart';
 import 'package:anx_reader/service/translate/microsoft.dart';
 import 'package:anx_reader/service/translate/microsoft_api.dart';
 import 'package:anx_reader/service/translate/web_view.dart';
+import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -45,6 +46,10 @@ enum TranslateService {
 
   /// Check if the service is a WebView provider.
   bool get isWebView => provider is WebViewTranslateProvider;
+
+  static List<TranslateService> get activeValues => values
+      .where((e) => e != TranslateService.ai || EnvVar.enableAIFeature)
+      .toList();
 }
 
 TranslateService getTranslateService(String name) {
