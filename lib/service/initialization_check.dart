@@ -60,7 +60,7 @@ class InitializationCheck {
       showCupertinoSheet(
         enableDrag: false,
         context: navigatorKey.currentContext!,
-        pageBuilder: (context) => Scaffold(
+        builder: (context) => Scaffold(
           body: OnboardingScreen(
             onComplete: () async {
               Prefs().lastAppVersion = cv;
@@ -79,7 +79,7 @@ class InitializationCheck {
     Future.delayed(const Duration(milliseconds: 800), () {
       showCupertinoSheet(
         context: navigatorKey.currentContext!,
-        pageBuilder: (context) => ChangelogScreen(
+        builder: (context) => ChangelogScreen(
           lastVersion: lv,
           currentVersion: cv,
           onComplete: () {

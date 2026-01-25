@@ -7,7 +7,6 @@ import 'package:anx_reader/page/settings_page/appearance.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/services.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
