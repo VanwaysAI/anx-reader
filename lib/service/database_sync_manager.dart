@@ -11,7 +11,6 @@ import 'package:path/path.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Database safe sync manager
 /// Provides safe database download, validation and recovery mechanisms
