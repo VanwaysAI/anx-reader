@@ -13,6 +13,8 @@ class BookStyle {
   double bottomMargin;
   double indent;
   int maxColumnCount;
+  double headingFontSize;
+  double columnThreshold;
 
   BookStyle({
     this.fontSize = 1.4,
@@ -27,6 +29,8 @@ class BookStyle {
     this.bottomMargin = 50.0,
     this.indent = 0,
     this.maxColumnCount = 0,
+    this.headingFontSize = 1.0,
+    this.columnThreshold = 720.0,
   });
 
   BookStyle copyWith({
@@ -42,6 +46,8 @@ class BookStyle {
     double? bottomMargin,
     double? indent,
     int? maxColumnCount,
+    double? headingFontSize,
+    double? columnThreshold,
   }) {
     return BookStyle(
       fontSize: fontSize ?? this.fontSize,
@@ -56,6 +62,8 @@ class BookStyle {
       bottomMargin: bottomMargin ?? this.bottomMargin,
       indent: indent ?? this.indent,
       maxColumnCount: maxColumnCount ?? this.maxColumnCount,
+      headingFontSize: headingFontSize ?? this.headingFontSize,
+      columnThreshold: columnThreshold ?? this.columnThreshold,
     );
   }
 
@@ -73,6 +81,8 @@ class BookStyle {
       'bottomMargin': bottomMargin,
       'indent': indent,
       'maxColumnCount': maxColumnCount,
+      'headingFontSize': headingFontSize,
+      'columnThreshold': columnThreshold,
     };
   }
 
@@ -90,7 +100,9 @@ class BookStyle {
       "topMargin": $topMargin,
       "bottomMargin": $bottomMargin,
       "indent": $indent,
-      "maxColumnCount": $maxColumnCount
+      "maxColumnCount": $maxColumnCount,
+      "headingFontSize": $headingFontSize,
+      "columnThreshold": $columnThreshold
     }
     ''';
   }
@@ -149,6 +161,16 @@ class BookStyle {
           : data['maxColumnCount'] is String
               ? int.parse(data['maxColumnCount'])
               : data['maxColumnCount'],
+      headingFontSize: data['headingFontSize'] == null
+          ? 1.5
+          : data['headingFontSize'] is String
+              ? double.parse(data['headingFontSize'])
+              : data['headingFontSize'],
+      columnThreshold: data['columnThreshold'] == null
+          ? 720.0
+          : data['columnThreshold'] is String
+              ? double.parse(data['columnThreshold'])
+              : data['columnThreshold'],
     );
   }
 }

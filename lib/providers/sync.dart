@@ -40,6 +40,9 @@ class Sync extends _$Sync {
 
   Sync._internal();
 
+  // Flag to prevent multiple sync direction dialogs
+  bool _isShowingDirectionDialog = false;
+
   @override
   SyncStateModel build() {
     return const SyncStateModel(
@@ -166,41 +169,53 @@ class Sync extends _$Sync {
 
   Future<SyncDirection?> _showSyncDirectionDialog(
       io.File localDb, RemoteFile remoteDb) async {
-    return await showDialog<SyncDirection>(
-      context: navigatorKey.currentContext!,
-      builder: (context) => AlertDialog(
-        title: Text(L10n.of(context).commonAttention),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(L10n.of(context).webdavSyncDirection),
-            SizedBox(height: 10),
-            Text(
-                '${L10n.of(context).bookSyncStatusLocalUpdateTime} ${localDb.lastModifiedSync()}'),
-            Text(
-                '${L10n.of(context).syncRemoteDataUpdateTime} ${remoteDb.mTime}'),
+    // Prevent multiple dialogs from showing simultaneously
+    if (_isShowingDirectionDialog) {
+      AnxLog.info('Sync direction dialog already showing, skipping');
+      return null;
+    }
+
+    _isShowingDirectionDialog = true;
+    try {
+      return await showDialog<SyncDirection>(
+        context: navigatorKey.currentContext!,
+        barrierDismissible: false, // Prevent dismissing by tapping outside
+        builder: (context) => AlertDialog(
+          title: Text(L10n.of(context).commonAttention),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L10n.of(context).webdavSyncDirection),
+              SizedBox(height: 10),
+              Text(
+                  '${L10n.of(context).bookSyncStatusLocalUpdateTime} ${localDb.lastModifiedSync()}'),
+              Text(
+                  '${L10n.of(context).syncRemoteDataUpdateTime} ${remoteDb.mTime}'),
+            ],
+          ),
+          actionsOverflowDirection: VerticalDirection.up,
+          actionsOverflowAlignment: OverflowBarAlignment.center,
+          actionsOverflowButtonSpacing: 10,
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(SyncDirection.upload);
+              },
+              child: Text(L10n.of(context).webdavUpload),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop(SyncDirection.download);
+              },
+              child: Text(L10n.of(context).webdavDownload),
+            ),
           ],
         ),
-        actionsOverflowDirection: VerticalDirection.up,
-        actionsOverflowAlignment: OverflowBarAlignment.center,
-        actionsOverflowButtonSpacing: 10,
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(SyncDirection.upload);
-            },
-            child: Text(L10n.of(context).webdavUpload),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop(SyncDirection.download);
-            },
-            child: Text(L10n.of(context).webdavDownload),
-          ),
-        ],
-      ),
-    );
+      );
+    } finally {
+      _isShowingDirectionDialog = false;
+    }
   }
 
   Future<void> _showDatabaseVersionMismatchDialog(int remoteVersion) async {
@@ -241,6 +256,12 @@ class Sync extends _$Sync {
       return;
     }
 
+    // Check if already syncing - MOVED BEFORE determineSyncDirection
+    if (state.isSyncing) {
+      AnxLog.info('Sync already in progress, skipping');
+      return;
+    }
+
     // Test ping and initialize
     try {
       await client.ping();
@@ -251,11 +272,6 @@ class Sync extends _$Sync {
     }
 
     AnxLog.info('Sync ping success');
-
-    // Check if already syncing
-    if (state.isSyncing) {
-      return;
-    }
 
     // Determine sync direction
     SyncDirection? finalDirection = await determineSyncDirection(direction);

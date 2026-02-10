@@ -3,6 +3,7 @@ import 'package:anx_reader/enums/convert_chinese_mode.dart';
 import 'package:anx_reader/enums/reading_info.dart';
 import 'package:anx_reader/enums/translation_mode.dart';
 import 'package:anx_reader/enums/writing_mode.dart';
+import 'package:anx_reader/enums/code_highlight_theme.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/reading_page.dart';
 import 'package:anx_reader/page/settings_page/subpage/fonts.dart';
@@ -168,6 +169,52 @@ class _ReadingMoreSettingsState extends State<ReadingMoreSettings> {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget columnThreshold() {
+      return StatefulBuilder(
+        builder: (context, setState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(L10n.of(context).readingPageColumnThreshold,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(width: 8),
+                Text(
+                  '${Prefs().bookStyle.columnThreshold.toInt()}px',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            if (Prefs().bookStyle.maxColumnCount == 0)
+              Text(
+                L10n.of(context).readingPageColumnThresholdTip,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
+              ),
+            Slider(
+              value: Prefs().bookStyle.columnThreshold,
+              min: 400,
+              max: 1200,
+              divisions: 40,
+              label: '${Prefs().bookStyle.columnThreshold.toInt()}px',
+              onChanged: Prefs().bookStyle.maxColumnCount == 0
+                  ? (value) {
+                      setState(() {
+                        final newBookStyle =
+                            Prefs().bookStyle.copyWith(columnThreshold: value);
+                        Prefs().saveBookStyleToPrefs(newBookStyle);
+                        epubPlayerKey.currentState?.changeStyle(newBookStyle);
+                      });
+                    }
+                  : null,
             ),
           ],
         ),
@@ -516,6 +563,142 @@ class _ReadingMoreSettingsState extends State<ReadingMoreSettings> {
       );
     }
 
+    Widget codeHighlightTheme() {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          final lightThemes = [
+            CodeHighlightThemeEnum.defaultTheme,
+            CodeHighlightThemeEnum.github,
+            CodeHighlightThemeEnum.oneLight,
+            CodeHighlightThemeEnum.materialLight,
+          ];
+
+          final darkThemes = [
+            CodeHighlightThemeEnum.vsDark,
+            CodeHighlightThemeEnum.oneDark,
+            CodeHighlightThemeEnum.dracula,
+            CodeHighlightThemeEnum.materialDark,
+            CodeHighlightThemeEnum.nord,
+            CodeHighlightThemeEnum.nightOwl,
+            CodeHighlightThemeEnum.solarizedDark,
+            CodeHighlightThemeEnum.atomDark,
+          ];
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(L10n.of(context).codeHighlightTheme,
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              // Quick toggle: Off / Light / Dark
+              Row(
+                children: [
+                  Expanded(
+                    child: AnxSegmentedButton<String>(
+                      segments: [
+                        SegmentButtonItem(
+                          label: L10n.of(context).codeHighlightOff,
+                          value: 'off',
+                          icon: const Icon(Icons.code_off),
+                        ),
+                        SegmentButtonItem(
+                          label: L10n.of(context).codeHighlightLight,
+                          value: 'light',
+                          icon: const Icon(Icons.light_mode),
+                        ),
+                        SegmentButtonItem(
+                          label: L10n.of(context).codeHighlightDark,
+                          value: 'dark',
+                          icon: const Icon(Icons.dark_mode),
+                        ),
+                      ],
+                      selected: {
+                        Prefs().codeHighlightTheme == CodeHighlightThemeEnum.off
+                            ? 'off'
+                            : Prefs().codeHighlightTheme.isLight
+                                ? 'light'
+                                : 'dark'
+                      },
+                      onSelectionChanged: (value) {
+                        setState(() {
+                          if (value.first == 'off') {
+                            Prefs().codeHighlightTheme =
+                                CodeHighlightThemeEnum.off;
+                          } else if (value.first == 'light') {
+                            Prefs().codeHighlightTheme =
+                                CodeHighlightThemeEnum.defaultTheme;
+                          } else {
+                            Prefs().codeHighlightTheme =
+                                CodeHighlightThemeEnum.vsDark;
+                          }
+                          epubPlayerKey.currentState?.changeStyle(null);
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              // Detailed theme selection (only show if not off)
+              if (Prefs().codeHighlightTheme != CodeHighlightThemeEnum.off) ...[
+                const SizedBox(height: 16),
+                // Light themes section
+                if (Prefs().codeHighlightTheme.isLight) ...[
+                  Text(L10n.of(context).codeHighlightLightThemes,
+                      style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: lightThemes.map((theme) {
+                      final isSelected = Prefs().codeHighlightTheme == theme;
+                      return ChoiceChip(
+                        label: Text(theme.displayName),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              Prefs().codeHighlightTheme = theme;
+                              epubPlayerKey.currentState?.changeStyle(null);
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+                // Dark themes section
+                if (Prefs().codeHighlightTheme.isDark) ...[
+                  Text(L10n.of(context).codeHighlightDarkThemes,
+                      style: Theme.of(context).textTheme.bodySmall),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: darkThemes.map((theme) {
+                      final isSelected = Prefs().codeHighlightTheme == theme;
+                      return ChoiceChip(
+                        label: Text(theme.displayName),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              Prefs().codeHighlightTheme = theme;
+                              epubPlayerKey.currentState?.changeStyle(null);
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ],
+          );
+        },
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(18.0),
       child: Column(
@@ -525,7 +708,10 @@ class _ReadingMoreSettingsState extends State<ReadingMoreSettings> {
           writingMode(),
           translationMode(),
           columnCount(),
+          columnThreshold(),
           convertChinese(),
+          const Divider(height: 15),
+          codeHighlightTheme(),
           const Divider(height: 15),
           readingInfo(),
           // const Divider(height: 8),

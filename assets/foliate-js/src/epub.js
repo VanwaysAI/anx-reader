@@ -545,13 +545,42 @@ class Resources {
                 href: resolveHref(href),
             }))
 
-        this.cover = this.getItemByProperty('cover-image')
+        // Try to find cover image, store XHTML cover page separately
+        const coverCandidate = this.getItemByProperty('cover-image')
             // EPUB 2 compat
             ?? this.getItemByID($$$(opf, 'meta')
                 .find(filterAttribute('name', 'cover'))
                 ?.getAttribute('content'))
+            // Guide reference
             ?? this.getItemByHref(this.guide
                 ?.find(ref => ref.type.includes('cover'))?.href)
+            // Common cover ID patterns (case-insensitive)
+            ?? this.manifest.find(item => 
+                ['cover', 'cover-image', 'coverimage'].includes(item.id?.toLowerCase())
+                && item.mediaType?.startsWith('image/'))
+            // Cover in href (check multiple common patterns)
+            ?? this.manifest.find(item => {
+                const href = item.href?.toLowerCase()
+                return href && item.mediaType?.startsWith('image/')
+                    && (href.includes('/cover.') || href.includes('/cover_')
+                        || href.endsWith('cover.jpg') || href.endsWith('cover.png')
+                        || href.endsWith('cover.jpeg') || href.endsWith('cover.gif'))
+            })
+            // Titlepage image (often contains cover)
+            ?? this.manifest.find(item =>
+                item.id?.toLowerCase().includes('titlepage')
+                && item.mediaType?.startsWith('image/'))
+            // Last resort: first image in manifest
+            ?? this.manifest.find(item => item.mediaType?.startsWith('image/'))
+
+        // If cover is XHTML/HTML, store it separately for later parsing
+        if (coverCandidate?.mediaType?.includes('html')) {
+            this.coverPage = coverCandidate
+            this.cover = null
+        } else {
+            this.cover = coverCandidate
+            this.coverPage = null
+        }
 
         this.cfis = CFI.fromElements($$itemref)
     }
@@ -677,7 +706,30 @@ class Loader {
         if (isExternal(href)) return href
         const path = resolveURL(href, base)
         const item = this.manifest.find(item => item.href === path)
-        if (!item) return href
+        if (!item) {
+            // Fallback for non-standard EPUBs with missing manifest entries
+            // Try to load the resource directly if it exists
+            const parent = parents[parents.length - 1]
+            if (this.#cache.has(path)) return this.ref(path, parent)
+            try {
+                const blob = await this.loadBlob(path)
+                if (blob) {
+                    // Infer media type from file extension
+                    const ext = path.split('.').pop()?.toLowerCase()
+                    const mediaType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg'
+                        : ext === 'png' ? 'image/png'
+                        : ext === 'gif' ? 'image/gif'
+                        : ext === 'svg' ? 'image/svg+xml'
+                        : ext === 'webp' ? 'image/webp'
+                        : ext === 'css' ? 'text/css'
+                        : 'application/octet-stream'
+                    return this.createURL(path, blob, mediaType, parent)
+                }
+            } catch (e) {
+                console.warn(`Failed to load resource not in manifest: ${path}`, e)
+            }
+            return href
+        }
         return this.loadItem(item, parents.concat(base))
     }
     async loadReplaced(item, parents = []) {
@@ -776,6 +828,22 @@ class Loader {
             //   `-webkit-column-break-${x}:`)
             // .replace(/break-(after|before|inside)\s*:\s*(avoid-)?page/gi, (_, x, y) =>
             //   `break-${x}: ${y ?? ''}column`)
+            // Replace font-size keyword values with pixel values so they can be calculated
+            .replace(/font-size\s*:\s*(xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large|smaller|larger)\s*([;!])/gi, (match, keyword, ending) => {
+                const keywordMap = {
+                    'xx-small': '9px',
+                    'x-small': '10px',
+                    'small': '13px',
+                    'medium': '16px',
+                    'large': '18px',
+                    'x-large': '24px',
+                    'xx-large': '32px',
+                    'xxx-large': '48px',
+                    'smaller': '13px',  // approximate relative value
+                    'larger': '18px'    // approximate relative value
+                }
+                return `font-size: ${keywordMap[keyword.toLowerCase()]}${ending}`
+            })
             // If px is used as the unit of font-size, it should be converted to em and the 
             // number should be divided by 16
             .replace(/(\d*\.?\d+)px/gi, (_, d) => `${parseFloat(d) / 16}em`)
@@ -1009,9 +1077,76 @@ ${doc.querySelector('parsererror').innerText}`)
     }
     async getCover() {
         const cover = this.resources?.cover
-        return cover?.href
-            ? new Blob([await this.loadBlob(cover.href)], { type: cover.mediaType })
-            : null
+        if (cover?.href) {
+            return new Blob([await this.loadBlob(cover.href)], { type: cover.mediaType })
+        }
+        
+        // If cover is an XHTML/HTML page, try to extract image from it
+        const coverPage = this.resources?.coverPage
+        if (coverPage?.href) {
+            try {
+                const text = await this.loadText(coverPage.href)
+                const parser = new DOMParser()
+                const doc = parser.parseFromString(text, 'application/xhtml+xml')
+                
+                // Try to find image in various ways
+                // 1. Look for <img> tags
+                const img = doc.querySelector('img')
+                if (img) {
+                    const src = img.getAttribute('src')
+                    if (src) {
+                        const imgHref = resolveURL(src, coverPage.href)
+                        const imgItem = this.resources.getItemByHref(imgHref)
+                        if (imgItem) {
+                            return new Blob([await this.loadBlob(imgItem.href)], { type: imgItem.mediaType })
+                        }
+                    }
+                }
+                
+                // 2. Look for <image> tags in SVG
+                const svgImage = doc.querySelector('image')
+                if (svgImage) {
+                    const href = svgImage.getAttribute('href') || svgImage.getAttributeNS('http://www.w3.org/1999/xlink', 'href')
+                    if (href) {
+                        const imgHref = resolveURL(href, coverPage.href)
+                        const imgItem = this.resources.getItemByHref(imgHref)
+                        if (imgItem) {
+                            return new Blob([await this.loadBlob(imgItem.href)], { type: imgItem.mediaType })
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to extract cover from XHTML page:', e)
+            }
+        }
+        
+        // Last resort: try common cover file locations outside manifest
+        // This handles cases like Apple Books' iTunesArtwork
+        const fallbackPaths = [
+            'iTunesArtwork',        // Apple Books cover (JPEG without extension)
+            'cover.jpg',
+            'cover.jpeg',
+            'cover.png',
+            'cover.gif',
+        ]
+        
+        for (const path of fallbackPaths) {
+            try {
+                const blob = await this.loadBlob(path)
+                if (blob && blob.size > 0) {
+                    // Try to detect media type from content
+                    const type = path === 'iTunesArtwork' ? 'image/jpeg' 
+                        : path.endsWith('.png') ? 'image/png'
+                        : path.endsWith('.gif') ? 'image/gif'
+                        : 'image/jpeg'
+                    return new Blob([blob], { type })
+                }
+            } catch (e) {
+                // File doesn't exist, continue to next fallback
+            }
+        }
+        
+        return null
     }
     async getCalibreBookmarks() {
         const txt = await this.loadText('META-INF/calibre_bookmarks.txt')

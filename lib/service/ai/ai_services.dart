@@ -50,10 +50,9 @@ List<AiServiceOption> buildDefaultAiServices() {
       identifier: 'gemini',
       title: 'Gemini',
       logo: 'assets/images/gemini.png',
-      defaultUrl:
-          'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      defaultUrl: 'https://generativelanguage.googleapis.com',
       defaultApiKey: 'YOUR_API_KEY',
-      defaultModel: 'gemini-2.0-flash',
+      defaultModel: 'gemini-2.5-flash',
     ),
     AiServiceOption(
       identifier: 'deepseek',

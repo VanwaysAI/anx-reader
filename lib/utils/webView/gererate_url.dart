@@ -32,15 +32,11 @@ String generateUrl(
   textColor = convertDartColorToJs(textColor);
   backgroundColor = convertDartColorToJs(backgroundColor);
 
-  // Choose day or night background image automatically based on theme
-  String bgimgUrl = Prefs().bgimg.url;
-  if (Prefs().autoAdjustReadingTheme && isDarkMode) {
-    final bgimg = Prefs().bgimg;
-    if (bgimg.nightUrl != null) {
-      bgimgUrl = bgimg.nightUrl!;
-    }
-  }
-
+  // Get effective background image URL using the new method
+  String bgimgUrl = Prefs().bgimg.getEffectiveUrl(
+        isDarkMode: isDarkMode,
+        autoAdjust: Prefs().autoAdjustReadingTheme,
+      );
   // const importing = $importing
   // const url = '${replaceSingleQuote(url)}'
   // let initialCfi = '${replaceSingleQuote(cfi)}'
@@ -87,12 +83,16 @@ String generateUrl(
     'hyphenate': false,
     'pageTurnStyle': Prefs().pageTurnStyle.name,
     'maxColumnCount': bookStyle.maxColumnCount,
+    'columnThreshold': bookStyle.columnThreshold,
     'writingMode': Prefs().writingMode.code,
     'textAlign': Prefs().textAlignment.code,
     'backgroundImage': bgimgUrl,
     'allowScript': Prefs().enableJsForEpub,
     'customCSS': Prefs().customCSS,
     'customCSSEnabled': Prefs().customCSSEnabled,
+    'useBookStyles': Prefs().useBookStyles,
+    'headingFontSize': bookStyle.headingFontSize,
+    'codeHighlightTheme': Prefs().codeHighlightTheme.code,
   };
 
   Map<String, dynamic> readingRules = {

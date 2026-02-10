@@ -8,7 +8,7 @@ import 'package:anx_reader/providers/storage_info.dart';
 import 'package:anx_reader/utils/get_path/get_base_path.dart';
 import 'package:anx_reader/utils/get_path/storage_migration.dart';
 import 'package:anx_reader/utils/platform_utils.dart';
-import 'package:anx_reader/widgets/common/anx_filled_button.dart';
+import 'package:anx_reader/widgets/common/anx_button.dart';
 import 'package:anx_reader/widgets/delete_confirm.dart';
 import 'package:anx_reader/widgets/settings/settings_section.dart';
 import 'package:anx_reader/widgets/settings/settings_tile.dart';
@@ -292,14 +292,14 @@ class _StorageSettingsState extends ConsumerState<StorageSettings>
                       children: [
                         if (_selectedNewPath == null)
                           Expanded(
-                            child: AnxFilledButton(
+                            child: AnxButton(
                               onPressed: _selectNewPath,
                               child: Text(L10n.of(context).storageSelectPath),
                             ),
                           )
                         else
                           Expanded(
-                            child: AnxFilledButton(
+                            child: AnxButton(
                               onPressed: _isMigrating ? null : _startMigration,
                               isLoading: _isMigrating,
                               child: Text(L10n.of(context).storageMigrateData),
@@ -308,7 +308,7 @@ class _StorageSettingsState extends ConsumerState<StorageSettings>
                         const SizedBox(width: 8),
                         if (Prefs().customStoragePath != null &&
                             _selectedNewPath == null)
-                          AnxFilledButton.outlined(
+                          AnxButton.outlined(
                             onPressed:
                                 _isMigrating ? null : _resetToDefaultPath,
                             child: Text(L10n.of(context).storageResetPath),

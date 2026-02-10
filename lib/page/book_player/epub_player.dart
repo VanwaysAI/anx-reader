@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/dao/book.dart';
 import 'package:anx_reader/dao/book_note.dart';
+import 'package:anx_reader/enums/page_turn_mode.dart';
 import 'package:anx_reader/enums/reading_info.dart';
 import 'package:anx_reader/enums/translation_mode.dart';
 import 'package:anx_reader/enums/writing_mode.dart';
@@ -164,6 +166,11 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
   void changeStyle(BookStyle? bookStyle) {
     styleTimer?.cancel();
+    String bgimgUrl = Prefs().bgimg.getEffectiveUrl(
+          isDarkMode: isDarkMode,
+          autoAdjust: Prefs().autoAdjustReadingTheme,
+        );
+
     styleTimer = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) return;
       BookStyle style = bookStyle ?? Prefs().bookStyle;
@@ -179,11 +186,15 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         letterSpacing: ${style.letterSpacing},
         textIndent: ${style.indent},
         maxColumnCount: ${style.maxColumnCount},
+        columnThreshold: ${style.columnThreshold},
         writingMode: '${Prefs().writingMode.code}',
         textAlign: '${Prefs().textAlignment.code}',
-        backgroundImage: '${Prefs().bgimg.url}',
+        backgroundImage: '$bgimgUrl',
         customCSS: `${Prefs().customCSS.replaceAll('`', '\\`')}`,
         customCSSEnabled: ${Prefs().customCSSEnabled},
+        useBookStyles: ${Prefs().useBookStyles},
+        headingFontSize: ${style.headingFontSize},
+        codeHighlightTheme: '${Prefs().codeHighlightTheme.code}',
       })
       ''');
     });
@@ -506,17 +517,28 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     final x = location['x'];
     final y = location['y'];
     final part = coordinatesToPart(x, y);
-    final currentPageTurningType = Prefs().pageTurningType;
-    final pageTurningType = pageTurningTypes[currentPageTurningType];
 
-    var action = pageTurningType[part];
+    PageTurningType action;
+    final pageTurnMode = PageTurnMode.fromCode(Prefs().pageTurnMode);
 
-    if (Prefs().swapPageTurnArea) {
-      if (action == PageTurningType.prev) {
-        action = PageTurningType.next;
-      } else if (action == PageTurningType.next) {
-        action = PageTurningType.prev;
+    if (pageTurnMode == PageTurnMode.simple) {
+      // Use predefined page turning types
+      final currentPageTurningType = Prefs().pageTurningType;
+      final pageTurningType = pageTurningTypes[currentPageTurningType];
+      action = pageTurningType[part];
+
+      // Apply swap if enabled
+      if (Prefs().swapPageTurnArea) {
+        if (action == PageTurningType.prev) {
+          action = PageTurningType.next;
+        } else if (action == PageTurningType.next) {
+          action = PageTurningType.prev;
+        }
       }
+    } else {
+      // Use custom configuration
+      final customConfig = Prefs().customPageTurnConfig;
+      action = PageTurningType.values[customConfig[part]];
     }
 
     switch (action) {
@@ -528,6 +550,8 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         break;
       case PageTurningType.menu:
         widget.showOrHideAppBarAndBottomBar(true);
+        break;
+      case PageTurningType.none:
         break;
     }
   }
@@ -710,17 +734,11 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       handlerName: 'onPushState',
       callback: (args) {
         Map<String, dynamic> state = args[0];
-        canGoBack = state['canGoBack'];
-        canGoForward = state['canGoForward'];
         if (!mounted) return;
         setState(() {
-          showHistory = true;
-        });
-        Future.delayed(const Duration(seconds: 20), () {
-          if (!mounted) return;
-          setState(() {
-            showHistory = false;
-          });
+          canGoBack = state['canGoBack'];
+          canGoForward = state['canGoForward'];
+          showHistory = canGoBack || canGoForward;
         });
       },
     );
@@ -898,8 +916,92 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     useHybridComposition: true,
   );
 
+  bool get isDarkMode =>
+      Theme.of(navigatorKey.currentContext!).brightness == Brightness.dark;
+
   void changeReadingInfo() {
     setState(() {});
+  }
+
+  Widget _buildHistoryCapsule() {
+    final l10n = L10n.of(context);
+    final buttonColor = Color(int.parse('0x$textColor')).withAlpha(200);
+
+    // Common button style for all history navigation buttons
+    final buttonStyle = TextButton.styleFrom(
+      minimumSize: const Size(0, 32),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(32),
+      ),
+    );
+
+    // Helper method to create history navigation buttons
+    Widget createHistoryButton(
+        IconData icon, String label, VoidCallback onPressed) {
+      return TextButton.icon(
+        icon: Icon(icon, size: 18, color: buttonColor),
+        label: Text(label, style: TextStyle(color: buttonColor, fontSize: 14)),
+        onPressed: onPressed,
+        style: buttonStyle,
+      );
+    }
+
+    // Build buttons list
+    final List<Widget> buttons = [];
+
+    if (canGoBack) {
+      buttons.add(createHistoryButton(
+        Icons.arrow_back,
+        l10n.historyBack,
+        backHistory,
+      ));
+    }
+
+    buttons.add(createHistoryButton(
+      Icons.close,
+      l10n.historyClose,
+      () => setState(() => showHistory = false),
+    ));
+
+    if (canGoForward) {
+      buttons.add(createHistoryButton(
+        Icons.arrow_forward,
+        l10n.historyForward,
+        forwardHistory,
+      ));
+    }
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 40),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+            child: Container(
+              height: 32,
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainer
+                    .withAlpha(123),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: buttons,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget readingInfoWidget() {
@@ -978,7 +1080,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         case ReadingInfoEnum.batteryAndTime:
           return batteryAndTimeWidget();
         case ReadingInfoEnum.none:
-          return const SizedBox();
+          return const SizedBox(width: 30);
       }
     }
 
@@ -1076,34 +1178,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           children: [
             buildWebviewWithIOSWorkaround(context, url, initialCfi),
             readingInfoWidget(),
-            if (showHistory)
-              Positioned(
-                bottom: 30,
-                left: 0,
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (canGoBack)
-                        IconButton(
-                          onPressed: () {
-                            backHistory();
-                          },
-                          icon: const Icon(Icons.arrow_back_ios),
-                        ),
-                      if (canGoForward)
-                        IconButton(
-                          onPressed: () {
-                            forwardHistory();
-                          },
-                          icon: const Icon(Icons.arrow_forward_ios),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+            if (showHistory) _buildHistoryCapsule(),
             if (Prefs().openBookAnimation)
               SizedBox.expand(
                   child: IgnorePointer(
