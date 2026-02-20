@@ -261,7 +261,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           );
         } else {
-          // Allow selecting AI tab on phones (Home AI is now a normal tab page).
+          if (navBarItems[currentIndex]['identifier'] == 'ai') {
+            currentIndex = 0;
+          }
           return Scaffold(
             extendBody: true,
             body: BottomBar(
