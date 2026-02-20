@@ -261,9 +261,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           );
         } else {
-          if (navBarItems[currentIndex]['identifier'] == 'ai') {
-            currentIndex = 0;
-          }
+          // Allow selecting AI tab on phones (Home AI is now a normal tab page).
           return Scaffold(
             extendBody: true,
             body: BottomBar(
