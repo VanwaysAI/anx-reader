@@ -1,22 +1,22 @@
- name: Build Windows (Manual)
+name: Build Windows (Manual)
 
-  on:
-    workflow_dispatch:
+on:
+  workflow_dispatch:
 
-  jobs:
-    build:
-      runs-on: windows-latest
-      steps:
-        - uses: actions/checkout@v4
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
 
-        - uses: subosito/flutter-action@v2
-          with:
-            channel: stable
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
 
-        - run: flutter pub get
-        - run: flutter build windows
+      - run: flutter pub get
+      - run: flutter build windows
 
-        - uses: actions/upload-artifact@v4
-          with:
-            name: windows-build
-            path: build/windows/x64/runner/Release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: build/windows/x64/runner/Release/
