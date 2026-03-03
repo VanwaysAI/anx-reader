@@ -78,6 +78,7 @@ class ReadingPageState extends ConsumerState<ReadingPage>
       TranslationModeEnum.bilingual => const Icon(Icons.compare),
     };
   }
+
   static const empty = SizedBox.shrink();
 
   double _aiSwipeUpTotalDy = 0;
@@ -893,7 +894,8 @@ class ReadingPageState extends ConsumerState<ReadingPage>
                             TranslationModeEnum.translationOnly,
                           TranslationModeEnum.translationOnly =>
                             TranslationModeEnum.bilingual,
-                          TranslationModeEnum.bilingual => TranslationModeEnum.off,
+                          TranslationModeEnum.bilingual =>
+                            TranslationModeEnum.off,
                         };
 
                         Prefs().setBookTranslationMode(widget.book.id, next);

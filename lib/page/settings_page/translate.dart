@@ -59,10 +59,8 @@ class _TranslateSettingState extends State<TranslateSetting> {
   }
 
   Future<void> _pickAiTranslateProvider() async {
-    final enabledProviders = Prefs()
-        .aiProvidersV1
-        .where((p) => p.enabled)
-        .toList(growable: false);
+    final enabledProviders =
+        Prefs().aiProvidersV1.where((p) => p.enabled).toList(growable: false);
 
     if (enabledProviders.isEmpty) {
       AnxToast.show(L10n.of(context).aiServiceNotConfigured);
@@ -75,9 +73,10 @@ class _TranslateSettingState extends State<TranslateSetting> {
         return ListView(
           children: [
             ListTile(
-              title: Text(L10n.of(context).settingsTranslateAiFollowChatProvider),
-              subtitle: Text(L10n.of(context)
-                  .settingsTranslateAiFollowChatProviderDesc),
+              title:
+                  Text(L10n.of(context).settingsTranslateAiFollowChatProvider),
+              subtitle: Text(
+                  L10n.of(context).settingsTranslateAiFollowChatProviderDesc),
               onTap: () {
                 Prefs().aiTranslateProviderId = '';
                 Navigator.pop(context);
@@ -185,9 +184,10 @@ class _TranslateSettingState extends State<TranslateSetting> {
                   ),
                   ListTile(
                     leading: const Icon(Icons.edit_outlined),
-                    title: Text(L10n.of(context).settingsTranslateAiModelCustom),
-                    subtitle:
-                        Text(L10n.of(context).settingsTranslateAiModelCustomDesc),
+                    title:
+                        Text(L10n.of(context).settingsTranslateAiModelCustom),
+                    subtitle: Text(
+                        L10n.of(context).settingsTranslateAiModelCustomDesc),
                     onTap: () async {
                       final controller = TextEditingController(
                         text: Prefs().aiTranslateModel.trim(),

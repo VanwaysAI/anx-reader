@@ -286,7 +286,8 @@ class InlineFullTextTranslateEngine {
             if (attempt > 1) continue;
 
             try {
-              final translated = await FullTextTranslateRuntime.instance.translate(
+              final translated =
+                  await FullTextTranslateRuntime.instance.translate(
                 TranslateService.aiFullText,
                 b.text,
                 from,
@@ -422,7 +423,8 @@ class InlineFullTextTranslateEngine {
     }
 
     if (raw.toLowerCase().startsWith('error:')) {
-      throw FormatException('AI error response: ${raw.substring(0, raw.length.clamp(0, 80))}');
+      throw FormatException(
+          'AI error response: ${raw.substring(0, raw.length.clamp(0, 80))}');
     }
 
     Object decoded;

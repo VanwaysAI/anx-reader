@@ -371,7 +371,8 @@ if (typeof reader !== 'undefined' && reader.view && reader.view.clearTranslation
                 onPressed: isReading
                     ? () async {
                         // Reset counters to avoid stacking on repeated retries.
-                        epubPlayerKey.currentState?.resetInlineTranslateHudStats();
+                        epubPlayerKey.currentState
+                            ?.resetInlineTranslateHudStats();
 
                         ({int started, int candidates})? parseStats(dynamic v) {
                           try {
@@ -380,7 +381,10 @@ if (typeof reader !== 'undefined' && reader.view && reader.view.clearTranslation
                               final candidates =
                                   (v['candidates'] as num?)?.toInt();
                               if (started != null && candidates != null) {
-                                return (started: started, candidates: candidates);
+                                return (
+                                  started: started,
+                                  candidates: candidates
+                                );
                               }
                             }
                           } catch (_) {}
@@ -407,7 +411,8 @@ return null;
                             );
 
                             AnxToast.show(
-                              L10n.of(context).readingPageTranslateRetryTriggered(
+                              L10n.of(context)
+                                  .readingPageTranslateRetryTriggered(
                                 stats.started,
                                 stats.candidates,
                               ),
@@ -431,7 +436,8 @@ return null;
                     InlineFullTextTranslationStatusBus.instance.progress,
                 builder: (context, p, _) {
                   final status = p.active
-                      ? L10n.of(context).settingsTranslateBackgroundStatusActive(
+                      ? L10n.of(context)
+                          .settingsTranslateBackgroundStatusActive(
                           p.done,
                           p.total,
                           p.inflight,
@@ -442,8 +448,8 @@ return null;
 
                   return ValueListenableBuilder<
                       Map<InlineFullTextTranslateFailureReason, int>>(
-                    valueListenable:
-                        InlineFullTextTranslationStatusBus.instance.failureReasons,
+                    valueListenable: InlineFullTextTranslationStatusBus
+                        .instance.failureReasons,
                     builder: (context, reasons, _) {
                       String? reasonText;
                       if (p.failed > 0 && reasons.isNotEmpty) {
@@ -458,13 +464,16 @@ return null;
                             InlineFullTextTranslateFailureReason.auth =>
                               L10n.of(context)
                                   .readingPageTranslateFailureReasonAuth,
-                            InlineFullTextTranslateFailureReason.notConfigured =>
+                            InlineFullTextTranslateFailureReason
+                                  .notConfigured =>
                               L10n.of(context)
                                   .readingPageTranslateFailureReasonNotConfigured,
-                            InlineFullTextTranslateFailureReason.untranslatedEcho =>
+                            InlineFullTextTranslateFailureReason
+                                  .untranslatedEcho =>
                               L10n.of(context)
                                   .readingPageTranslateFailureReasonUntranslated,
-                            InlineFullTextTranslateFailureReason.translateError =>
+                            InlineFullTextTranslateFailureReason
+                                  .translateError =>
                               L10n.of(context)
                                   .readingPageTranslateFailureReasonTranslateError,
                             InlineFullTextTranslateFailureReason.exception =>
@@ -539,41 +548,43 @@ return null;
               child: TextButton.icon(
                 onPressed: isReading
                     ? () async {
-
-                  final current = Prefs().inlineFullTextTranslateConcurrency;
-                  final selected = await showModalBottomSheet<int>(
-                    context: context,
-                    builder: (context) {
-                      return SafeArea(
-                        child: ListView(
-                          children: [
-                            for (var i = 1; i <= 8; i++)
-                              ListTile(
-                                title: Text(
-                                  L10n.of(context)
-                                      .readingPageTranslateConcurrencyValue(i),
-                                ),
-                                trailing:
-                                    i == current ? const Icon(Icons.check) : null,
-                                onTap: () => Navigator.pop(context, i),
+                        final current =
+                            Prefs().inlineFullTextTranslateConcurrency;
+                        final selected = await showModalBottomSheet<int>(
+                          context: context,
+                          builder: (context) {
+                            return SafeArea(
+                              child: ListView(
+                                children: [
+                                  for (var i = 1; i <= 8; i++)
+                                    ListTile(
+                                      title: Text(
+                                        L10n.of(context)
+                                            .readingPageTranslateConcurrencyValue(
+                                                i),
+                                      ),
+                                      trailing: i == current
+                                          ? const Icon(Icons.check)
+                                          : null,
+                                      onTap: () => Navigator.pop(context, i),
+                                    ),
+                                ],
                               ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
+                            );
+                          },
+                        );
 
-                  if (selected != null) {
-                    Prefs().inlineFullTextTranslateConcurrency = selected;
-                    setState(() {});
-                  }
-                }
+                        if (selected != null) {
+                          Prefs().inlineFullTextTranslateConcurrency = selected;
+                          setState(() {});
+                        }
+                      }
                     : null,
                 icon: const Icon(Icons.speed, size: 18),
                 label: Text(
                   L10n.of(context).readingPageTranslateConcurrencyValue(
-                        Prefs().inlineFullTextTranslateConcurrency,
-                      ),
+                    Prefs().inlineFullTextTranslateConcurrency,
+                  ),
                 ),
               ),
             ),

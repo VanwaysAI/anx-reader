@@ -127,8 +127,7 @@ Stream<String> _generateStream({
   }
 
   final eligibleEntries = managedEntries
-      .where((e) =>
-          e.enabled && e.key.trim().isNotEmpty && !isCoolingDown(e))
+      .where((e) => e.enabled && e.key.trim().isNotEmpty && !isCoolingDown(e))
       .toList(growable: false);
 
   AnxLog.info(
