@@ -438,12 +438,7 @@ class _AISettingsState extends ConsumerState<AISettings> {
           userPromptsTile(),
         ],
       ),
-      SettingsSection(
-        title: Text(l10n.settingsAiTools),
-        tiles: [
-          toolsTile,
-        ],
-      ),
+
       // AI chat interface display settings
       SettingsSection(
         title: Text(l10n.settingsAiChatDisplayMode),
@@ -610,6 +605,12 @@ class _AISettingsState extends ConsumerState<AISettings> {
                   ),
                 );
               }),
+        ],
+      ),
+      SettingsSection(
+        title: Text(l10n.settingsAiTools),
+        tiles: [
+          toolsTile,
         ],
       ),
     ]);
