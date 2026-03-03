@@ -1,55 +1,83 @@
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/settings_page/developer/vibration_test_page.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:anx_reader/page/settings_page/subpage/log_page.dart';
+import 'package:anx_reader/widgets/settings/settings_section.dart';
+import 'package:anx_reader/widgets/settings/settings_tile.dart';
+import 'package:anx_reader/widgets/settings/settings_title.dart';
 import 'package:flutter/material.dart';
 
-class DeveloperOptionsPage extends StatelessWidget {
+class DeveloperOptionsPage extends StatefulWidget {
   const DeveloperOptionsPage({super.key});
 
   @override
+  State<DeveloperOptionsPage> createState() => _DeveloperOptionsPageState();
+}
+
+class _DeveloperOptionsPageState extends State<DeveloperOptionsPage> {
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Developer Options'),
-      ),
-      body: AnimatedBuilder(
-        animation: Prefs(),
-        builder: (context, _) {
-          final enabled = Prefs().developerOptionsEnabled;
-          return ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            children: [
-              SwitchListTile(
-                title: const Text('Enable Developer Options'),
-                subtitle: const Text(
-                    'Toggle off to hide developer entries in settings'),
-                value: enabled,
-                onChanged: (value) {
+    final l10n = L10n.of(context);
+
+    return settingsSections(
+      sections: [
+        SettingsSection(
+          title: Text(l10n.settingsDeveloperOptions),
+          tiles: [
+            SettingsTile.switchTile(
+              leading: const Icon(Icons.developer_mode),
+              title: Text(l10n.settingsDeveloperOptionsEnable),
+              description: Text(l10n.settingsDeveloperOptionsEnableDesc),
+              initialValue: Prefs().developerOptionsEnabled,
+              onToggle: (value) {
+                setState(() {
                   Prefs().developerOptionsEnabled = value;
-                  if (!value && Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.vibration_outlined),
-                title: const Text('Vibration Test'),
-                subtitle:
-                    const Text('Inspect device support and trigger presets'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.of(context).push(
-                    CupertinoPageRoute(
-                      builder: (context) => const VibrationTestPage(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          );
-        },
-      ),
+                });
+                if (!value && Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            SettingsTile.navigation(
+              leading: const Icon(Icons.vibration_outlined),
+              title: Text(l10n.settingsVibrationTest),
+              description: Text(l10n.settingsVibrationTestDesc),
+              onPressed: (context) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const VibrationTestPage(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        SettingsSection(
+          title: Text(l10n.settingsAiDebugTitle),
+          tiles: [
+            SettingsTile.switchTile(
+              leading: const Icon(Icons.bug_report),
+              title: Text(l10n.settingsAiDebugEnable),
+              description: Text(l10n.settingsAiDebugEnableDesc),
+              initialValue: Prefs().aiDebugLogsEnabled,
+              onToggle: (value) {
+                setState(() {
+                  Prefs().aiDebugLogsEnabled = value;
+                });
+              },
+            ),
+            SettingsTile.navigation(
+              leading: const Icon(Icons.list_alt),
+              title: Text(l10n.settingsAdvancedLog),
+              onPressed: (context) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LogPage()),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
