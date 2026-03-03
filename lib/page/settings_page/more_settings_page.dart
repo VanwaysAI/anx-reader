@@ -1,10 +1,10 @@
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/settings_page/ai.dart';
-import 'package:anx_reader/page/settings_page/ai_provider_center/ai_provider_center_page.dart';
+import 'package:anx_reader/page/settings_page/subpage/ai_provider_center/ai_provider_center_page.dart';
 import 'package:anx_reader/page/settings_page/advanced.dart';
 import 'package:anx_reader/page/settings_page/appearance.dart';
-import 'package:anx_reader/page/settings_page/developer/developer_options_page.dart';
+import 'package:anx_reader/page/settings_page/subpage/developer/developer_options_page.dart';
 import 'package:anx_reader/page/settings_page/narrate.dart';
 import 'package:anx_reader/page/settings_page/reading.dart';
 import 'package:anx_reader/page/settings_page/settings_page.dart';

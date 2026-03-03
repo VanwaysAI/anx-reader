@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
-import 'package:anx_reader/page/settings_page/developer/developer_options_page.dart';
+import 'package:anx_reader/page/settings_page/subpage/developer/developer_options_page.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/settings/link_icon.dart';
