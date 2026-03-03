@@ -425,66 +425,125 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
     }
   }
 
-  Future<void> _editThinkingMode() async {
-    if (_isStreaming) return;
+  Widget _buildThinkingModePopup() {
+    if (_isStreaming) {
+      return IconButton(
+        icon: Icon(
+          _thinkingIcon(
+            _thinkingModeForProvider(_selectedProviderId),
+          ),
+          size: 18,
+        ),
+        tooltip: L10n.of(context).aiThinkingTitle,
+        onPressed: null, // Disabled during streaming
+      );
+    }
 
     final l10n = L10n.of(context);
     final provider = _currentProvider;
     final supported = _supportedThinkingModes(provider);
-
     final current = _thinkingModeForProvider(provider.id);
 
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.all(12),
-            children: [
-              ListTile(
-                title: Text(l10n.aiThinkingTitle),
-                subtitle: Text(provider.name),
-              ),
-              if (provider.type == AiProviderType.gemini)
-                SwitchListTile.adaptive(
-                  title:
-                      Text(l10n.settingsAiProviderCenterIncludeThoughtsTitle),
-                  subtitle:
-                      Text(l10n.settingsAiProviderCenterIncludeThoughtsDesc),
-                  value: _includeThoughtsForProvider(provider),
-                  onChanged: (v) {
-                    final next = Map<String, String>.from(
-                      Prefs().getAiConfig(provider.id),
-                    );
-                    next['include_thoughts'] = v ? 'true' : 'false';
-                    Prefs().saveAiConfig(provider.id, next);
-                    setState(() {});
-                  },
+    return PopupMenuButton<AiThinkingMode>(
+      icon: Icon(
+        _thinkingIcon(current),
+        size: 18,
+      ),
+      tooltip: l10n.aiThinkingTitle,
+      onSelected: (mode) {
+        final next = Map<String, String>.from(
+          Prefs().getAiConfig(provider.id),
+        );
+        next['thinking_mode'] = aiThinkingModeToString(mode);
+        Prefs().saveAiConfig(provider.id, next);
+        setState(() {});
+      },
+      itemBuilder: (context) {
+        return [
+          // Provider info header (non-selectable)
+          PopupMenuItem<AiThinkingMode>(
+            enabled: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.aiThinkingTitle,
+                  style: Theme.of(context).textTheme.titleSmall,
                 ),
-              for (final mode in AiThinkingMode.values)
-                RadioListTile<AiThinkingMode>(
-                  value: mode,
-                  groupValue: current,
-                  title: Text(_thinkingModeLabel(mode, l10n)),
-                  secondary: Icon(_thinkingIcon(mode)),
-                  onChanged: supported.contains(mode)
-                      ? (v) {
-                          if (v == null) return;
+                Text(
+                  provider.name,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (provider.type == AiProviderType.gemini) ...[
+                  const SizedBox(height: 8),
+                  StatefulBuilder(
+                    builder: (context, setStateLocal) {
+                      return SwitchListTile.adaptive(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          l10n.settingsAiProviderCenterIncludeThoughtsTitle,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        value: _includeThoughtsForProvider(provider),
+                        onChanged: (v) {
                           final next = Map<String, String>.from(
                             Prefs().getAiConfig(provider.id),
                           );
-                          next['thinking_mode'] = aiThinkingModeToString(v);
+                          next['include_thoughts'] = v ? 'true' : 'false';
                           Prefs().saveAiConfig(provider.id, next);
                           setState(() {});
-                          Navigator.of(context).pop();
-                        }
-                      : null,
-                ),
-            ],
+                          setStateLocal(() {});
+                        },
+                      );
+                    },
+                  ),
+                ],
+                const Divider(),
+              ],
+            ),
           ),
-        );
+          // Thinking mode options
+          for (final mode in AiThinkingMode.values)
+            PopupMenuItem<AiThinkingMode>(
+              value: mode,
+              enabled: supported.contains(mode),
+              child: Row(
+                children: [
+                  Icon(
+                    _thinkingIcon(mode),
+                    size: 20,
+                    color: supported.contains(mode)
+                        ? (current == mode
+                            ? Theme.of(context).colorScheme.primary
+                            : null)
+                        : Theme.of(context).disabledColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _thinkingModeLabel(mode, l10n),
+                      style: TextStyle(
+                        color: current == mode
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                        fontWeight: current == mode
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  if (current == mode)
+                    Icon(
+                      Icons.check,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                ],
+              ),
+            ),
+        ];
       },
     );
   }
@@ -1140,16 +1199,7 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
                     children: [
                       Flexible(child: aiService),
                       const SizedBox(width: 6),
-                      IconButton(
-                        icon: Icon(
-                          _thinkingIcon(
-                            _thinkingModeForProvider(_selectedProviderId),
-                          ),
-                          size: 18,
-                        ),
-                        tooltip: L10n.of(context).aiThinkingTitle,
-                        onPressed: _editThinkingMode,
-                      ),
+                      _buildThinkingModePopup(),
                       IconButton(
                         icon: const Icon(Icons.tune, size: 18),
                         tooltip: L10n.of(context).aiChatEditModelTitle,
