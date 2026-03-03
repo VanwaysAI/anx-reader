@@ -1,6 +1,7 @@
 enum AiDockSideEnum {
   left('left'),
-  right('right');
+  right('right'),
+  bottom('bottom');
 
   final String code;
 
@@ -12,6 +13,8 @@ enum AiDockSideEnum {
         return AiDockSideEnum.left;
       case 'right':
         return AiDockSideEnum.right;
+      case 'bottom':
+        return AiDockSideEnum.bottom;
       default:
         return AiDockSideEnum.right;
     }

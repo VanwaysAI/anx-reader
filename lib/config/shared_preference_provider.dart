@@ -23,7 +23,6 @@ import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
 import 'package:anx_reader/models/bgimg.dart';
 import 'package:anx_reader/models/book_style.dart';
-import 'package:anx_reader/models/ai_input_quick_prompt.dart';
 import 'package:anx_reader/models/chapter_split_presets.dart';
 import 'package:anx_reader/models/chapter_split_rule.dart';
 import 'package:anx_reader/models/font_model.dart';
@@ -1908,47 +1907,13 @@ class Prefs extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Configurable quick prompts shown in AI chat input area.
-  /// Returns default prompts (localized) if never customized.
-  List<AiInputQuickPrompt> get aiInputQuickPrompts {
-    final stored = prefs.getString('aiInputQuickPrompts');
-    if (stored != null && stored.isNotEmpty) {
-      final list = AiInputQuickPrompt.fromJsonList(stored);
-      if (list.isNotEmpty) return list;
-    }
-    // Return empty list; AiChatStream will use localized defaults.
-    return [];
-  }
-
-  set aiInputQuickPrompts(List<AiInputQuickPrompt> prompts) {
-    touchAiSettingsUpdatedAt();
-    prefs.setString(
-        'aiInputQuickPrompts', AiInputQuickPrompt.toJsonList(prompts));
-    notifyListeners();
-  }
-
-  /// Whether user has customized quick prompts (used to decide seeding).
-  bool get hasCustomAiInputQuickPrompts {
-    return prefs.containsKey('aiInputQuickPrompts');
-  }
-
-  /// Clear custom quick prompts to revert to defaults.
-  void clearAiInputQuickPrompts() {
-    if (prefs.containsKey('aiInputQuickPrompts')) {
-      touchAiSettingsUpdatedAt();
-    }
-    prefs.remove('aiInputQuickPrompts');
-    notifyListeners();
-  }
-
-  /// iPad AI panel mode: dock (split panel) or bottomSheet.
   AiPadPanelModeEnum get aiPadPanelMode {
     return AiPadPanelModeEnum.fromCode(
-        prefs.getString('aiPadPanelMode') ?? 'dock');
+        prefs.getString('aiPadPanelMode') ?? 'auto');
   }
 
   set aiPadPanelMode(AiPadPanelModeEnum mode) {
-    if ((prefs.getString('aiPadPanelMode') ?? 'dock') != mode.code) {
+    if ((prefs.getString('aiPadPanelMode') ?? 'auto') != mode.code) {
       touchAiSettingsUpdatedAt();
     }
     prefs.setString('aiPadPanelMode', mode.code);

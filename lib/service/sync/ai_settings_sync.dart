@@ -5,7 +5,6 @@ import 'package:anx_reader/enums/ai_dock_side.dart';
 import 'package:anx_reader/enums/ai_pad_panel_mode.dart';
 import 'package:anx_reader/enums/ai_panel_position.dart';
 import 'package:anx_reader/enums/ai_prompts.dart';
-import 'package:anx_reader/models/ai_input_quick_prompt.dart';
 import 'package:anx_reader/models/user_prompt.dart';
 import 'package:anx_reader/service/ai/ai_services.dart';
 import 'package:anx_reader/utils/log/common.dart';
@@ -70,8 +69,6 @@ Map<String, dynamic> buildLocalAiSettingsJson() {
     'services': services,
     'prompts': prompts,
     'userPrompts': prefs.userPrompts.map((e) => e.toJson()).toList(),
-    'inputQuickPrompts':
-        prefs.aiInputQuickPrompts.map((e) => e.toJson()).toList(),
     'ui': ui,
     'translate': translate,
   };
@@ -148,19 +145,6 @@ void applyAiSettingsJson(Map<String, dynamic> json) {
         }
       }
       prefs.userPrompts = list;
-    }
-
-    final quickPrompts = json['inputQuickPrompts'];
-    if (quickPrompts is List) {
-      final list = <AiInputQuickPrompt>[];
-      for (final item in quickPrompts) {
-        if (item is Map<String, dynamic>) {
-          list.add(AiInputQuickPrompt.fromJson(item));
-        } else if (item is Map) {
-          list.add(AiInputQuickPrompt.fromJson(item.cast<String, dynamic>()));
-        }
-      }
-      prefs.aiInputQuickPrompts = list;
     }
 
     final ui = json['ui'];

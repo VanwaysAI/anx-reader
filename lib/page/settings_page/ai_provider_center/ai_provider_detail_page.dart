@@ -815,7 +815,7 @@ class _AiProviderDetailPageState extends State<AiProviderDetailPage> {
                               ),
                             ],
                           ),
-                          Switch.adaptive(
+                          Switch(
                             value: e.enabled,
                             onChanged: (v) {
                               final now = DateTime.now().millisecondsSinceEpoch;

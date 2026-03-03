@@ -1,7 +1,7 @@
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/enums/ai_prompts.dart';
-import 'package:anx_reader/enums/ai_dock_side.dart';
 import 'package:anx_reader/enums/ai_pad_panel_mode.dart';
+import 'package:anx_reader/enums/ai_panel_position.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/providers/ai_cache_count.dart';
 import 'package:anx_reader/providers/user_prompts.dart';
@@ -13,7 +13,6 @@ import 'package:anx_reader/page/settings_page/ai_provider_center/ai_provider_cen
 import 'package:anx_reader/widgets/ai/ai_stream.dart';
 import 'package:anx_reader/widgets/common/anx_button.dart';
 import 'package:anx_reader/widgets/delete_confirm.dart';
-import 'package:anx_reader/page/settings_page/ai_quick_prompts_editor.dart';
 import 'package:anx_reader/page/settings_page/subpage/log_page.dart';
 import 'package:anx_reader/widgets/settings/settings_section.dart';
 import 'package:anx_reader/widgets/settings/settings_tile.dart';
@@ -445,56 +444,106 @@ class _AISettingsState extends ConsumerState<AISettings> {
           toolsTile,
         ],
       ),
-      // iPad-specific AI panel settings (only show on larger screens)
-      if (MediaQuery.of(context).size.width >= 600)
-        SettingsSection(
-          title: Text(l10n.settingsAiPadPanelMode),
-          tiles: [
-            SettingsTile.switchTile(
-              title: Text(l10n.settingsAiPadPanelModeBottomSheet),
-              description: Text(l10n.settingsAiPadPanelModeDock),
-              initialValue:
-                  Prefs().aiPadPanelMode == AiPadPanelModeEnum.bottomSheet,
-              onToggle: (value) {
-                setState(() {
-                  Prefs().aiPadPanelMode = value
-                      ? AiPadPanelModeEnum.bottomSheet
-                      : AiPadPanelModeEnum.dock;
-                });
-              },
-            ),
-            // Dock side only relevant when in dock mode
-            if (Prefs().aiPadPanelMode == AiPadPanelModeEnum.dock)
-              SettingsTile.navigation(
-                title: Text(l10n.settingsAiDockSide),
-                value: Text(Prefs().aiDockSide == AiDockSideEnum.left
-                    ? l10n.settingsAiDockSideLeft
-                    : l10n.settingsAiDockSideRight),
-                onPressed: (context) {
-                  setState(() {
-                    Prefs().aiDockSide =
-                        Prefs().aiDockSide == AiDockSideEnum.left
-                            ? AiDockSideEnum.right
-                            : AiDockSideEnum.left;
-                  });
-                },
-              ),
-          ],
-        ),
+      // AI chat interface display settings
       SettingsSection(
-        title: Text(l10n.settingsAiQuickPrompts),
+        title: Text(l10n.settingsAiChatDisplayMode),
         tiles: [
-          SettingsTile.navigation(
-            title: Text(l10n.settingsAiQuickPrompts),
-            description: Text(l10n.settingsAiQuickPromptsHint),
-            onPressed: (context) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AiQuickPromptsEditor(),
+          CustomSettingsTile(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 10,
+                    end: 8,
+                    top: 19,
+                    bottom: 8,
+                  ),
+                  child: Text(
+                    l10n.settingsAiChatDisplayModeTitle,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                 ),
-              );
-            },
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 10,
+                    end: 8,
+                    bottom: 8,
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<AiPadPanelModeEnum>(
+                      segments: [
+                        ButtonSegment<AiPadPanelModeEnum>(
+                          value: AiPadPanelModeEnum.auto,
+                          label: Text(l10n.settingsAiChatDisplayModeAuto),
+                        ),
+                        ButtonSegment<AiPadPanelModeEnum>(
+                          value: AiPadPanelModeEnum.dock,
+                          label: Text(l10n.settingsAiChatDisplayModeDock),
+                        ),
+                        ButtonSegment<AiPadPanelModeEnum>(
+                          value: AiPadPanelModeEnum.bottomSheet,
+                          label:
+                              Text(l10n.settingsAiChatDisplayModeBottomSheet),
+                        ),
+                      ],
+                      selected: {Prefs().aiPadPanelMode},
+                      onSelectionChanged: (Set<AiPadPanelModeEnum> selected) {
+                        setState(() {
+                          Prefs().aiPadPanelMode = selected.first;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                // Dock position selector (only show when not in bottom sheet mode)
+                if (Prefs().aiPadPanelMode !=
+                    AiPadPanelModeEnum.bottomSheet) ...[
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      start: 10,
+                      end: 8,
+                      top: 8,
+                      bottom: 8,
+                    ),
+                    child: Text(
+                      l10n.settingsAiDockPosition,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      start: 10,
+                      end: 8,
+                      bottom: 19,
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<AiPanelPositionEnum>(
+                        segments: [
+                          ButtonSegment<AiPanelPositionEnum>(
+                            value: AiPanelPositionEnum.right,
+                            label: Text(l10n.settingsAiDockPositionRight),
+                          ),
+                          ButtonSegment<AiPanelPositionEnum>(
+                            value: AiPanelPositionEnum.bottom,
+                            label: Text(l10n.settingsAiDockPositionBottom),
+                          ),
+                        ],
+                        selected: {Prefs().aiPanelPosition},
+                        onSelectionChanged:
+                            (Set<AiPanelPositionEnum> selected) {
+                          setState(() {
+                            Prefs().aiPanelPosition = selected.first;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -606,9 +655,11 @@ class _AISettingsState extends ConsumerState<AISettings> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AnxButton(
-                  onPressed: _showAddPromptDialog,
-                  child: Text(L10n.of(context).settingsAiUserPromptsAdd),
+                Center(
+                  child: AnxButton(
+                    onPressed: _showAddPromptDialog,
+                    child: Text(L10n.of(context).settingsAiUserPromptsAdd),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -689,10 +740,6 @@ class _AISettingsState extends ConsumerState<AISettings> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withAlpha(100)),
-          borderRadius: BorderRadius.circular(8),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

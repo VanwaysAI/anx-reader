@@ -521,7 +521,12 @@ class ReadingPageState extends ConsumerState<ReadingPage>
   bool _isAiDockedLeft() {
     final width = MediaQuery.of(navigatorKey.currentContext!).size.width;
     if (width < 600) return false;
-    if (Prefs().aiPadPanelMode != AiPadPanelModeEnum.dock) return false;
+
+    final mode = Prefs().aiPadPanelMode;
+
+    // Only allow docking in auto or dock mode (not in bottom sheet mode)
+    if (mode == AiPadPanelModeEnum.bottomSheet) return false;
+
     if (Prefs().aiPanelPosition != AiPanelPositionEnum.right) return false;
     return Prefs().aiDockSide == AiDockSideEnum.left && _aiChat != null;
   }
@@ -748,9 +753,20 @@ class ReadingPageState extends ConsumerState<ReadingPage>
 
   bool _shouldUseAiBottomSheet(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth < 600 ||
-        (screenWidth >= 600 &&
-            Prefs().aiPadPanelMode == AiPadPanelModeEnum.bottomSheet);
+    final mode = Prefs().aiPadPanelMode;
+
+    // Auto mode: use bottom sheet on small screens, dock on large screens
+    if (mode == AiPadPanelModeEnum.auto) {
+      return screenWidth < 600;
+    }
+
+    // Explicit bottom sheet mode
+    if (mode == AiPadPanelModeEnum.bottomSheet) {
+      return true;
+    }
+
+    // Dock mode: only use bottom sheet on very small screens
+    return screenWidth < 600;
   }
 
   PersistentBottomSheetController? _aiBottomSheetController;

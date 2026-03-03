@@ -129,14 +129,6 @@ class _SubMoreSettingsState extends State<SubMoreSettings> {
                     L10n.of(context).settingsAiTools,
                   ],
                 },
-                {
-                  "title": L10n.of(context).settingsAiProviderCenterTitle,
-                  "icon": Icons.hub_outlined,
-                  "sections": const AiProviderCenterPage(),
-                  "subtitles": [
-                    L10n.of(context).settingsAiProviderCenterDesc,
-                  ],
-                },
               ],
               {
                 "title": L10n.of(context).storage,
