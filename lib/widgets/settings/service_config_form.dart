@@ -132,9 +132,10 @@ class _ServiceConfigFormState extends State<ServiceConfigForm> {
         final double min = item.min ?? 0.0;
         final double max = item.max ?? 100.0;
         final double step = item.step ?? 1.0;
-        final double currentValue = (_currentConfig[item.key] ?? item.defaultValue ?? min).toDouble();
+        final double currentValue =
+            (_currentConfig[item.key] ?? item.defaultValue ?? min).toDouble();
         final String unit = item.unit ?? '';
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

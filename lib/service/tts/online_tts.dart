@@ -101,11 +101,11 @@ class OnlineTts extends BaseTts {
     // Clear pending audio so it will be re-fetched with new rate
     _clearPendingAudio();
   }
+
   @override
   double get rate => Prefs().ttsRate;
 
   @override
-
   @override
   bool get isPlaying => ttsStateNotifier.value == TtsStateEnum.playing;
 
@@ -176,7 +176,8 @@ class OnlineTts extends BaseTts {
       segment.isSilent = false;
       segment.fetchVersion = _audioFetchVersion; // Mark with current version
     }
-    AnxLog.info('Cleared pending audio buffer - will re-fetch with new settings (version: $_audioFetchVersion)');
+    AnxLog.info(
+        'Cleared pending audio buffer - will re-fetch with new settings (version: $_audioFetchVersion)');
   }
 
   // ============ Producer: Prefetcher Loop ============
@@ -188,16 +189,17 @@ class OnlineTts extends BaseTts {
     try {
       while (!_shouldStop) {
         // Check for segments that need audio re-fetch (after settings change)
-        final segmentsNeedingAudio = _buffer
-            .where((s) => !s.isReady && !s.isSilent)
-            .toList();
-        
+        final segmentsNeedingAudio =
+            _buffer.where((s) => !s.isReady && !s.isSilent).toList();
+
         if (segmentsNeedingAudio.isNotEmpty) {
           // Re-fetch audio for segments that were cleared
           for (var i = 0; i < segmentsNeedingAudio.length; i += _batchSize) {
             if (_shouldStop) break;
-            final batch = segmentsNeedingAudio.skip(i).take(_batchSize).toList();
-            final futures = batch.map((segment) => _fetchAudioForSegment(segment));
+            final batch =
+                segmentsNeedingAudio.skip(i).take(_batchSize).toList();
+            final futures =
+                batch.map((segment) => _fetchAudioForSegment(segment));
             await Future.wait(futures);
           }
         }
@@ -292,16 +294,17 @@ class OnlineTts extends BaseTts {
       try {
         final bytes = await backend
             .speak(
-          segment.sentence.text,
-          null,
-          rate,
-          pitch,
-        )
+              segment.sentence.text,
+              null,
+              rate,
+              pitch,
+            )
             .timeout(Duration(seconds: _fetchTimeoutSeconds));
 
         // Check if version is still valid (settings haven't changed during fetch)
         if (segment.fetchVersion != targetVersion) {
-          AnxLog.info('Audio fetch completed but version changed - discarding (segment version: ${segment.fetchVersion}, target: $targetVersion)');
+          AnxLog.info(
+              'Audio fetch completed but version changed - discarding (segment version: ${segment.fetchVersion}, target: $targetVersion)');
           return;
         }
 
