@@ -29,7 +29,9 @@ import 'package:anx_reader/providers/chapter_content_bridge.dart';
 import 'package:anx_reader/providers/current_reading.dart';
 import 'package:anx_reader/service/book_player/book_player_server.dart';
 import 'package:anx_reader/providers/toc_search.dart';
+import 'package:anx_reader/service/tts/base_tts.dart';
 import 'package:anx_reader/service/tts/models/tts_sentence.dart';
+import 'package:anx_reader/service/tts/tts_handler.dart';
 import 'package:anx_reader/utils/coordinates_to_part.dart';
 import 'package:anx_reader/utils/js/convert_dart_color_to_js.dart';
 import 'package:anx_reader/utils/platform_utils.dart';
@@ -299,8 +301,14 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     webViewController.evaluateJavascript(source: "clearSearch()");
   }
 
-  Future<void> initTts() async =>
+  Future<void> initTts({String? fromCfi}) async {
+    if (fromCfi != null && fromCfi.isNotEmpty) {
+      await webViewController.evaluateJavascript(
+          source: "window.ttsFromCfi('$fromCfi')");
+    } else {
       await webViewController.evaluateJavascript(source: "window.ttsHere()");
+    }
+  }
 
   void ttsStop() => webViewController.evaluateJavascript(source: "ttsStop()");
 
@@ -546,6 +554,14 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       action = PageTurningType.values[customConfig[part]];
     }
 
+    // Disable mouse/touch page turning when keyboard shortcuts are enabled
+    if (Prefs().keyboardShortcutTurnPage) {
+      // Only allow menu action, disable prev/next page turning
+      if (action == PageTurningType.prev || action == PageTurningType.next) {
+        return;
+      }
+    }
+
     switch (action) {
       case PageTurningType.prev:
         prevPage();
@@ -690,6 +706,21 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         handlerName: 'onAnnotationClick',
         callback: (args) {
           Map<String, dynamic> annotation = args[0];
+
+          if (annotation['annotation'] == null) {
+            // Check if TTS is active and the click is on the currently read text
+            final currentTtsState = TtsHandler().ttsStateNotifier.value;
+            if (currentTtsState == TtsStateEnum.playing ||
+                currentTtsState == TtsStateEnum.paused) {
+              if (currentTtsState == TtsStateEnum.playing) {
+                audioHandler.pause();
+              } else {
+                audioHandler.play();
+              }
+              return;
+            }
+          }
+
           int id = annotation['annotation']['id'];
           String cfi = annotation['annotation']['value'];
           String note = annotation['annotation']['note'];
@@ -851,6 +882,10 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
   Future<void> _handlePointerEvents(PointerEvent event) async {
     if (await isFootNoteOpen() || Prefs().pageTurnStyle == PageTurn.scroll) {
+      return;
+    }
+    // Disable scroll wheel page turning when keyboard shortcuts are enabled
+    if (Prefs().keyboardShortcutTurnPage) {
       return;
     }
     if (event is PointerScrollEvent) {

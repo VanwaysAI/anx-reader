@@ -1,1 +1,163 @@
-{}
+{
+  "ar": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "de": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "es": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "fr": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "it": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "ja": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "ko": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "pt": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "ro": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "ru": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "tr": [
+    "contextMenuNarrate",
+    "readingPageKeyboardShortcutTurnPage",
+    "readingPageKeyboardShortcutTurnPageTips",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "zh_CN": [
+    "contextMenuNarrate",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "zh_LZH": [
+    "contextMenuNarrate",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ],
+
+  "zh_TW": [
+    "contextMenuNarrate",
+    "settingsNarrateEdgeTts",
+    "settingsNarrateEdgeHelpText",
+    "settingsNarrateEdgeUrlDescription",
+    "settingsNarrateEdgeVoiceDescription",
+    "settingsNarrateEdgeRateLabel",
+    "settingsNarrateEdgeRateDescription"
+  ]
+}
