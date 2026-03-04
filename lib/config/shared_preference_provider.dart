@@ -16,6 +16,7 @@ import 'package:anx_reader/enums/translation_mode.dart';
 import 'package:anx_reader/enums/writing_mode.dart';
 import 'package:anx_reader/enums/text_alignment.dart';
 import 'package:anx_reader/enums/ai_panel_position.dart';
+import 'package:anx_reader/enums/ai_chat_display_mode.dart';
 import 'package:anx_reader/enums/code_highlight_theme.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
@@ -827,6 +828,33 @@ class Prefs extends ChangeNotifier {
     notifyListeners();
   }
 
+  void saveAiProviders(List<dynamic> providers) {
+    final jsonList = providers.map((p) {
+      // Handle both AiProvider objects and already-serialized maps
+      if (p is Map<String, dynamic>) {
+        return p;
+      } else {
+        return p.toJson();
+      }
+    }).toList();
+    prefs.setString('aiProviders', jsonEncode(jsonList));
+    notifyListeners();
+  }
+
+  List<dynamic> getAiProviders() {
+    String? jsonString = prefs.getString('aiProviders');
+    if (jsonString == null) {
+      return [];
+    }
+    try {
+      final List<dynamic> decoded = jsonDecode(jsonString);
+      // Import will be handled in ai_providers.dart to avoid circular dependency
+      return decoded;
+    } catch (e) {
+      return [];
+    }
+  }
+
   void saveAiPrompt(AiPrompts identifier, String prompt) {
     prefs.setString('aiPrompt_${identifier.name}', prompt);
     notifyListeners();
@@ -1494,6 +1522,37 @@ class Prefs extends ChangeNotifier {
 
   set codeHighlightTheme(CodeHighlightThemeEnum theme) {
     prefs.setString('codeHighlightTheme', theme.code);
+    notifyListeners();
+  }
+
+  // AI chat display mode configuration
+  AiChatDisplayMode get aiChatDisplayMode {
+    return AiChatDisplayMode.fromCode(
+        prefs.getString('aiChatDisplayMode') ?? 'adaptive');
+  }
+
+  set aiChatDisplayMode(AiChatDisplayMode mode) {
+    prefs.setString('aiChatDisplayMode', mode.code);
+    notifyListeners();
+  }
+
+  // AI panel width (for split mode)
+  double get aiPanelWidth {
+    return prefs.getDouble('aiPanelWidth') ?? 300;
+  }
+
+  set aiPanelWidth(double width) {
+    prefs.setDouble('aiPanelWidth', width);
+    notifyListeners();
+  }
+
+  // AI panel height (for split mode)
+  double get aiPanelHeight {
+    return prefs.getDouble('aiPanelHeight') ?? 300;
+  }
+
+  set aiPanelHeight(double height) {
+    prefs.setDouble('aiPanelHeight', height);
     notifyListeners();
   }
 }

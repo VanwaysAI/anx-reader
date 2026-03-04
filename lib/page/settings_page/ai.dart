@@ -1,14 +1,15 @@
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/enums/ai_prompts.dart';
+import 'package:anx_reader/enums/ai_chat_display_mode.dart';
+import 'package:anx_reader/enums/ai_panel_position.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
+import 'package:anx_reader/page/settings_page/ai_provider_list_page.dart';
 import 'package:anx_reader/providers/ai_cache_count.dart';
+import 'package:anx_reader/providers/ai_providers.dart';
 import 'package:anx_reader/providers/user_prompts.dart';
-import 'package:anx_reader/service/ai/ai_services.dart';
-import 'package:anx_reader/service/ai/index.dart';
-import 'package:anx_reader/service/ai/prompt_generate.dart';
 import 'package:anx_reader/service/ai/tools/ai_tool_registry.dart';
-import 'package:anx_reader/widgets/ai/ai_stream.dart';
 import 'package:anx_reader/widgets/common/anx_button.dart';
+import 'package:anx_reader/widgets/common/anx_segmented_button.dart';
 import 'package:anx_reader/widgets/delete_confirm.dart';
 import 'package:anx_reader/widgets/settings/settings_section.dart';
 import 'package:anx_reader/widgets/settings/settings_tile.dart';
@@ -17,7 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:anx_reader/utils/toast/common.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AISettings extends ConsumerStatefulWidget {
   const AISettings({super.key});
@@ -27,55 +27,10 @@ class AISettings extends ConsumerStatefulWidget {
 }
 
 class _AISettingsState extends ConsumerState<AISettings> {
-  bool showSettings = false;
-  int currentIndex = 0;
-  late List<Map<String, dynamic>> initialServicesConfig;
-  bool _obscureApiKey = true;
-
   // User prompts state
   String? _expandedUserPromptId;
   final Map<String, TextEditingController> _userPromptNameControllers = {};
   final Map<String, TextEditingController> _userPromptContentControllers = {};
-
-  late final List<AiServiceOption> serviceOptions;
-  late List<Map<String, dynamic>> services;
-
-  @override
-  void initState() {
-    serviceOptions = buildDefaultAiServices();
-    services = serviceOptions.map(
-      (option) {
-        return {
-          'identifier': option.identifier,
-          'title': option.title,
-          'logo': option.logo,
-          'config': {
-            'url': option.defaultUrl,
-            'api_key': option.defaultApiKey,
-            'model': option.defaultModel,
-          },
-        };
-      },
-    ).toList();
-    initialServicesConfig = services
-        .map(
-          (service) => {
-            ...service,
-            'config': Map<String, String>.from(
-              service['config'] as Map<String, String>,
-            ),
-          },
-        )
-        .toList();
-    for (final service in services) {
-      final stored = Prefs().getAiConfig(service['identifier'] as String);
-      final config = service['config'] as Map<String, String>;
-      for (final entry in stored.entries) {
-        config[entry.key] = entry.value;
-      }
-    }
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -125,208 +80,6 @@ class _AISettingsState extends ConsumerState<AISettings> {
         "variables": [],
       }
     ];
-
-    Widget aiConfig() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              services[currentIndex]["title"],
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          for (var key in services[currentIndex]["config"].keys)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: TextField(
-                obscureText: key == "api_key" && _obscureApiKey,
-                controller: TextEditingController(
-                    text: services[currentIndex]["config"][key] ??
-                        initialServicesConfig[currentIndex]["config"][key]),
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: key,
-                  hintText: services[currentIndex]["config"][key],
-                  suffixIcon: key == "api_key"
-                      ? IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _obscureApiKey = !_obscureApiKey;
-                            });
-                          },
-                          icon: _obscureApiKey
-                              ? const Icon(Icons.visibility_off)
-                              : const Icon(Icons.visibility),
-                        )
-                      : null,
-                ),
-                onChanged: (value) {
-                  services[currentIndex]["config"][key] = value;
-                },
-              ),
-            ),
-          CustomSettingsTile(
-            child: GestureDetector(
-              onTap: () async {
-                if (!await launchUrl(
-                    Uri.parse('https://anx.anxcye.com/docs/ai/'),
-                    mode: LaunchMode.externalApplication)) {
-                  AnxToast.show(L10n.of(context).commonFailed);
-                }
-              },
-              child: Text(
-                L10n.of(context).settingsNarrateClickForHelp,
-                style: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  decoration: TextDecoration.underline,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                  onPressed: () {
-                    Prefs().deleteAiConfig(
-                      services[currentIndex]["identifier"],
-                    );
-                    services[currentIndex]["config"] = Map<String, String>.from(
-                        initialServicesConfig[currentIndex]["config"]);
-                    setState(() {});
-                  },
-                  child: Text(L10n.of(context).commonReset)),
-              TextButton(
-                  onPressed: () {
-                    SmartDialog.show(
-                      onDismiss: () {
-                        cancelActiveAiRequest();
-                      },
-                      builder: (context) => AlertDialog(
-                          title: Text(L10n.of(context).commonTest),
-                          content: AiStream(
-                              prompt: generatePromptTest(),
-                              identifier: services[currentIndex]["identifier"],
-                              config: services[currentIndex]["config"],
-                              regenerate: true)),
-                    );
-                  },
-                  child: Text(L10n.of(context).commonTest)),
-              TextButton(
-                  onPressed: () {
-                    Prefs().saveAiConfig(
-                      services[currentIndex]["identifier"],
-                      services[currentIndex]["config"],
-                    );
-
-                    setState(() {
-                      showSettings = false;
-                    });
-                  },
-                  child: Text(L10n.of(context).commonSave)),
-              TextButton(
-                  onPressed: () {
-                    Prefs().selectedAiService =
-                        services[currentIndex]["identifier"];
-                    Prefs().saveAiConfig(
-                      services[currentIndex]["identifier"],
-                      services[currentIndex]["config"],
-                    );
-
-                    setState(() {
-                      showSettings = false;
-                    });
-                  },
-                  child: Text(L10n.of(context).commonApply)),
-            ],
-          )
-        ],
-      );
-    }
-
-    var servicesTile = CustomSettingsTile(
-        child: AnimatedSize(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      alignment: Alignment.topCenter,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 100,
-              child: ListView.builder(
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                itemCount: services.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: InkWell(
-                      onTap: () {
-                        if (showSettings) {
-                          if (currentIndex == index) {
-                            setState(() {
-                              showSettings = false;
-                            });
-                            return;
-                          }
-                          showSettings = false;
-                          Future.delayed(
-                            const Duration(milliseconds: 200),
-                            () {
-                              setState(() {
-                                showSettings = true;
-                                currentIndex = index;
-                              });
-                            },
-                          );
-                        } else {
-                          showSettings = true;
-                          currentIndex = index;
-                        }
-
-                        setState(() {});
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        width: 100,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Prefs().selectedAiService ==
-                                      services[index]["identifier"]
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.grey),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Image.asset(
-                              services[index]["logo"],
-                              height: 25,
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            FittedBox(child: Text(services[index]["title"])),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            !showSettings ? const SizedBox() : aiConfig(),
-          ],
-        ),
-      ),
-    ));
 
     var promptTile = CustomSettingsTile(
       child: ListView.builder(
@@ -455,7 +208,18 @@ class _AISettingsState extends ConsumerState<AISettings> {
       SettingsSection(
         title: Text(L10n.of(context).settingsAiServices),
         tiles: [
-          servicesTile,
+          SettingsTile.navigation(
+            title: Text(l10n.settingsAiProviders),
+            description: _buildProviderDescription(),
+            onPressed: (context) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AiProviderListPage(),
+                ),
+              );
+            },
+          ),
           // SettingsTile.navigation(
           //   leading: const Icon(Icons.chat),
           //   title: Text(L10n.of(context).aiChat),
@@ -468,6 +232,14 @@ class _AISettingsState extends ConsumerState<AISettings> {
           //     );
           //   },
           // ),
+        ],
+      ),
+      SettingsSection(
+        title: Text(L10n.of(context).settingsAiChatDisplay),
+        tiles: [
+          aiChatDisplayModeTile(),
+          if (Prefs().aiChatDisplayMode != AiChatDisplayMode.popup)
+            aiPanelPositionTile(),
         ],
       ),
       SettingsSection(
@@ -554,6 +326,115 @@ class _AISettingsState extends ConsumerState<AISettings> {
         ],
       ),
     ]);
+  }
+
+  // Build description showing current selected provider
+  Widget? _buildProviderDescription() {
+    final provider =
+        ref.read(aiProvidersProvider.notifier).getSelectedProvider();
+    if (provider == null) {
+      return null;
+    }
+    return Text(provider.title);
+  }
+
+  // AI chat display mode configuration
+  AbstractSettingsTile aiChatDisplayModeTile() {
+    final l10n = L10n.of(context);
+    return CustomSettingsTile(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.settingsAiChatDisplayMode,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: AnxSegmentedButton<AiChatDisplayMode>(
+                    segments: [
+                      SegmentButtonItem(
+                        value: AiChatDisplayMode.adaptive,
+                        label: l10n.settingsAiChatDisplayModeAdaptive,
+                        icon: const Icon(Icons.auto_awesome, size: 18),
+                      ),
+                      SegmentButtonItem(
+                        value: AiChatDisplayMode.split,
+                        label: l10n.settingsAiChatDisplayModeSplit,
+                        icon: const Icon(Icons.splitscreen, size: 18),
+                      ),
+                      SegmentButtonItem(
+                        value: AiChatDisplayMode.popup,
+                        label: l10n.settingsAiChatDisplayModePopup,
+                        icon: const Icon(Icons.open_in_new, size: 18),
+                      ),
+                    ],
+                    selected: {Prefs().aiChatDisplayMode},
+                    onSelectionChanged: (Set<AiChatDisplayMode> selected) {
+                      if (selected.isNotEmpty) {
+                        Prefs().aiChatDisplayMode = selected.first;
+                        setState(() {});
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // AI panel position configuration (only shown when not in popup mode)
+  AbstractSettingsTile aiPanelPositionTile() {
+    final l10n = L10n.of(context);
+    return CustomSettingsTile(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.settingsAiPanelPosition,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: AnxSegmentedButton<AiPanelPositionEnum>(
+                    segments: [
+                      SegmentButtonItem(
+                        value: AiPanelPositionEnum.bottom,
+                        label: l10n.settingsAiPanelPositionBottom,
+                        icon: const Icon(Icons.vertical_align_bottom, size: 18),
+                      ),
+                      SegmentButtonItem(
+                        value: AiPanelPositionEnum.right,
+                        label: l10n.settingsAiPanelPositionRight,
+                        icon: const Icon(Icons.border_right, size: 18),
+                      ),
+                    ],
+                    selected: {Prefs().aiPanelPosition},
+                    onSelectionChanged: (Set<AiPanelPositionEnum> selected) {
+                      if (selected.isNotEmpty) {
+                        Prefs().aiPanelPosition = selected.first;
+                        setState(() {});
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // User prompts management methods

@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
+import 'package:anx_reader/models/ai_provider.dart';
+import 'package:anx_reader/providers/ai_providers.dart';
+import 'package:anx_reader/service/ai/ai_key_rotator.dart';
 import 'package:anx_reader/service/ai/langchain_ai_config.dart';
 import 'package:anx_reader/service/ai/langchain_registry.dart';
 import 'package:anx_reader/service/ai/langchain_runner.dart';
@@ -51,6 +54,57 @@ Stream<String> _generateStream({
 }) async* {
   AnxLog.info('aiGenerateStream called identifier: $identifier');
   final sanitizedMessages = _sanitizeMessagesForPrompt(messages);
+
+  LangchainAiConfig config;
+
+  // Try to use new provider system first if ref is available
+  if (registry.ref != null && overrideConfig == null) {
+    try {
+      final notifier = registry.ref!.read(aiProvidersProvider.notifier);
+      // If a specific provider id was passed, use it; otherwise use the default
+      final AiProvider? provider = identifier != null
+          ? notifier.getProviderById(identifier)
+          : notifier.getSelectedProvider();
+      if (provider != null &&
+          provider.enabled &&
+          AiKeyRotator.hasValidKey(provider)) {
+        final apiKey = AiKeyRotator.getNextKey(provider);
+        if (apiKey != null) {
+          config = LangchainAiConfig.fromProvider(
+            providerId: provider.id,
+            model: provider.model,
+            apiKey: apiKey,
+            url: provider.url,
+          );
+
+          AnxLog.info(
+              'aiGenerateStream (new): ${provider.id}, model: ${config.model}, baseUrl: ${config.baseUrl}');
+
+          final pipeline = registry.resolveByProtocol(provider.protocol, config,
+              useAgent: useAgent);
+          final model = pipeline.model;
+
+          yield* _executeStream(
+            model: model,
+            pipeline: pipeline,
+            sanitizedMessages: sanitizedMessages,
+            useAgent: useAgent,
+          );
+
+          // Advance key index for round-robin rotation after successful call
+          registry.ref!
+              .read(aiProvidersProvider.notifier)
+              .advanceKeyIndex(provider.id);
+          return;
+        }
+      }
+    } catch (e) {
+      AnxLog.warning(
+          'Failed to use new provider system, falling back to legacy: $e');
+    }
+  }
+
+  // Fall back to legacy system
   final selectedIdentifier = identifier ?? Prefs().selectedAiService;
   final savedConfig = Prefs().getAiConfig(selectedIdentifier);
   if (savedConfig.isEmpty &&
@@ -64,7 +118,7 @@ Stream<String> _generateStream({
     return;
   }
 
-  var config = LangchainAiConfig.fromPrefs(selectedIdentifier, savedConfig);
+  config = LangchainAiConfig.fromPrefs(selectedIdentifier, savedConfig);
   if (overrideConfig != null && overrideConfig.isNotEmpty) {
     final override =
         LangchainAiConfig.fromPrefs(selectedIdentifier, overrideConfig);
@@ -72,11 +126,26 @@ Stream<String> _generateStream({
   }
 
   AnxLog.info(
-      'aiGenerateStream: $selectedIdentifier, model: ${config.model}, baseUrl: ${config.baseUrl}');
+      'aiGenerateStream (legacy): $selectedIdentifier, model: ${config.model}, baseUrl: ${config.baseUrl}');
 
   final pipeline = registry.resolve(config, useAgent: useAgent);
   final model = pipeline.model;
 
+  yield* _executeStream(
+    model: model,
+    pipeline: pipeline,
+    sanitizedMessages: sanitizedMessages,
+    useAgent: useAgent,
+  );
+}
+
+/// Execute the AI stream with the given model and pipeline
+Stream<String> _executeStream({
+  required BaseChatModel model,
+  required LangchainPipeline pipeline,
+  required List<ChatMessage> sanitizedMessages,
+  required bool useAgent,
+}) async* {
   Stream<String> stream;
   if (useAgent) {
     final inputMessage = _latestUserMessage(sanitizedMessages);

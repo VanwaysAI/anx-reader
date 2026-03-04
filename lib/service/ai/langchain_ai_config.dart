@@ -86,6 +86,21 @@ class LangchainAiConfig {
     );
   }
 
+  /// Create LangchainAiConfig from AiProvider model with a specific API key
+  factory LangchainAiConfig.fromProvider({
+    required String providerId,
+    required String model,
+    required String apiKey,
+    required String url,
+  }) {
+    return LangchainAiConfig(
+      identifier: providerId,
+      apiKey: apiKey,
+      model: model,
+      baseUrl: _deriveBaseUrl(url),
+    );
+  }
+
   LangchainAiConfig copyWith({
     String? model,
     String? apiKey,

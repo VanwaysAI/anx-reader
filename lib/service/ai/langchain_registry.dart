@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/models/ai_provider.dart';
 import 'package:anx_reader/providers/current_reading.dart';
 import 'package:anx_reader/service/ai/tools/ai_tool_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,6 +39,34 @@ class LangchainAiRegistry {
       case 'openrouter':
       case 'openai':
       default:
+        return _buildPipeline(
+          config,
+          _buildOpenAi(config),
+          useAgent: useAgent,
+        );
+    }
+  }
+
+  /// Resolve pipeline based on AiProtocol enum (for new provider system)
+  LangchainPipeline resolveByProtocol(
+    AiProtocol protocol,
+    LangchainAiConfig config, {
+    bool useAgent = false,
+  }) {
+    switch (protocol) {
+      case AiProtocol.claude:
+        return _buildPipeline(
+          config,
+          _buildAnthropic(config),
+          useAgent: useAgent,
+        );
+      case AiProtocol.gemini:
+        return _buildPipeline(
+          config,
+          _buildGoogle(config),
+          useAgent: useAgent,
+        );
+      case AiProtocol.openai:
         return _buildPipeline(
           config,
           _buildOpenAi(config),
