@@ -866,6 +866,8 @@
    "settingsAiChatDisplayModeSplit": "Împărțit",
    "settingsAiChatDisplayModePopup": "Pop-up",
    "settingsAiPanelPosition": "Poziția Panoului",
-   "settingsAiPanelPositionBottom": "Jos",
-   "settingsAiPanelPositionRight": "Dreapta"
+  "settingsAiPanelPositionBottom": "Jos",
+  "settingsAiPanelPositionRight": "Dreapta",
+  "commonAddSuccess": "Adăugat cu succes",
+  "commonSaveSuccess": "Salvat cu succes"
 }
