@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Peso da Fonte",
   "headingFontSize": "Tamanho do Título",
   "readingPageLetterSpacing": "Espaçamento de Letras",
+  "readingPageKeyboardShortcutTurnPage": "Atalho de Teclado para Virar Página",
+  "readingPageKeyboardShortcutTurnPageTips": "Use Ctrl+[ e Ctrl+] para virar páginas",
   "bookDetailSave": "Salvar",
   "bookDetailEdit": "Editar",
   "bookDetailNthBook": "{count, plural, =1{1º livro que você leu} =2{2º livro que você leu} few{3º livro que você leu} other{{count}º livro que você leu}}",

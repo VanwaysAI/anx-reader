@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Grosor de Fuente",
   "headingFontSize": "Tamaño del Título",
   "readingPageLetterSpacing": "Espaciado de Letras",
+  "readingPageKeyboardShortcutTurnPage": "Atajo de Teclado para Pasar Página",
+  "readingPageKeyboardShortcutTurnPageTips": "Use Ctrl+[ y Ctrl+] para pasar páginas",
   "bookDetailSave": "Guardar",
   "bookDetailEdit": "Editar",
   "bookDetailNthBook": "{count, plural, =1{1er libro que has leído} =2{2do libro que has leído} few{3er libro que has leído} other{{count}º libro que has leído}}",

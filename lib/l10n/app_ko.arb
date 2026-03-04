@@ -145,6 +145,8 @@
   "readingPageFontWeight": "폰트 굵기",
   "headingFontSize": "제목 크기",
   "readingPageLetterSpacing": "글자 간격",
+  "readingPageKeyboardShortcutTurnPage": "페이지 넘김 키보드 단축키",
+  "readingPageKeyboardShortcutTurnPageTips": "Ctrl+[ 및 Ctrl+]를 사용하여 페이지를 넘기세요",
   "bookDetailSave": "저장",
   "bookDetailEdit": "편집",
   "bookDetailNthBook": "{count, plural, =1{읽은 1번째 책} =2{읽은 2번째 책} few{읽은 3번째 책} other{읽은 {count}번째 책}}",

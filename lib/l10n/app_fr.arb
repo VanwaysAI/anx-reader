@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Épaisseur de Police",
   "headingFontSize": "Taille du Titre",
   "readingPageLetterSpacing": "Espacement des Lettres",
+  "readingPageKeyboardShortcutTurnPage": "Raccourci Clavier pour Tourner la Page",
+  "readingPageKeyboardShortcutTurnPageTips": "Utilisez Ctrl+[ et Ctrl+] pour tourner les pages",
   "bookDetailSave": "Enregistrer",
   "bookDetailEdit": "Modifier",
   "bookDetailNthBook": "{count, plural, =1{1er livre que vous avez lu} =2{2ème livre que vous avez lu} few{3ème livre que vous avez lu} other{{count}ème livre que vous avez lu}}",

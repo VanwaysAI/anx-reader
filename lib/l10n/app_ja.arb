@@ -145,6 +145,8 @@
   "readingPageFontWeight": "フォントの太さ",
   "headingFontSize": "見出しサイズ",
   "readingPageLetterSpacing": "文字間隔",
+  "readingPageKeyboardShortcutTurnPage": "ページめくりのキーボードショートカット",
+  "readingPageKeyboardShortcutTurnPageTips": "Ctrl+[ と Ctrl+] でページをめくります",
   "bookDetailSave": "保存",
   "bookDetailEdit": "編集",
   "bookDetailNthBook": "{count, plural, =1{読んだ1冊目の本} =2{読んだ2冊目の本} few{読んだ3冊目の本} other{読んだ{count}冊目の本}}",

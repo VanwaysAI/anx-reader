@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Font Weight",
   "headingFontSize": "Heading Size",
   "readingPageLetterSpacing": "Letter Spacing",
+  "readingPageKeyboardShortcutTurnPage": "Scurtătură Tastatură pentru Întoarcere Pagină",
+  "readingPageKeyboardShortcutTurnPageTips": "Folosește Ctrl+[ și Ctrl+] pentru a întoarce paginile",
   "bookDetailSave": "Save",
   "bookDetailEdit": "Edit",
   "bookDetailNthBook": "{count, plural, one{1st book you've read} =2{2nd book you've read} few{3rd book you've read} other{{count}th book you've read}}",

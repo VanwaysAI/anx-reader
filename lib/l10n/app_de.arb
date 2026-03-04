@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Schriftstärke",
   "headingFontSize": "Überschriftsgröße",
   "readingPageLetterSpacing": "Zeichenabstand",
+  "readingPageKeyboardShortcutTurnPage": "Tastaturkürzel zum Umblättern",
+  "readingPageKeyboardShortcutTurnPageTips": "Verwenden Sie Strg+[ und Strg+] zum Umblättern",
   "bookDetailSave": "Speichern",
   "bookDetailEdit": "Bearbeiten",
   "bookDetailNthBook": "{count, plural, =1{1. Buch, das Sie gelesen haben} =2{2. Buch, das Sie gelesen haben} few{3. Buch, das Sie gelesen haben} other{{count}. Buch, das Sie gelesen haben}}",

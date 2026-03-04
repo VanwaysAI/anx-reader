@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Yazı Tipi Kalınlığı",
   "headingFontSize": "Başlık Boyutu",
   "readingPageLetterSpacing": "Harf Aralığı",
+  "readingPageKeyboardShortcutTurnPage": "Klavye Kısayolu ile Sayfa Çevirme",
+  "readingPageKeyboardShortcutTurnPageTips": "Sayfaları çevirmek için Ctrl+[ ve Ctrl+] kullanın",
   "bookDetailSave": "Kaydet",
   "bookDetailEdit": "Düzenle",
   "bookDetailNthBook": "{count, plural, =1{Okuduğunuz 1. kitap} =2{Okuduğunuz 2. kitap} few{Okuduğunuz 3. kitap} other{Okuduğunuz {count}. kitap}}",

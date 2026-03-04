@@ -145,6 +145,8 @@
   "readingPageFontWeight": "وزن الخط",
   "headingFontSize": "حجم العنوان",
   "readingPageLetterSpacing": "تباعد الأحرف",
+  "readingPageKeyboardShortcutTurnPage": "اختصار لوحة المفاتيح لقلب الصفحة",
+  "readingPageKeyboardShortcutTurnPageTips": "استخدم Ctrl+[ و Ctrl+] لقلب الصفحات",
   "bookDetailSave": "حفظ",
   "bookDetailEdit": "تعديل",
   "bookDetailNthBook": "{count, plural, =1{أول كتاب قرأته} =2{الكتاب الثاني الذي قرأته} few{الكتاب الثالث الذي قرأته} other{الكتاب رقم {count} الذي قرأته}}",

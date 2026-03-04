@@ -145,6 +145,8 @@
   "readingPageFontWeight": "Peso Font",
   "headingFontSize": "Dimensione Titolo",
   "readingPageLetterSpacing": "Spaziatura Lettere",
+  "readingPageKeyboardShortcutTurnPage": "Scorciatoia Tastiera per Voltare Pagina",
+  "readingPageKeyboardShortcutTurnPageTips": "Usa Ctrl+[ e Ctrl+] per voltare le pagine",
   "bookDetailSave": "Salva",
   "bookDetailEdit": "Modifica",
   "bookDetailNthBook": "{count, plural, =1{1º libro che hai letto} =2{2º libro che hai letto} few{3º libro che hai letto} other{{count}º libro che hai letto}}",

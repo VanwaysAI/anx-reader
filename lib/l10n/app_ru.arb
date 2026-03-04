@@ -143,6 +143,8 @@
   "readingPageFontWeight": "Толщина шрифта",
   "headingFontSize": "Размер заголовка",
   "readingPageLetterSpacing": "Межбуквенный интервал",
+  "readingPageKeyboardShortcutTurnPage": "Клавиши перелистывания страниц",
+  "readingPageKeyboardShortcutTurnPageTips": "Используйте Ctrl+[ и Ctrl+] для перелистывания страниц",
   "bookDetailSave": "Сохранить",
   "bookDetailEdit": "Изменить",
   "bookDetailNthBook": "{count, plural, =1{1-я прочитанная книга} =2{2-я прочитанная книга} few{3-я прочитанная книга} other{прочитано {count}-я книга}}",
