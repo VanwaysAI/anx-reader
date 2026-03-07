@@ -2,6 +2,7 @@
 
 ## 1.13.0
 - Fix(reader): Fix images with large inline max-width overflowing column width and appearing on wrong page (#742)
+- Fix(ai): Fix type cast error when using Gemini AI with tools (#747)
 - Feat(tts): Add floating action button in reader for quick TTS controls (previous, pause/resume, next, stop) (#723)
 - Fix(tts): Fix crash when SystemTts speak() receives null text from WebView
 - Feat(ai): Add AI Provider Configuration Center with support for OpenAI-compatible, Claude, and Gemini protocols
@@ -16,6 +17,7 @@
 - Feat(ai): Add model picker in provider detail page with showMenu dropdown after fetching
 
 - Fix(reader): 修复图片内嵌大 max-width 导致宽度超出栏宽而显示到下一页的问题 (#742)
+- Fix(ai): 修复使用 Gemini AI 工具时的类型转换错误 (#747)
 
 - Feat(tts): 新增阅读界面朗读快捷操作悬浮按钮（上一句、暂停/继续、下一句、停止）(#723)
 - Fix(tts): 修复 SystemTts 从 WebView 获取文本为空时的崩溃问题
