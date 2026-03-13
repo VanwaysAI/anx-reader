@@ -550,6 +550,8 @@
   "underlineTranslationTip": "辞書翻訳など、下線によって選択されたテキストの翻訳機能。",
   "fullTextTranslation": "フルテキスト翻訳",
   "fullTextTranslationTip": "コンテンツ全体を翻訳するページを読むためのバイリンガル並列翻訳機能。",
+  "settingsAiRpm": "レート制限 (RPM)",
+  "settingsAiRpmTip": "1分あたりの最大AIリクエスト数。0に設定すると無効になります。",
   "translationServiceConfiguration": "翻訳サービスの構成",
   "translationMode": "翻訳モード",
   "translationOnly": "翻訳のみ",

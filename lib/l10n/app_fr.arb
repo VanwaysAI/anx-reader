@@ -550,6 +550,8 @@
   "underlineTranslationTip": "Caractéristique de traduction pour le texte sélectionné par soulignement, tel que la traduction du dictionnaire, etc.",
   "fullTextTranslation": "Traduction en texte intégral",
   "fullTextTranslationTip": "Caractéristique de traduction parallèle bilingue pour la lecture des pages, traduisant un contenu entier.",
+  "settingsAiRpm": "Limite de débit (RPM)",
+  "settingsAiRpmTip": "Nombre maximum de requêtes IA par minute. Définir à 0 pour désactiver.",
   "translationServiceConfiguration": "Configuration du service de traduction",
   "translationMode": "Mode de traduction",
   "translationOnly": "Traduction uniquement",

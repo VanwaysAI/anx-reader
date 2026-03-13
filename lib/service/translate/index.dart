@@ -94,6 +94,7 @@ abstract class TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   });
 
   /// Translate text only (no widget), with retry logic.
@@ -102,6 +103,7 @@ abstract class TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) async {
     const int maxRetries = 2;
 
@@ -113,11 +115,15 @@ abstract class TranslateServiceProvider {
           from,
           to,
           contextText: contextText,
+          isFullText: isFullText,
         )) {
           lastResult = result;
-          if (result != '...' && result.trim().isNotEmpty) {
-            return result;
-          }
+        }
+
+        if (lastResult != null &&
+            lastResult.trim().isNotEmpty &&
+            lastResult != '...') {
+          return lastResult;
         }
 
         throw Exception(

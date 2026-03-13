@@ -26,13 +26,20 @@ class AiTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) {
-    final prompt = generatePromptTranslate(
-      text,
-      mapLanguageCode(to),
-      mapLanguageCode(from),
-      contextText: contextText,
-    );
+    final prompt = isFullText
+        ? generatePromptFullTextTranslate(
+            text,
+            mapLanguageCode(to),
+            mapLanguageCode(from),
+          )
+        : generatePromptTranslate(
+            text,
+            mapLanguageCode(to),
+            mapLanguageCode(from),
+            contextText: contextText,
+          );
 
     return AiStream(
       prompt: prompt,
@@ -46,14 +53,21 @@ class AiTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) async* {
     try {
-      final payload = generatePromptTranslate(
-        text,
-        mapLanguageCode(to),
-        mapLanguageCode(from),
-        contextText: contextText,
-      );
+      final payload = isFullText
+          ? generatePromptFullTextTranslate(
+              text,
+              mapLanguageCode(to),
+              mapLanguageCode(from),
+            )
+          : generatePromptTranslate(
+              text,
+              mapLanguageCode(to),
+              mapLanguageCode(from),
+              contextText: contextText,
+            );
 
       final messages = payload.buildMessages();
 

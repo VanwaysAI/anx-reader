@@ -550,6 +550,8 @@
   "underlineTranslationTip": "Funzione di traduzione per il testo selezionato per sottolineatura, come la traduzione del dizionario, ecc.",
   "fullTextTranslation": "Traduzione full-text",
   "fullTextTranslationTip": "Funzione di traduzione parallela bilingue per le pagine di lettura, traduzione di interi contenuti.",
+  "settingsAiRpm": "Limite di frequenza (RPM)",
+  "settingsAiRpmTip": "Massimo richieste AI al minuto. Impostare a 0 per disabilitare.",
   "translationServiceConfiguration": "Configurazione del servizio di traduzione",
   "translationMode": "Modalità di traduzione",
   "translationOnly": "Solo traduzione",

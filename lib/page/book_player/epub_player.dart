@@ -849,7 +849,8 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           final from = Prefs().fullTextTranslateFrom;
           final to = Prefs().fullTextTranslateTo;
 
-          return await service.provider.translateTextOnly(text, from, to);
+          return await service.provider
+              .translateTextOnly(text, from, to, isFullText: true);
         } catch (e) {
           AnxLog.severe('Translation error: $e');
           return 'Translation error: $e';

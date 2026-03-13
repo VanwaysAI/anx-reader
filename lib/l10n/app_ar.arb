@@ -550,6 +550,8 @@
   "underlineTranslationTip": "ميزة الترجمة للنص المحدد عن طريق التأكيد ، مثل ترجمة القاموس ، إلخ.",
   "fullTextTranslation": "ترجمة النص الكامل",
   "fullTextTranslationTip": "ميزة الترجمة المتوازية ثنائية اللغة لقراءة الصفحات ، وترجمة المحتوى بأكمله.",
+  "settingsAiRpm": "معدل الطلبات (RPM)",
+  "settingsAiRpmTip": "الحد الأقصى لطلبات الذكاء الاصطناعي في الدقيقة. اضبط على 0 لتعطيل.",
   "translationServiceConfiguration": "تكوين خدمة الترجمة",
   "translationMode": "وضع الترجمة",
   "translationOnly": "الترجمة فقط",

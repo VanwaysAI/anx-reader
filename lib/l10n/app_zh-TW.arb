@@ -550,6 +550,8 @@
   "underlineTranslationTip": "為劃線選取的文字提供翻譯功能，例如字典查詢等。",
   "fullTextTranslation": "全文翻譯",
   "fullTextTranslationTip": "在閱讀頁面提供雙語對照翻譯功能，可翻譯全文內容。",
+  "settingsAiRpm": "AI 請求限流（RPM）",
+  "settingsAiRpmTip": "每分鐘最大 AI 請求數，設為 0 則不限制。",
   "translationServiceConfiguration": "翻譯服務設定",
   "translationMode": "翻譯模式",
   "translationOnly": "僅顯示翻譯",

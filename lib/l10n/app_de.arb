@@ -550,6 +550,8 @@
   "underlineTranslationTip": "Übersetzungsfunktion für Text, der durch Unterstreichung ausgewählt wurde, wie z.B. Wörterbuchübersetzung etc.",
   "fullTextTranslation": "Volltextübersetzung",
   "fullTextTranslationTip": "Zweisprachige parallele Übersetzungsfunktion für das Lesen von Seiten, Übersetzen des gesamten Inhalts.",
+  "settingsAiRpm": "Rate-Limit (RPM)",
+  "settingsAiRpmTip": "Maximale KI-Anfragen pro Minute. Auf 0 setzen zum Deaktivieren.",
   "translationServiceConfiguration": "Übersetzungsdienstkonfiguration",
   "translationMode": "Übersetzungsmodus",
   "translationOnly": "Nur Übersetzung",

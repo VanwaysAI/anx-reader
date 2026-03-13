@@ -552,6 +552,8 @@
   "underlineTranslationTip": "Sözlük çevirisi, vb. Gibi alt çizgiyle seçilen metin için çeviri özelliği vb.",
   "fullTextTranslation": "Tam metin çeviri",
   "fullTextTranslationTip": "İki dilli paralel çeviri özelliği, tüm içeriği tercüme etmek için sayfaları okumak için.",
+  "settingsAiRpm": "Hız sınırı (RPM)",
+  "settingsAiRpmTip": "Dakika başına maksimum AI isteği. Devre dışı bırakmak için 0'a ayarlayın.",
   "translationServiceConfiguration": "Çeviri Hizmet Yapılandırması",
   "translationMode": "Çeviri modu",
   "translationOnly": "Yalnızca Çeviri",

@@ -18,6 +18,30 @@ import 'package:langchain_core/prompts.dart';
 
 final CancelableLangchainRunner _runner = CancelableLangchainRunner();
 
+// Global request timestamps list for RPM throttling
+final List<DateTime> _aiRequestTimestamps = [];
+
+/// Throttle AI requests if RPM limit is configured (sliding 1-minute window).
+Future<void> _throttleIfNeeded() async {
+  final rpm = Prefs().aiRpm;
+  if (rpm <= 0) return;
+  final now = DateTime.now();
+  final windowStart = now.subtract(const Duration(minutes: 1));
+  _aiRequestTimestamps.removeWhere((ts) => ts.isBefore(windowStart));
+  if (_aiRequestTimestamps.length >= rpm) {
+    final oldest = _aiRequestTimestamps.first;
+    final waitUntil = oldest.add(const Duration(minutes: 1));
+    final waitDuration = waitUntil.difference(DateTime.now());
+    if (waitDuration > Duration.zero) {
+      await Future.delayed(waitDuration);
+    }
+    final newNow = DateTime.now();
+    _aiRequestTimestamps.removeWhere(
+        (ts) => ts.isBefore(newNow.subtract(const Duration(minutes: 1))));
+  }
+  _aiRequestTimestamps.add(DateTime.now());
+}
+
 Stream<String> aiGenerateStream(
   List<ChatMessage> messages, {
   String? identifier,
@@ -84,6 +108,7 @@ Stream<String> _generateStream({
               useAgent: useAgent);
           final model = pipeline.model;
 
+          await _throttleIfNeeded();
           yield* _executeStream(
             model: model,
             pipeline: pipeline,
@@ -101,6 +126,77 @@ Stream<String> _generateStream({
     } catch (e) {
       AnxLog.warning(
           'Failed to use new provider system, falling back to legacy: $e');
+    }
+  }
+
+  // Try new provider system without ref (reads directly from Prefs storage)
+  if (overrideConfig == null) {
+    try {
+      final rawProviders = Prefs().getAiProviders();
+      if (rawProviders.isNotEmpty) {
+        final providers = rawProviders
+            .map((json) => AiProvider.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        AiProvider? provider;
+        if (identifier != null) {
+          try {
+            provider = providers.firstWhere((p) => p.id == identifier);
+          } catch (_) {
+            provider = null;
+          }
+        } else {
+          final selectedId = Prefs().selectedAiService;
+          try {
+            provider = providers.firstWhere((p) => p.id == selectedId);
+          } catch (_) {}
+          provider ??= providers.where((p) => p.enabled).firstOrNull;
+        }
+
+        if (provider != null &&
+            provider.enabled &&
+            AiKeyRotator.hasValidKey(provider)) {
+          final apiKey = AiKeyRotator.getNextKey(provider);
+          if (apiKey != null) {
+            config = LangchainAiConfig.fromProvider(
+              providerId: provider.id,
+              model: provider.model,
+              apiKey: apiKey,
+              url: provider.url,
+            );
+
+            AnxLog.info(
+                'aiGenerateStream (no-ref new): ${provider.id}, model: ${config.model}, baseUrl: ${config.baseUrl}');
+
+            final pipeline = registry.resolveByProtocol(
+                provider.protocol, config,
+                useAgent: useAgent);
+            final model = pipeline.model;
+
+            await _throttleIfNeeded();
+            yield* _executeStream(
+              model: model,
+              pipeline: pipeline,
+              sanitizedMessages: sanitizedMessages,
+              useAgent: useAgent,
+            );
+
+            // Advance key index in persistent storage for round-robin rotation
+            final updatedProviders = providers.map((p) {
+              if (p.id == provider!.id) {
+                return p.copyWith(
+                    keyIndex: p.keyIndex + 1, updatedAt: DateTime.now());
+              }
+              return p;
+            }).toList();
+            Prefs().saveAiProviders(updatedProviders);
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      AnxLog.warning(
+          'Failed to use no-ref new provider system, falling back to legacy: $e');
     }
   }
 
@@ -131,6 +227,7 @@ Stream<String> _generateStream({
   final pipeline = registry.resolve(config, useAgent: useAgent);
   final model = pipeline.model;
 
+  await _throttleIfNeeded();
   yield* _executeStream(
     model: model,
     pipeline: pipeline,

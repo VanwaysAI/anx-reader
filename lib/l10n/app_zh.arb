@@ -550,6 +550,8 @@
   "underlineTranslationTip": "通过划线选择的文本的翻译功能，例如字典翻译等",
   "fullTextTranslation": "全文翻译",
   "fullTextTranslationTip": "用于阅读页面中的双语对照翻译功能，翻译整个段落或页面内容",
+  "settingsAiRpm": "AI 请求限流（RPM）",
+  "settingsAiRpmTip": "每分钟最大 AI 请求数，设为 0 则不限制。",
   "translationServiceConfiguration": "翻译服务配置",
   "translationMode": "翻译模式",
   "translationOnly": "仅翻译",

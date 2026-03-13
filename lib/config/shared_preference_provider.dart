@@ -637,6 +637,23 @@ class Prefs extends ChangeNotifier {
         prefs.getString('fullTextTranslateTo') ?? getCurrentLanguageCode());
   }
 
+  set aiRpm(int rpm) {
+    prefs.setInt('aiRpm', rpm);
+    notifyListeners();
+  }
+
+  /// Maximum AI requests per minute across all AI features. 0 means unlimited.
+  int get aiRpm {
+    // Migrate from old fullTextTranslateRpm key if present
+    final legacy = prefs.getInt('fullTextTranslateRpm');
+    if (legacy != null) {
+      prefs.setInt('aiRpm', legacy);
+      prefs.remove('fullTextTranslateRpm');
+      return legacy;
+    }
+    return prefs.getInt('aiRpm') ?? 0;
+  }
+
   // set convertChineseMode(ConvertChineseMode mode) {
   //   prefs.setString('convertChineseMode', mode.name);
   //   notifyListeners();

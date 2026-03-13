@@ -552,6 +552,8 @@
   "underlineTranslationTip": "Функция перевода текста, выделенного подчеркиванием, например, словарный перевод.",
   "fullTextTranslation": "Полный перевод текста",
   "fullTextTranslationTip": "Функция двуязычного параллельного перевода на страницах чтения.",
+  "settingsAiRpm": "Ограничение частоты (RPM)",
+  "settingsAiRpmTip": "Максимальное количество запросов ИИ в минуту. Установите 0 для отключения.",
   "translationServiceConfiguration": "Настройка сервиса перевода",
   "translationMode": "Режим отображения перевода",
   "translationOnly": "Единый",
