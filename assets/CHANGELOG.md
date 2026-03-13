@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.14.0
+- Fix(reader): Fix RangeError crash when read theme color is null/invalid (#759)
 - Feat(tts): Add Narrator option to text selection toolbar to start TTS from selected text (#794) Thanks @deskangel
 - Feat(tts): Add click to pause/resume TTS playback on currently reading text (#794) Thanks @deskangel
 - Feat(reader): Add Ctrl+[ and Ctrl+] page turning shortcuts on macOS, support Logitech Options+ mouse button mapping (#794) Thanks @deskangel
@@ -18,6 +19,7 @@
 - L10n: Complete Romanian translation (#714) Thanks @Steinhagen
 
 - Feat(tts): 在文本选择工具栏新增朗读选项，支持从选中文本开始 TTS (#794) 感谢 @deskangel
+- Fix(reader): 修复阅读主题颜色为空/无效时的 RangeError 崩溃 (#759)
 - Feat(tts): 新增点击正在朗读的文本以暂停/继续 TTS 播放 (#794) 感谢 @deskangel
 - Feat(reader): macOS 新增 Ctrl+[ 和 Ctrl+] 翻页快捷键，支持 Logitech Options+ 鼠标按键映射 (#794) 感谢 @deskangel
 - Feat(ai): 在 AI 服务层添加全局 AI 请求限流（RPM）
