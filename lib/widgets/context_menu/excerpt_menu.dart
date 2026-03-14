@@ -266,7 +266,7 @@ class ExcerptMenuState extends State<ExcerptMenu> {
         children: [
           // copy
           IconAndText(
-            useIconButton: true,
+            compact: true,
             onTap: () {
               Clipboard.setData(ClipboardData(text: widget.annoContent));
               AnxToast.show(L10n.of(context).notesPageCopied);
@@ -277,7 +277,7 @@ class ExcerptMenuState extends State<ExcerptMenu> {
           ),
           // Web search
           IconAndText(
-            useIconButton: true,
+            compact: true,
             onTap: () {
               widget.onClose();
               launchUrl(
@@ -291,14 +291,14 @@ class ExcerptMenuState extends State<ExcerptMenu> {
           ),
           // toggle translation menu
           IconAndText(
-            useIconButton: true,
+            compact: true,
             onTap: widget.toggleTranslationMenu,
             icon: const Icon(Icons.translate),
             text: L10n.of(context).contextMenuTranslate,
           ),
           // narrate
           IconAndText(
-            useIconButton: true,
+            compact: true,
             onTap: () async {
               widget.onClose();
               final playerState = epubPlayerKey.currentState;
@@ -323,7 +323,7 @@ class ExcerptMenuState extends State<ExcerptMenu> {
           // edit note
           if (!widget.footnote)
             IconAndText(
-              useIconButton: true,
+              compact: true,
               onTap: () async {
                 epubPlayerKey.currentState?.setSelectionClearLocked(true);
                 await onColorSelected(annoColor, close: false);
@@ -340,7 +340,7 @@ class ExcerptMenuState extends State<ExcerptMenu> {
           // AI chat
           if (EnvVar.enableAIFeature)
             IconAndText(
-              useIconButton: true,
+              compact: true,
               onTap: () {
                 widget.onClose();
                 final key = readingPageKey.currentState;
@@ -358,7 +358,7 @@ class ExcerptMenuState extends State<ExcerptMenu> {
             ),
           // share
           IconAndText(
-            useIconButton: true,
+            compact: true,
             onTap: () {
               widget.onClose();
               ExcerptShareService.showShareExcerpt(

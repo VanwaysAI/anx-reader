@@ -570,6 +570,8 @@
   "readingPageSwapPageTurnAreaTips": "Turn the previous area into next area",
   "readingPageShowMenuOnHover": "Mouse Hover to Show Menu",
   "readingPageShowMenuOnHoverTips": "Automatically show menu when hovering over the top or bottom edge of the window for easy access",
+  "readingPageShowActionLabels": "Show Action Labels",
+  "readingPageShowActionLabelsTips": "Show text below icon-style action buttons such as the selection context menu",
   "pageTurnModeSimple": "Simple",
   "pageTurnModeCustom": "Custom",
   "customPageTurnConfig": "Custom Page Turn Config",

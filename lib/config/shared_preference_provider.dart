@@ -1031,6 +1031,15 @@ class Prefs extends ChangeNotifier {
     return prefs.getBool('showMenuOnHover') ?? true;
   }
 
+  set showActionLabels(bool status) {
+    prefs.setBool('showActionLabels', status);
+    notifyListeners();
+  }
+
+  bool get showActionLabels {
+    return prefs.getBool('showActionLabels') ?? true;
+  }
+
   set pageTurnMode(String mode) {
     prefs.setString('pageTurnMode', mode);
     notifyListeners();

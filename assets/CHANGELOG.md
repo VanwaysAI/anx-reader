@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.14.0
+- Feat(appearance): Add setting to toggle action button labels visibility in selection context menu
+- Fix(ui): Fix context menu action buttons layout and icon color issues when labels are hidden
 - Feat(reader): Add background image blur and opacity controls in reading settings (#753)
 - Fix(reader): Fix background image effects not applying and switch reader background fill mode to cover (#753)
 - Fix(reader): Fix RangeError crash when read theme color is null/invalid (#759)
@@ -38,6 +40,8 @@
 - Feat(ai): Add quick model switcher in AI chat input bar (tune icon button)
 - Feat(ai): Add model picker in provider detail page with showMenu dropdown after fetching
 
+- Feat(appearance): 新增设置项，可开关选中文本菜单等操作按钮的底部文字提示
+- Fix(ui): 修复关闭文字提示时上下文菜单按钮布局及图标颜色变灰的问题
 - Fix(reader): 修复 Windows 端右键触发 WebView2 系统上下文菜单（返回、刷新、另存为、打印）的问题 (#746)
 - Fix(reader): 修复图片内嵌大 max-width 导致宽度超出栏宽而显示到下一页的问题 (#742)
 - Fix(reader): 修复禁用书籍自带样式时 epub 标题颜色不跟随主题色的问题，智能识别黑色标题并进行覆盖 (#749)

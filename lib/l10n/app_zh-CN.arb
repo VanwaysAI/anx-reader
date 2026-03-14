@@ -570,6 +570,8 @@
   "readingPageSwapPageTurnAreaTips": "将向前翻页区域改为向后翻页",
   "readingPageShowMenuOnHover": "鼠标悬浮显示菜单",
   "readingPageShowMenuOnHoverTips": "当鼠标悬浮在窗口顶部或底部时自动弹出菜单，便于操作",
+  "readingPageShowActionLabels": "显示操作文字",
+  "readingPageShowActionLabelsTips": "在选中文本菜单等图标按钮下方显示文字说明",
   "pageTurnModeSimple": "简单",
   "pageTurnModeCustom": "自定义",
   "customPageTurnConfig": "自定义翻页区域",
