@@ -2,79 +2,78 @@
 
 ## 1.14.0
 - Feat(appearance): Add setting to toggle action button labels visibility in selection context menu
-- Fix(ui): Fix context menu action buttons layout and icon color issues when labels are hidden
 - Feat(reader): Add background image blur and opacity controls in reading settings (#753)
-- Fix(reader): Fix background image effects not applying and switch reader background fill mode to cover (#753)
-- Fix(reader): Fix RangeError crash when read theme color is null/invalid (#759)
 - Feat(tts): Add Narrator option to text selection toolbar to start TTS from selected text (#794) Thanks @deskangel
 - Feat(tts): Add click to pause/resume TTS playback on currently reading text (#794) Thanks @deskangel
+- Feat(tts): Add floating action button in reader for quick TTS controls (previous, pause/resume, next, stop) (#723)
 - Feat(reader): Add Ctrl+[ and Ctrl+] page turning shortcuts on macOS, support Logitech Options+ mouse button mapping (#794) Thanks @deskangel
 - Feat(ai): Add global AI RPM rate limiting in AI service layer
-- Fix(ai): Fix unable to use AI for full-text translation
-- Fix(tts): Fix TTS type selection having no effect when changed in reading interface (#794) Thanks @deskangel
-- Fix(tts): Fix incorrect reading position after modifying pitch or rate (#794) Thanks @deskangel
-- Fix(reader): Desktop resource lifecycle, WebView stability, and scroll UX optimization (#790) Thanks @yi124773651
-- Fix(reader): Fix window close cleanup to properly stop server, dispose WebView2, close database, and destroy window
-- Fix(ai): Fix AI crash prevention by adding guards for null webViewEnvironment on Windows
-- Fix(reader): Add scroll debounce mechanism for smoother page turning experience
-- Fix(reader): Fix image saving permission issue on Android 10+ devices by removing unnecessary storage permission requests (#793)
-- Fix(l10n): Update Russian translation in app_ru.arb (#774) Thanks @Xapitonov
-- Fix(l10n): Update full_description.txt (#775) Thanks @Xapitonov
-- Docs: Add CLAUDE.md for AI assistant guidance (#792) Thanks @Anxcye
-- Fix(toc): Show full chapter titles in TOC by wrapping long text instead of truncating with ellipsis (#751)
-- L10n: Complete Romanian translation (#714) Thanks @Steinhagen
-- Fix(reader): Disable WebView2 right-click context menu (back, reload, save as, print) on Windows (#746)
-- Fix(reader): Fix images with large inline max-width overflowing column width and appearing on wrong page (#742)
-- Fix(reader): Fix epub heading color not following theme color when useBookStyles is disabled (#749)
-- Fix(ai): Fix type cast error when using Gemini AI with tools (#747)
-- Feat(tts): Add floating action button in reader for quick TTS controls (previous, pause/resume, next, stop) (#723)
-- Fix(tts): Fix crash when SystemTts speak() receives null text from WebView
 - Feat(ai): Add AI Provider Configuration Center with support for OpenAI-compatible, Claude, and Gemini protocols
 - Feat(ai): Support multiple API keys per provider with round-robin rotation
 - Feat(ai): Add provider test connection with streaming preview
-- Fix(ai): Fix test connection using default provider instead of current provider
 - Feat(ai): Add AI chat display mode settings with adaptive, split, and popup options
 - Feat(ai): Add resizable AI panel with drag to resize, sizes persisted
 - Feat(ai): Add AI panel position settings (bottom/right) for non-popup modes
 - Feat(ai): Add font size setting for AI chat via three-dot menu
 - Feat(ai): Add quick model switcher in AI chat input bar (tune icon button)
 - Feat(ai): Add model picker in provider detail page with showMenu dropdown after fetching
+- Fix(ui): Fix context menu action buttons layout and icon color issues when labels are hidden
+- Fix(reader): Fix background image effects not applying and switch reader background fill mode to cover (#753)
+- Fix(reader): Fix RangeError crash when read theme color is null/invalid (#759)
+- Fix(tts): Fix TTS type selection having no effect when changed in reading interface (#794) Thanks @deskangel
+- Fix(tts): Fix incorrect reading position after modifying pitch or rate (#794) Thanks @deskangel
+- Fix(tts): Fix crash when SystemTts speak() receives null text from WebView
+- Fix(ai): Fix unable to use AI for full-text translation
+- Fix(ai): Fix test connection using default provider instead of current provider
+- Fix(ai): Fix AI crash prevention by adding guards for null webViewEnvironment on Windows
+- Fix(ai): Fix type cast error when using Gemini AI with tools (#747)
+- Fix(reader): Desktop resource lifecycle, WebView stability, and scroll UX optimization (#790) Thanks @yi124773651
+- Fix(reader): Fix window close cleanup to properly stop server, dispose WebView2, close database, and destroy window
+- Fix(reader): Add scroll debounce mechanism for smoother page turning experience
+- Fix(reader): Fix image saving permission issue on Android 10+ devices by removing unnecessary storage permission requests (#793)
+- Fix(reader): Disable WebView2 right-click context menu (back, reload, save as, print) on Windows (#746)
+- Fix(reader): Fix images with large inline max-width overflowing column width and appearing on wrong page (#742)
+- Fix(reader): Fix epub heading color not following theme color when useBookStyles is disabled (#749)
+- Fix(toc): Show full chapter titles in TOC by wrapping long text instead of truncating with ellipsis (#751)
+- Fix(l10n): Update Russian translation in app_ru.arb (#774) Thanks @Xapitonov
+- Fix(l10n): Update full_description.txt (#775) Thanks @Xapitonov
+- L10n: Complete Romanian translation (#714) Thanks @Steinhagen
 
 - Feat(appearance): 新增设置项，可开关选中文本菜单等操作按钮的底部文字提示
-- Fix(ui): 修复关闭文字提示时上下文菜单按钮布局及图标颜色变灰的问题
-- Fix(reader): 修复 Windows 端右键触发 WebView2 系统上下文菜单（返回、刷新、另存为、打印）的问题 (#746)
-- Fix(reader): 修复图片内嵌大 max-width 导致宽度超出栏宽而显示到下一页的问题 (#742)
-- Fix(reader): 修复禁用书籍自带样式时 epub 标题颜色不跟随主题色的问题，智能识别黑色标题并进行覆盖 (#749)
-- Fix(ai): 修复使用 Gemini AI 工具时的类型转换错误 (#747)
+- Feat(reader): 阅读设置新增背景图模糊度和透明度调节 (#753)
+- Feat(tts): 在文本选择工具栏新增朗读选项，支持从选中文本开始 TTS (#794) 感谢 @deskangel
+- Feat(tts): 新增点击正在朗读的文本以暂停/继续 TTS 播放 (#794) 感谢 @deskangel
 - Feat(tts): 新增阅读界面朗读快捷操作悬浮按钮（上一句、暂停/继续、下一句、停止）(#723)
-- Fix(tts): 修复 SystemTts 从 WebView 获取文本为空时的崩溃问题
+- Feat(reader): macOS 新增 Ctrl+[ 和 Ctrl+] 翻页快捷键，支持 Logitech Options+ 鼠标按键映射 (#794) 感谢 @deskangel
+- Feat(ai): 在 AI 服务层添加全局 AI 请求限流（RPM）
 - Feat(ai): 新增 AI 供应商配置中心，支持 OpenAI 兼容、Claude 和 Gemini 协议
 - Feat(ai): 支持每个供应商配置多个 API Key，自动轮询使用
 - Feat(ai): 新增供应商连接测试，支持流式预览
-- Fix(ai): 修复测试连接时使用默认供应商而非当前供应商的问题
 - Feat(ai): 新增 AI 对话显示模式设置，支持自适应、分屏和弹出三种模式
 - Feat(ai): 新增可调整尺寸的 AI 面板，支持拖动调整大小，尺寸自动保存
 - Feat(ai): 新增 AI 面板位置设置（非弹出模式下可选择底部或右侧）
 - Feat(ai): 新增 AI 对话字体大小设置，通过三点菜单访问
 - Feat(ai): 新增 AI 聊天输入栏快速切换模型按钮（调谐图标）
 - Feat(ai): 供应商详情页新增模型选择器，获取后通过下拉菜单显示
-- Feat(reader): 阅读设置新增背景图模糊度和透明度调节 (#753)
+- Fix(ui): 修复关闭文字提示时上下文菜单按钮布局及图标颜色变灰的问题
 - Fix(reader): 修复背景图效果不生效的问题，并将阅读器背景图填充方式调整为 cover (#753)
-- Feat(tts): 在文本选择工具栏新增朗读选项，支持从选中文本开始 TTS (#794) 感谢 @deskangel
 - Fix(reader): 修复阅读主题颜色为空/无效时的 RangeError 崩溃 (#759)
-- Feat(tts): 新增点击正在朗读的文本以暂停/继续 TTS 播放 (#794) 感谢 @deskangel
-- Feat(reader): macOS 新增 Ctrl+[ 和 Ctrl+] 翻页快捷键，支持 Logitech Options+ 鼠标按键映射 (#794) 感谢 @deskangel
-- Feat(ai): 在 AI 服务层添加全局 AI 请求限流（RPM）
-- Fix(ai): 修复无法使用 AI 进行全文翻译的问题
 - Fix(tts): 修复在阅读界面切换 TTS 类型无效的问题 (#794) 感谢 @deskangel
 - Fix(tts): 修复调整音调或语速后朗读位置不正确的问题 (#794) 感谢 @deskangel
+- Fix(tts): 修复 SystemTts 从 WebView 获取文本为空时的崩溃问题
+- Fix(ai): 修复无法使用 AI 进行全文翻译的问题
+- Fix(ai): 修复测试连接时使用默认供应商而非当前供应商的问题
+- Fix(ai): 修复 AI 崩溃问题，为 Windows 上空 webViewEnvironment 添加防护
+- Fix(ai): 修复使用 Gemini AI 工具时的类型转换错误 (#747)
 - Fix(reader): 桌面端资源生命周期管理、WebView 稳定性及滚动体验优化 (#790) 感谢 @yi124773651
 - Fix(reader): 修复窗口关闭时的清理流程，正确停止服务器、释放 WebView2、关闭数据库并销毁窗口
-- Fix(ai): 修复 AI 崩溃问题，为 Windows 上空 webViewEnvironment 添加防护
 - Fix(reader): 添加滚动防抖机制，优化翻页体验
 - Fix(reader): 修复 Android 10+ 设备图片保存权限问题，移除不必要的存储权限请求 (#793)
-- Fix(l10n): 更新俄语翻译 app_ru.arb (#774) 感谢 @Xapitonov
+- Fix(reader): 修复 Windows 端右键触发 WebView2 系统上下文菜单（返回、刷新、另存为、打印）的问题 (#746)
+- Fix(reader): 修复图片内嵌大 max-width 导致宽度超出栏宽而显示到下一页的问题 (#742)
+- Fix(reader): 修复禁用书籍自带样式时 epub 标题颜色不跟随主题色的问题，智能识别黑色标题并进行覆盖 (#749)
 - Fix(toc): 目录中过长的章节标题现在会自动换行显示完整内容，不再以省略号截断 (#751)
+- Fix(l10n): 更新俄语翻译 app_ru.arb (#774) 感谢 @Xapitonov
 - L10n: 完成罗马尼亚语翻译 (#714) 感谢 @Steinhagen
 
 ## 1.12.0
