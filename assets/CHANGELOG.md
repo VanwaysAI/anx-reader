@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.14.0
+- Feat(reader): Add background image fit mode setting with cover and stretch options
 - Feat(appearance): Add setting to toggle action button labels visibility in selection context menu
 - Feat(reader): Add background image blur and opacity controls in reading settings (#753)
 - Feat(tts): Add Narrator option to text selection toolbar to start TTS from selected text (#794) Thanks @deskangel
@@ -40,6 +41,7 @@
 - L10n: Complete Romanian translation (#714) Thanks @Steinhagen
 
 - Feat(appearance): 新增设置项，可开关选中文本菜单等操作按钮的底部文字提示
+- Feat(reader): 新增背景图缩放模式设置，支持 cover 和 stretch 两种模式
 - Feat(reader): 阅读设置新增背景图模糊度和透明度调节 (#753)
 - Feat(tts): 在文本选择工具栏新增朗读选项，支持从选中文本开始 TTS (#794) 感谢 @deskangel
 - Feat(tts): 新增点击正在朗读的文本以暂停/继续 TTS 播放 (#794) 感谢 @deskangel
