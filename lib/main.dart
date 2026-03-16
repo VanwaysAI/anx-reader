@@ -90,6 +90,8 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp>
     with WidgetsBindingObserver, WindowListener {
+  static const Locale _englishFallbackLocale = Locale('en');
+
   @override
   void initState() {
     super.initState();
@@ -191,6 +193,7 @@ class _MyAppState extends ConsumerState<MyApp>
             builder: FlutterSmartDialog.init(),
             navigatorKey: navigatorKey,
             locale: prefsNotifier.locale,
+            localeListResolutionCallback: _resolveLocale,
             localizationsDelegates: L10n.localizationsDelegates,
             supportedLocales: L10n.supportedLocales,
             title: 'Anx Reader',
@@ -205,6 +208,37 @@ class _MyAppState extends ConsumerState<MyApp>
         },
       ),
     );
+  }
+
+  Locale _resolveLocale(
+    List<Locale>? preferredLocales,
+    Iterable<Locale> supportedLocales,
+  ) {
+    if (preferredLocales == null || preferredLocales.isEmpty) {
+      return _englishFallbackLocale;
+    }
+
+    final Locale resolvedLocale = basicLocaleListResolution(
+      preferredLocales,
+      supportedLocales,
+    );
+
+    final bool hasMatch = preferredLocales.any((Locale preferredLocale) {
+      return supportedLocales.any((Locale supportedLocale) {
+        if (preferredLocale.languageCode != supportedLocale.languageCode) {
+          return false;
+        }
+
+        final String? preferredCountryCode = preferredLocale.countryCode;
+        final String? supportedCountryCode = supportedLocale.countryCode;
+
+        return preferredCountryCode == null ||
+            supportedCountryCode == null ||
+            preferredCountryCode == supportedCountryCode;
+      });
+    });
+
+    return hasMatch ? resolvedLocale : _englishFallbackLocale;
   }
 }
 
