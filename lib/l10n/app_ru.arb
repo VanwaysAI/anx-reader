@@ -518,7 +518,7 @@
   "cssValidationUnmatchedBraces": "Несовпадающие скобки",
   "cssValidationMissingSemicolon": "Отсутствует точка с запятой в строке {lineNumber}",
   "cssSaveAndApply": "Сохранить и применить",
-  "cssRestoreDefault": "Восстановить по умолчанию",
+  "cssRestoreDefault": "Очистить CSS",
   "cssEditorHint": "Ваш пользовательский CSS здесь...",
   "md5Management": "Управление дубликатами файлов",
   "md5Statistics": "Статистика MD5",
