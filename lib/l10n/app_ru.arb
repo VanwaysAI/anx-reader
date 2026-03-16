@@ -23,7 +23,7 @@
   "settingsAppearanceLanguage": "Язык интерфейса",
   "settingsAppearanceOpenBookAnimation": "Анимация открытия книги",
   "settingsAppearanceBottomNavigatorShow": "Нижняя навигация",
-  "settingsAdvancedAutoHideBottomBar": "Автоскрытие навигации",
+  "settingsAdvancedAutoHideBottomBar": "Автоскрывать навигацию",
   "readingContents": "Оглавление",
   "statisticToPresent": "Делиться",
   "statisticBooksRead": "{count, plural, =0{Нет прочитанных книг} =1{Прочитана 1 книга} other{{count} прочитанных книг} }",
