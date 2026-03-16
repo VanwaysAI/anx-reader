@@ -488,7 +488,7 @@
   "replacementFailed": "Ошибка замены",
   "replacementFailedContent": "Ошибка проверки базы данных после замены, автоматически восстановлена предыдущая версия. Ваши данные в безопасности.",
   "syncUnknownError": "Ошибка синхронизации",
-  "onboardingWelcomeTitle": "Вас приветствует Anx Reader",
+  "onboardingWelcomeTitle": "Вас приветствует \nAnx Reader",
   "onboardingWelcomeBody": "Мощная читалка эл. книг с ИИ-ассистентом и синхронизацией с разными платформами.",
   "onboardingAppearanceTitle": "Настройте чтение под себя",
   "onboardingAppearanceBody": "Настройте язык, цвета темы и режим электронной бумаги: «Настройки» → «Оформление».",
