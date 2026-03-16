@@ -509,7 +509,7 @@
   "optimizedForEInkDisplays": "Оптимизировано для электронных чернил",
   "commonUpdated": "Обновлено!",
   "updateFromVersion": "Обновлено с {version}",
-  "welcomeToVersion": "Добро пожаловать в {version}",
+  "welcomeToVersion": "Рады представить {version}",
   "whatsNew": "Что нового",
   "databaseBackupManagement": "Управление резервными копиями базы данных",
   "restoreDatabase": "Восстановить базу данных",
