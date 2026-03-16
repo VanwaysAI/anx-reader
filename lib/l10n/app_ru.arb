@@ -576,7 +576,7 @@
   "textAlignmentRight": "По правому краю",
   "textAlignmentJustify": "По ширине",
   "codeHighlightTheme": "Тема подсветки кода",
-  "codeHighlightOff": "Выключено",
+  "codeHighlightOff": "Без",
   "codeHighlightLight": "Светлая",
   "codeHighlightDark": "Тёмная",
   "codeHighlightLightThemes": "Светлые темы",
