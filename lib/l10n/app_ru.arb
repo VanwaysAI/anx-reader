@@ -248,7 +248,7 @@
   "settingsSyncWebdavUsername": "Имя пользователя",
   "settingsSyncWebdavPassword": "Пароль",
   "settingsSyncWebdavTestConnection": "Тест подключения",
-  "settingsSyncWebdavSyncNow": "Обновить сейчас",
+  "settingsSyncWebdavSyncNow": "Синхр. сейчас",
   "exportAndImport": "Экспорт/Импорт",
   "exportAndImportExport": "Экспортировать",
   "exportAndImportImport": "Импортировать",
