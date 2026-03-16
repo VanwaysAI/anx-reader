@@ -258,7 +258,7 @@
   "importCannotGetFilePath": "Не удалось получить путь к файлу",
   "importSuccessRestartApp": "Импорт успешен, пожалуйста, перезапустите приложение",
   "importFailed": "Ошибка импорта: {error}",
-  "settingsSyncCompletedToast": "Намёк об синхронизации",
+  "settingsSyncCompletedToast": "Сообщить о синхронизации",
   "settingsSyncAutoSync": "Автосинхронизация",
   "settingsTranslate": "Перевод",
   "settingsTranslateCurrentService": "Текущий сервис",
