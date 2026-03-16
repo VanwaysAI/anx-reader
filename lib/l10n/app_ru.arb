@@ -112,7 +112,7 @@
   "scroll": "Прокрутка",
   "bookDeleted": "Книга удалена",
   "importNBooksSelected": "{count, plural, =1{Выбрана 1 книга} other{Выбрано {count} книг}}",
-  "importSupportTypes": "Поддержка форматов: {types}",
+  "importSupportTypes": "Поддержка типов книг: {types}",
   "importNBooksNotSupport": "{count, plural, =1{1 книга пока не поддерживается} other{{count} книг пока не поддерживаются}}",
   "importImportNBooks": "{count, plural, =1{Импортировать 1 книгу} other{Импортировать {count} книг}}",
   "bookshelfTips_1": "Книг пока нет.",
