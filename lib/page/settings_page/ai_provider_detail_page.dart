@@ -301,7 +301,6 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
             ),
           ],
         ),
-        
         children: [
           DropdownButtonFormField<AiReasoningEffort>(
             initialValue: _reasoningEffort,
