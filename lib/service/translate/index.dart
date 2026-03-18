@@ -7,7 +7,6 @@ import 'package:anx_reader/service/config/config_item.dart';
 import 'package:anx_reader/service/translate/ai.dart';
 import 'package:anx_reader/service/translate/deepl.dart';
 import 'package:anx_reader/service/translate/google_api.dart';
-import 'package:anx_reader/service/translate/microsoft.dart';
 import 'package:anx_reader/service/translate/microsoft_api.dart';
 import 'package:anx_reader/service/translate/web_view.dart';
 import 'package:anx_reader/utils/env_var.dart';
@@ -21,8 +20,7 @@ enum TranslateService {
   microsoftApi,
   googleApi,
   deepl,
-  ai,
-  microsoft;
+  ai;
 
   TranslateServiceProvider get provider {
     switch (this) {
@@ -38,8 +36,6 @@ enum TranslateService {
         return DeepLTranslateProvider();
       case TranslateService.ai:
         return AiTranslateProvider();
-      case TranslateService.microsoft:
-        return MicrosoftTranslateProvider();
     }
   }
 
@@ -55,6 +51,10 @@ enum TranslateService {
 }
 
 TranslateService getTranslateService(String name) {
+  if (name == 'microsoft') {
+    return TranslateService.microsoftApi;
+  }
+
   try {
     return TranslateService.values.firstWhere((e) => e.name == name);
   } catch (e) {
@@ -94,6 +94,7 @@ abstract class TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   });
 
   /// Translate text only (no widget), with retry logic.
@@ -102,6 +103,7 @@ abstract class TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) async {
     const int maxRetries = 2;
 
@@ -113,11 +115,15 @@ abstract class TranslateServiceProvider {
           from,
           to,
           contextText: contextText,
+          isFullText: isFullText,
         )) {
           lastResult = result;
-          if (result != '...' && result.trim().isNotEmpty) {
-            return result;
-          }
+        }
+
+        if (lastResult != null &&
+            lastResult.trim().isNotEmpty &&
+            lastResult != '...') {
+          return lastResult;
         }
 
         throw Exception(

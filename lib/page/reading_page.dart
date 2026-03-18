@@ -5,6 +5,7 @@ import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/dao/reading_time.dart';
 import 'package:anx_reader/dao/theme.dart';
 import 'package:anx_reader/enums/ai_panel_position.dart';
+import 'package:anx_reader/enums/ai_chat_display_mode.dart';
 import 'package:anx_reader/enums/sync_direction.dart';
 import 'package:anx_reader/enums/sync_trigger.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
@@ -25,6 +26,7 @@ import 'package:anx_reader/widgets/ai/ai_stream.dart';
 import 'package:anx_reader/widgets/reading_page/notes_widget.dart';
 import 'package:anx_reader/models/reading_time.dart';
 import 'package:anx_reader/widgets/reading_page/progress_widget.dart';
+import 'package:anx_reader/widgets/reading_page/tts_fab.dart';
 import 'package:anx_reader/widgets/reading_page/tts_widget.dart';
 import 'package:anx_reader/widgets/reading_page/style_widget.dart';
 import 'package:anx_reader/widgets/reading_page/toc_widget.dart';
@@ -76,9 +78,9 @@ class ReadingPageState extends ConsumerState<ReadingPage>
   Widget? _aiChat;
   final aiChatKey = GlobalKey<AiChatStreamState>();
   static const double _aiChatMinWidth = 240;
-  double _aiChatWidth = 300;
+  late double _aiChatWidth;
   static const double _aiChatMinHeight = 200;
-  double _aiChatHeight = 300;
+  late double _aiChatHeight;
   bool _isResizingAiChat = false;
   bool bookmarkExists = false;
 
@@ -89,6 +91,11 @@ class ReadingPageState extends ConsumerState<ReadingPage>
   @override
   void initState() {
     _readerFocusNode = FocusNode(debugLabel: 'reading_page_focus');
+
+    // Initialize AI panel sizes from persistent storage
+    _aiChatWidth = Prefs().aiPanelWidth;
+    _aiChatHeight = Prefs().aiPanelHeight;
+
     if (widget.book.isDeleted) {
       Navigator.pop(context);
       AnxToast.show(L10n.of(context).bookDeleted);
@@ -216,6 +223,29 @@ class ReadingPageState extends ConsumerState<ReadingPage>
     if (logicalKey == LogicalKeyboardKey.enter) {
       showOrHideAppBarAndBottomBar(true);
       return KeyEventResult.handled;
+    }
+
+    // Handle Ctrl+[ and Ctrl+] for page turning when keyboard shortcut is enabled
+    if (Prefs().keyboardShortcutTurnPage) {
+      final isControlPressed = HardwareKeyboard.instance.isControlPressed;
+      if (isControlPressed && logicalKey == LogicalKeyboardKey.bracketLeft) {
+        epubPlayerKey.currentState?.prevPage();
+        return KeyEventResult.handled;
+      }
+      if (isControlPressed && logicalKey == LogicalKeyboardKey.bracketRight) {
+        epubPlayerKey.currentState?.nextPage();
+        return KeyEventResult.handled;
+      }
+      final bool isSimulatedCtrlLeft = event.character == '\u001b';
+      final bool isSimulatedCtrlRight = event.character == '\u001d';
+      if (isSimulatedCtrlLeft) {
+        epubPlayerKey.currentState?.prevPage();
+        return KeyEventResult.handled;
+      }
+      if (isSimulatedCtrlRight) {
+        epubPlayerKey.currentState?.nextPage();
+        return KeyEventResult.handled;
+      }
     }
 
     if (Prefs().volumeKeyTurnPage) {
@@ -394,6 +424,9 @@ class ReadingPageState extends ConsumerState<ReadingPage>
       setState(() {
         _isResizingAiChat = false;
       });
+      // Save the panel sizes to persistent storage
+      Prefs().aiPanelWidth = _aiChatWidth;
+      Prefs().aiPanelHeight = _aiChatHeight;
     }
   }
 
@@ -522,7 +555,29 @@ class ReadingPageState extends ConsumerState<ReadingPage>
     bool sendImmediate = false,
   }) async {
     List<AiQuickPromptChip> quickPrompts = _getAiQuickPromptChips();
-    if (MediaQuery.of(navigatorKey.currentContext!).size.width < 600) {
+
+    // Determine display mode
+    final displayMode = Prefs().aiChatDisplayMode;
+    final screenWidth = MediaQuery.of(navigatorKey.currentContext!).size.width;
+
+    bool shouldShowAsPopup = false;
+
+    switch (displayMode) {
+      case AiChatDisplayMode.adaptive:
+        // Show as popup if width < 600
+        shouldShowAsPopup = screenWidth < 600;
+        break;
+      case AiChatDisplayMode.popup:
+        // Always show as popup
+        shouldShowAsPopup = true;
+        break;
+      case AiChatDisplayMode.split:
+        // Always show as split screen
+        shouldShowAsPopup = false;
+        break;
+    }
+
+    if (shouldShowAsPopup) {
       showModalBottomSheet(
           context: navigatorKey.currentContext!,
           isScrollControlled: true,
@@ -582,7 +637,24 @@ class ReadingPageState extends ConsumerState<ReadingPage>
       tooltip: L10n.of(context).aiChat,
       icon: const Icon(Icons.auto_awesome),
       onPressed: () async {
-        if (MediaQuery.of(context).size.width > 600 && _aiChat != null) {
+        // Determine if should show as split based on display mode
+        final displayMode = Prefs().aiChatDisplayMode;
+        final screenWidth = MediaQuery.of(context).size.width;
+
+        bool shouldShowAsSplit = false;
+        switch (displayMode) {
+          case AiChatDisplayMode.adaptive:
+            shouldShowAsSplit = screenWidth >= 600;
+            break;
+          case AiChatDisplayMode.split:
+            shouldShowAsSplit = true;
+            break;
+          case AiChatDisplayMode.popup:
+            shouldShowAsSplit = false;
+            break;
+        }
+
+        if (shouldShowAsSplit && _aiChat != null) {
           setState(() {
             _aiChat = null;
           });
@@ -901,6 +973,15 @@ class ReadingPageState extends ConsumerState<ReadingPage>
                     ],
                   ),
                   controller,
+                  // TTS floating action button: always in the tree when toolbar
+                  // is hidden; TtsFab handles its own show/hide internally so
+                  // its State (expanded flag) is never destroyed mid-session.
+                  if (bottomBarOffstage)
+                    const Positioned(
+                      right: 16,
+                      bottom: 24,
+                      child: TtsFab(),
+                    ),
                 ],
               ),
             ),

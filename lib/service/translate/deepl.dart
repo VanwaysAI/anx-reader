@@ -43,6 +43,7 @@ class DeepLTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) {
     return convertStreamToWidget(
       translateStream(text, from, to, contextText: contextText),
@@ -55,6 +56,7 @@ class DeepLTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) async* {
     try {
       final config = getConfig();

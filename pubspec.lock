@@ -37,10 +37,10 @@ packages:
     dependency: transitive
     description:
       name: anthropic_sdk_dart
-      sha256: "30162d70384f38f98f22e2402776f28d260b721fef684893dbed2a3108e72428"
+      sha256: ab9fb1aaf866e2de7b2f86cdb81221763e7559e42abfd6e345588df55e2150dc
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.1"
+    version: "1.3.2"
   archive:
     dependency: "direct main"
     description:
@@ -340,6 +340,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.0"
+  cli_util:
+    dependency: transitive
+    description:
+      name: cli_util
+      sha256: ff6785f7e9e3c38ac98b2fb035701789de90154024a75b6cb926445e83197d1c
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.2"
   clock:
     dependency: transitive
     description:
@@ -1188,26 +1196,29 @@ packages:
   langchain:
     dependency: "direct main"
     description:
-      name: langchain
-      sha256: b7035e0903953cb065734499296e66d9fa0f6e15934aa2f57389b9fb6b001aab
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/langchain"
+      ref: "310fb6b3"
+      resolved-ref: "310fb6b3e9f7ff4f6b10b1a82838fa50a33f659f"
+      url: "https://github.com/Anxcye/langchain_dart.git"
+    source: git
     version: "0.8.1"
   langchain_anthropic:
     dependency: "direct main"
     description:
-      name: langchain_anthropic
-      sha256: e78c81064733f6dbc67b5ea06cc62454581bede69a4f06abe7ebf1347716be78
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/langchain_anthropic"
+      ref: "310fb6b3"
+      resolved-ref: "310fb6b3e9f7ff4f6b10b1a82838fa50a33f659f"
+      url: "https://github.com/Anxcye/langchain_dart.git"
+    source: git
     version: "0.3.1"
   langchain_core:
     dependency: "direct main"
     description:
-      name: langchain_core
-      sha256: fce3cd0e31dcbac80d209f6361207936a58b05506b800f13227cbe83f6e3e721
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/langchain_core"
+      ref: "310fb6b3"
+      resolved-ref: "310fb6b3e9f7ff4f6b10b1a82838fa50a33f659f"
+      url: "https://github.com/Anxcye/langchain_dart.git"
+    source: git
     version: "0.4.1"
   langchain_google:
     dependency: "direct main"
@@ -1220,10 +1231,11 @@ packages:
   langchain_openai:
     dependency: "direct main"
     description:
-      name: langchain_openai
-      sha256: "23ed96ece5bc27ec95d1b720bce61267e6db578d24134ddf80b715184e932330"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/langchain_openai"
+      ref: "310fb6b3"
+      resolved-ref: "310fb6b3e9f7ff4f6b10b1a82838fa50a33f659f"
+      url: "https://github.com/Anxcye/langchain_dart.git"
+    source: git
     version: "0.8.1+1"
   langchain_tiktoken:
     dependency: transitive

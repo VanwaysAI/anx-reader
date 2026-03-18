@@ -228,6 +228,12 @@ const setSelectionHandler = (view, doc, index) => {
     });
   }
   else if (navigator.platform.includes('Win')) {
+    // Prevent the default WebView2 context menu (back, reload, save as, print)
+    // from appearing on right-click inside the book content frame.
+    doc.addEventListener('contextmenu', e => {
+      e.preventDefault();
+    });
+
     if (navigator.maxTouchPoints > 0) {
       // In Edge, the longpress by touch generates following touch event sequence:
       // pointerover -> enter -> down -> move(n) -> cancel -> out -> leave
@@ -517,13 +523,9 @@ const getCSS = ({ fontSize,
 
   const writingModeCSS = writingMode === 'auto' ? '' : `writing-mode: ${writingMode} !important;`
 
-  const backgroundImageCSS = !backgroundImage || flow || backgroundImage === 'none' ? 'background: none !important;' :
-    `background-image: url('${backgroundImage}') !important;
-    background-size: 100% 100% !important;
-    background-repeat: repeat !important;
-    background-attachment: scroll !important; 
-    background-position: center center !important;
-    background-clip: content-box !important;`
+  // Background images are rendered by the paginator layer so blur/opacity
+  // controls apply consistently across the whole reading surface.
+  const backgroundImageCSS = 'background: none !important;'
 
 
   // Some CSS selectors are inspired by https://github.com/readest/foliate-js
@@ -727,6 +729,27 @@ const getCSS = ({ fontSize,
     
     ${customCSSEnabled && customCSS ? customCSS : ''}
 `}
+
+const fixHeadingColor = (themeColor) => {
+  const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6')
+  const blackPatterns = [
+    /^#000000?$/i,
+    /^rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)$/i,
+    /^rgba\(\s*0\s*,\s*0\s*,\s*0\s*,\s*1\s*\)$/i,
+    /^black$/i
+  ]
+
+  headings.forEach(heading => {
+    const style = window.getComputedStyle(heading)
+    const color = style.color
+
+    const isBlack = blackPatterns.some(pattern => pattern.test(color.trim()))
+
+    if (isBlack) {
+      heading.style.setProperty('color', themeColor, 'important')
+    }
+  })
+}
 
 const convertChineseHandler = (mode, doc) => {
   console.log('convertChinese', mode)
@@ -1504,6 +1527,9 @@ const setStyle = (oldStyle) => {
   reader.view.renderer.setAttribute('max-column-count', style.maxColumnCount)
   reader.view.renderer.setAttribute('column-threshold', `${style.columnThreshold}px`)
   reader.view.renderer.setAttribute('bgimg-url', style.backgroundImage)
+  reader.view.renderer.setAttribute('bgimg-blur', style.bgimgBlur ?? 0)
+  reader.view.renderer.setAttribute('bgimg-opacity', style.bgimgOpacity ?? 1)
+  reader.view.renderer.setAttribute('bgimg-fit', style.bgimgFit ?? 'cover')
 
   turn.animated ? reader.view.renderer.setAttribute('animated', 'true')
     : reader.view.renderer.removeAttribute('animated')
@@ -1531,6 +1557,10 @@ const setStyle = (oldStyle) => {
     headingFontSize: style.headingFontSize
   }
   reader.view.renderer.setStyles?.(getCSS(newStyle))
+
+  if (!style.useBookStyles && style.fontColor) {
+    fixHeadingColor(style.fontColor)
+  }
 
   if (!oldStyle) {
     return
@@ -1685,6 +1715,24 @@ window.ttsStop = () => reader.view.initTTS(true)
 
 window.ttsHere = () => {
   initTts()
+  return reader.view.tts.from(reader.view.lastLocation.range)
+}
+
+window.ttsFromCfi = async (cfi) => {
+  initTts()
+  try {
+    const resolved = await reader.view.resolveNavigation(cfi)
+    if (resolved && resolved.anchor) {
+      const contents = reader.view.renderer.getContents()
+      const content = contents.find(c => c.index === resolved.index) || contents[0]
+      if (content && content.doc) {
+        const range = resolved.anchor(content.doc)
+        return reader.view.tts.from(range)
+      }
+    }
+  } catch (e) {
+    console.error(e)
+  }
   return reader.view.tts.from(reader.view.lastLocation.range)
 }
 

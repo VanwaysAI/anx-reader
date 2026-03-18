@@ -19,6 +19,7 @@ abstract class WebViewTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) {
     final url = getUrl(text, from, to);
     return SizedBox(
@@ -70,6 +71,7 @@ abstract class WebViewTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) async* {
     // WebView providers do not support stream translation
     yield "...";
@@ -81,6 +83,7 @@ abstract class WebViewTranslateProvider extends TranslateServiceProvider {
     LangListEnum from,
     LangListEnum to, {
     String? contextText,
+    bool isFullText = false,
   }) async {
     // WebView providers do not support text-only translation
     return "";

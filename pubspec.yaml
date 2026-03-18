@@ -2,7 +2,7 @@ name: anx_reader
 description: "An e-book reader."
 publish_to: 'none'
 
-version: 1.12.0+6311
+version: 1.14.0+6320
 
 environment:
   sdk: '>=3.5.2 <4.0.0'
@@ -42,7 +42,7 @@ dependencies:
   html: ^0.15.4
   flutter_html: ^3.0.0-beta.2
   archive: ^3.6.1
-  flutter_inappwebview: 
+  flutter_inappwebview:
     git:
       url: https://gitcode.com/Anxcye/flutter_inappwebview
       ref: 9f5423bc29e27914c1059c9c6e30ac4c13cb20ed
@@ -254,8 +254,27 @@ dependency_overrides:
       url: https://gitcode.com/openharmony-sig/fluttertpc_audio_service
       path: audio_service
       ref: 43be9f21
-
-  
+  langchain:
+    git:
+      url: https://github.com/Anxcye/langchain_dart.git
+      ref: 310fb6b3
+      path: packages/langchain
+  langchain_core:
+    git:
+      url: https://github.com/Anxcye/langchain_dart.git
+      ref: 310fb6b3
+      path: packages/langchain_core
+  langchain_openai:
+    git:
+      url: https://github.com/Anxcye/langchain_dart.git
+      ref: 310fb6b3
+      path: packages/langchain_openai
+  langchain_anthropic:
+    git:
+      url: https://github.com/Anxcye/langchain_dart.git
+      ref: 310fb6b3
+      path: packages/langchain_anthropic
+#  analyzer: ^8.0.0
 
 dev_dependencies:
   flutter_test:

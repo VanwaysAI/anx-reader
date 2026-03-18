@@ -9,6 +9,7 @@ import 'package:anx_reader/enums/convert_chinese_mode.dart';
 import 'package:anx_reader/enums/excerpt_share_template.dart';
 import 'package:anx_reader/enums/hint_key.dart';
 import 'package:anx_reader/enums/lang_list.dart';
+import 'package:anx_reader/enums/reading_info.dart';
 import 'package:anx_reader/enums/sort_field.dart';
 import 'package:anx_reader/enums/sort_order.dart';
 import 'package:anx_reader/enums/sync_protocol.dart';
@@ -16,6 +17,8 @@ import 'package:anx_reader/enums/translation_mode.dart';
 import 'package:anx_reader/enums/writing_mode.dart';
 import 'package:anx_reader/enums/text_alignment.dart';
 import 'package:anx_reader/enums/ai_panel_position.dart';
+import 'package:anx_reader/enums/ai_chat_display_mode.dart';
+import 'package:anx_reader/enums/bgimg_fit.dart';
 import 'package:anx_reader/enums/code_highlight_theme.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
@@ -613,8 +616,13 @@ class Prefs extends ChangeNotifier {
   }
 
   TranslateService get fullTextTranslateService {
-    return getTranslateService(
-        prefs.getString('fullTextTranslateService') ?? 'microsoft');
+    final serviceName =
+        prefs.getString('fullTextTranslateService') ?? 'microsoftApi';
+    if (serviceName == 'microsoft') {
+      prefs.setString('fullTextTranslateService', 'microsoftApi');
+      return TranslateService.microsoftApi;
+    }
+    return getTranslateService(serviceName);
   }
 
   set fullTextTranslateFrom(LangListEnum from) {
@@ -634,6 +642,23 @@ class Prefs extends ChangeNotifier {
   LangListEnum get fullTextTranslateTo {
     return getLang(
         prefs.getString('fullTextTranslateTo') ?? getCurrentLanguageCode());
+  }
+
+  set aiRpm(int rpm) {
+    prefs.setInt('aiRpm', rpm);
+    notifyListeners();
+  }
+
+  /// Maximum AI requests per minute across all AI features. 0 means unlimited.
+  int get aiRpm {
+    // Migrate from old fullTextTranslateRpm key if present
+    final legacy = prefs.getInt('fullTextTranslateRpm');
+    if (legacy != null) {
+      prefs.setInt('aiRpm', legacy);
+      prefs.remove('fullTextTranslateRpm');
+      return legacy;
+    }
+    return prefs.getInt('aiRpm') ?? 0;
   }
 
   // set convertChineseMode(ConvertChineseMode mode) {
@@ -827,6 +852,33 @@ class Prefs extends ChangeNotifier {
     notifyListeners();
   }
 
+  void saveAiProviders(List<dynamic> providers) {
+    final jsonList = providers.map((p) {
+      // Handle both AiProvider objects and already-serialized maps
+      if (p is Map<String, dynamic>) {
+        return p;
+      } else {
+        return p.toJson();
+      }
+    }).toList();
+    prefs.setString('aiProviders', jsonEncode(jsonList));
+    notifyListeners();
+  }
+
+  List<dynamic> getAiProviders() {
+    String? jsonString = prefs.getString('aiProviders');
+    if (jsonString == null) {
+      return [];
+    }
+    try {
+      final List<dynamic> decoded = jsonDecode(jsonString);
+      // Import will be handled in ai_providers.dart to avoid circular dependency
+      return decoded;
+    } catch (e) {
+      return [];
+    }
+  }
+
   void saveAiPrompt(AiPrompts identifier, String prompt) {
     prefs.setString('aiPrompt_${identifier.name}', prompt);
     notifyListeners();
@@ -942,6 +994,15 @@ class Prefs extends ChangeNotifier {
     return prefs.getInt('maxAiCacheCount') ?? 300;
   }
 
+  set aiChatFontSize(double size) {
+    prefs.setDouble('aiChatFontSize', size);
+    notifyListeners();
+  }
+
+  double get aiChatFontSize {
+    return prefs.getDouble('aiChatFontSize') ?? 14.0;
+  }
+
   set volumeKeyTurnPage(bool status) {
     prefs.setBool('volumeKeyTurnPage', status);
     notifyListeners();
@@ -949,6 +1010,15 @@ class Prefs extends ChangeNotifier {
 
   bool get volumeKeyTurnPage {
     return prefs.getBool('volumeKeyTurnPage') ?? false;
+  }
+
+  set keyboardShortcutTurnPage(bool status) {
+    prefs.setBool('keyboardShortcutTurnPage', status);
+    notifyListeners();
+  }
+
+  bool get keyboardShortcutTurnPage {
+    return prefs.getBool('keyboardShortcutTurnPage') ?? false;
   }
 
   set swapPageTurnArea(bool status) {
@@ -966,6 +1036,15 @@ class Prefs extends ChangeNotifier {
 
   bool get showMenuOnHover {
     return prefs.getBool('showMenuOnHover') ?? true;
+  }
+
+  set showActionLabels(bool status) {
+    prefs.setBool('showActionLabels', status);
+    notifyListeners();
+  }
+
+  bool get showActionLabels {
+    return prefs.getBool('showActionLabels') ?? true;
   }
 
   set pageTurnMode(String mode) {
@@ -1114,7 +1193,52 @@ class Prefs extends ChangeNotifier {
     if (readingInfoJson == null) {
       return ReadingInfoModel();
     }
-    return ReadingInfoModel.fromJson(jsonDecode(readingInfoJson));
+    final Map<String, dynamic> json =
+        Map<String, dynamic>.from(jsonDecode(readingInfoJson));
+    if (json.containsKey('header') || json.containsKey('footer')) {
+      return ReadingInfoModel.fromJson(json);
+    }
+
+    return ReadingInfoModel(
+      header: ReadingInfoSectionModel(
+        left: _decodeReadingInfoEnum(
+          json['headerLeft'],
+          ReadingInfoEnum.chapterTitle,
+        ),
+        center: _decodeReadingInfoEnum(
+          json['headerCenter'],
+          ReadingInfoEnum.none,
+        ),
+        right: _decodeReadingInfoEnum(
+          json['headerRight'],
+          ReadingInfoEnum.none,
+        ),
+        verticalMargin: prefs.getDouble('pageHeaderMargin') ??
+            MediaQuery.of(navigatorKey.currentContext!).padding.bottom,
+        leftMargin: prefs.getDouble('pageHeaderLeftMargin') ?? 20,
+        rightMargin: prefs.getDouble('pageHeaderRightMargin') ?? 20,
+        fontSize: prefs.getDouble('pageHeaderFontSize') ?? 10,
+      ),
+      footer: ReadingInfoSectionModel(
+        left: _decodeReadingInfoEnum(
+          json['footerLeft'],
+          ReadingInfoEnum.batteryAndTime,
+        ),
+        center: _decodeReadingInfoEnum(
+          json['footerCenter'],
+          ReadingInfoEnum.chapterProgress,
+        ),
+        right: _decodeReadingInfoEnum(
+          json['footerRight'],
+          ReadingInfoEnum.bookProgress,
+        ),
+        verticalMargin: prefs.getDouble('pageFooterMargin') ??
+            MediaQuery.of(navigatorKey.currentContext!).padding.bottom,
+        leftMargin: prefs.getDouble('pageFooterLeftMargin') ?? 20,
+        rightMargin: prefs.getDouble('pageFooterRightMargin') ?? 20,
+        fontSize: prefs.getDouble('pageFooterFontSize') ?? 10,
+      ),
+    );
   }
 
   set isSystemTts(bool status) {
@@ -1366,26 +1490,6 @@ class Prefs extends ChangeNotifier {
     notifyListeners();
   }
 
-  double get pageHeaderMargin {
-    return prefs.getDouble('pageHeaderMargin') ??
-        MediaQuery.of(navigatorKey.currentContext!).padding.bottom;
-  }
-
-  set pageHeaderMargin(double margin) {
-    prefs.setDouble('pageHeaderMargin', margin);
-    notifyListeners();
-  }
-
-  double get pageFooterMargin {
-    return prefs.getDouble('pageFooterMargin') ??
-        MediaQuery.of(navigatorKey.currentContext!).padding.bottom;
-  }
-
-  set pageFooterMargin(double margin) {
-    prefs.setDouble('pageFooterMargin', margin);
-    notifyListeners();
-  }
-
   String? get lastAppVersion {
     return prefs.getString('lastAppVersion');
   }
@@ -1468,6 +1572,15 @@ class Prefs extends ChangeNotifier {
     notifyListeners();
   }
 
+  BgimgFitEnum get bgimgFit {
+    return BgimgFitEnum.fromCode(prefs.getString('bgimgFit') ?? 'cover');
+  }
+
+  set bgimgFit(BgimgFitEnum fit) {
+    prefs.setString('bgimgFit', fit.code);
+    notifyListeners();
+  }
+
   AiPanelPositionEnum get aiPanelPosition {
     return AiPanelPositionEnum.fromCode(
         prefs.getString('aiPanelPosition') ?? 'right');
@@ -1487,4 +1600,48 @@ class Prefs extends ChangeNotifier {
     prefs.setString('codeHighlightTheme', theme.code);
     notifyListeners();
   }
+
+  // AI chat display mode configuration
+  AiChatDisplayMode get aiChatDisplayMode {
+    return AiChatDisplayMode.fromCode(
+        prefs.getString('aiChatDisplayMode') ?? 'adaptive');
+  }
+
+  set aiChatDisplayMode(AiChatDisplayMode mode) {
+    prefs.setString('aiChatDisplayMode', mode.code);
+    notifyListeners();
+  }
+
+  // AI panel width (for split mode)
+  double get aiPanelWidth {
+    return prefs.getDouble('aiPanelWidth') ?? 300;
+  }
+
+  set aiPanelWidth(double width) {
+    prefs.setDouble('aiPanelWidth', width);
+    notifyListeners();
+  }
+
+  // AI panel height (for split mode)
+  double get aiPanelHeight {
+    return prefs.getDouble('aiPanelHeight') ?? 300;
+  }
+
+  set aiPanelHeight(double height) {
+    prefs.setDouble('aiPanelHeight', height);
+    notifyListeners();
+  }
+}
+
+ReadingInfoEnum _decodeReadingInfoEnum(
+  Object? value,
+  ReadingInfoEnum fallback,
+) {
+  if (value is! String) return fallback;
+  for (final item in ReadingInfoEnum.values) {
+    if (item.name == value) {
+      return item;
+    }
+  }
+  return fallback;
 }

@@ -29,7 +29,9 @@ import 'package:anx_reader/providers/chapter_content_bridge.dart';
 import 'package:anx_reader/providers/current_reading.dart';
 import 'package:anx_reader/service/book_player/book_player_server.dart';
 import 'package:anx_reader/providers/toc_search.dart';
+import 'package:anx_reader/service/tts/base_tts.dart';
 import 'package:anx_reader/service/tts/models/tts_sentence.dart';
+import 'package:anx_reader/service/tts/tts_handler.dart';
 import 'package:anx_reader/utils/coordinates_to_part.dart';
 import 'package:anx_reader/utils/js/convert_dart_color_to_js.dart';
 import 'package:anx_reader/utils/platform_utils.dart';
@@ -101,6 +103,11 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   String? _lastSelectionContextText;
   bool _selectionClearLocked = false;
   bool _selectionClearPending = false;
+
+  // Scroll wheel debounce
+  Timer? _scrollDebounceTimer;
+  double _accumulatedScrollDelta = 0;
+  static const double _scrollThreshold = 50.0;
 
   // to know anytime if we are on top of navigation stack
   bool get _isTopOfNavigationStack =>
@@ -190,6 +197,9 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         writingMode: '${Prefs().writingMode.code}',
         textAlign: '${Prefs().textAlignment.code}',
         backgroundImage: '$bgimgUrl',
+        bgimgBlur: ${Prefs().bgimg.blur},
+        bgimgOpacity: ${Prefs().bgimg.opacity},
+        bgimgFit: '${Prefs().bgimgFit.code}',
         customCSS: `${Prefs().customCSS.replaceAll('`', '\\`')}`,
         customCSSEnabled: ${Prefs().customCSSEnabled},
         useBookStyles: ${Prefs().useBookStyles},
@@ -198,6 +208,23 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       })
       ''');
     });
+  }
+
+  void changeBgimgEffect() {
+    if (!mounted) return;
+    final bgimg = Prefs().bgimg;
+    final bgimgUrl = bgimg.getEffectiveUrl(
+      isDarkMode: isDarkMode,
+      autoAdjust: Prefs().autoAdjustReadingTheme,
+    );
+    webViewController.evaluateJavascript(source: '''
+      changeStyle({
+        backgroundImage: '$bgimgUrl',
+        bgimgBlur: ${bgimg.blur},
+        bgimgOpacity: ${bgimg.opacity},
+        bgimgFit: '${Prefs().bgimgFit.code}',
+      })
+    ''');
   }
 
   void changeReadingRules(ReadingRules readingRules) {
@@ -294,8 +321,14 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     webViewController.evaluateJavascript(source: "clearSearch()");
   }
 
-  Future<void> initTts() async =>
+  Future<void> initTts({String? fromCfi}) async {
+    if (fromCfi != null && fromCfi.isNotEmpty) {
+      await webViewController.evaluateJavascript(
+          source: "window.ttsFromCfi('$fromCfi')");
+    } else {
       await webViewController.evaluateJavascript(source: "window.ttsHere()");
+    }
+  }
 
   void ttsStop() => webViewController.evaluateJavascript(source: "ttsStop()");
 
@@ -541,6 +574,14 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       action = PageTurningType.values[customConfig[part]];
     }
 
+    // Disable mouse/touch page turning when keyboard shortcuts are enabled
+    if (Prefs().keyboardShortcutTurnPage) {
+      // Only allow menu action, disable prev/next page turning
+      if (action == PageTurningType.prev || action == PageTurningType.next) {
+        return;
+      }
+    }
+
     switch (action) {
       case PageTurningType.prev:
         prevPage();
@@ -685,6 +726,21 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         handlerName: 'onAnnotationClick',
         callback: (args) {
           Map<String, dynamic> annotation = args[0];
+
+          if (annotation['annotation'] == null) {
+            // Check if TTS is active and the click is on the currently read text
+            final currentTtsState = TtsHandler().ttsStateNotifier.value;
+            if (currentTtsState == TtsStateEnum.playing ||
+                currentTtsState == TtsStateEnum.paused) {
+              if (currentTtsState == TtsStateEnum.playing) {
+                audioHandler.pause();
+              } else {
+                audioHandler.play();
+              }
+              return;
+            }
+          }
+
           int id = annotation['annotation']['id'];
           String cfi = annotation['annotation']['value'];
           String note = annotation['annotation']['note'];
@@ -813,7 +869,8 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           final from = Prefs().fullTextTranslateFrom;
           final to = Prefs().fullTextTranslateTo;
 
-          return await service.provider.translateTextOnly(text, from, to);
+          return await service.provider
+              .translateTextOnly(text, from, to, isFullText: true);
         } catch (e) {
           AnxLog.severe('Translation error: $e');
           return 'Translation error: $e';
@@ -848,12 +905,24 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     if (await isFootNoteOpen() || Prefs().pageTurnStyle == PageTurn.scroll) {
       return;
     }
+    // Disable scroll wheel page turning when keyboard shortcuts are enabled
+    if (Prefs().keyboardShortcutTurnPage) {
+      return;
+    }
     if (event is PointerScrollEvent) {
-      if (event.scrollDelta.dy > 0) {
-        nextPage();
-      } else {
-        prevPage();
-      }
+      _accumulatedScrollDelta += event.scrollDelta.dy;
+
+      _scrollDebounceTimer?.cancel();
+      _scrollDebounceTimer = Timer(const Duration(milliseconds: 80), () {
+        if (_accumulatedScrollDelta.abs() >= _scrollThreshold) {
+          if (_accumulatedScrollDelta > 0) {
+            nextPage();
+          } else {
+            prevPage();
+          }
+        }
+        _accumulatedScrollDelta = 0;
+      });
     }
   }
 
@@ -903,6 +972,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
   @override
   void dispose() {
+    _scrollDebounceTimer?.cancel();
     _animationController?.dispose();
     saveReadingProgress();
     removeOverlay();
@@ -1009,63 +1079,64 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       return const SizedBox();
     }
 
-    TextStyle textStyle = TextStyle(
-      color: Color(int.parse('0x$textColor')).withAlpha(150),
-      fontSize: 10,
-    );
+    final readingInfoColor = Color(int.parse('0x$textColor')).withAlpha(150);
+    final iconColor = Color(int.parse('0x$textColor'));
 
-    Widget chapterTitleWidget = Text(
-      (chapterCurrentPage == 1 ? widget.book.title : chapterTitle),
-      style: textStyle,
-    );
+    Widget getWidget(ReadingInfoEnum readingInfoEnum, TextStyle textStyle) {
+      final batteryTextStyle = TextStyle(
+        color: iconColor,
+        fontSize: (textStyle.fontSize ?? 10) - 1,
+      );
+      final batteryIconSize = (textStyle.fontSize ?? 10) * 2.7;
 
-    Widget chapterProgressWidget = Text(
-      '$chapterCurrentPage/$chapterTotalPages',
-      style: textStyle,
-    );
+      final chapterTitleWidget = Text(
+        (chapterCurrentPage == 1 ? widget.book.title : chapterTitle),
+        style: textStyle,
+      );
 
-    Widget bookProgressWidget =
-        Text('${(percentage * 100).toStringAsFixed(2)}%', style: textStyle);
+      final chapterProgressWidget = Text(
+        '$chapterCurrentPage/$chapterTotalPages',
+        style: textStyle,
+      );
 
-    Widget timeWidget = MinuteClock(textStyle: textStyle);
+      final bookProgressWidget =
+          Text('${(percentage * 100).toStringAsFixed(2)}%', style: textStyle);
 
-    Widget batteryWidget = FutureBuilder(
-        future: Battery().batteryLevel,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 0.8, 2, 0),
-                  child: Text('${snapshot.data}',
-                      style: TextStyle(
-                        color: Color(int.parse('0x$textColor')),
-                        fontSize: 9,
-                      )),
-                ),
-                Icon(
-                  HeroIcons.battery_0,
-                  size: 27,
-                  color: Color(int.parse('0x$textColor')),
-                ),
-              ],
-            );
-          } else {
-            return const SizedBox();
-          }
-        });
+      final timeWidget = MinuteClock(textStyle: textStyle);
 
-    Widget batteryAndTimeWidget() => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            batteryWidget,
-            const SizedBox(width: 5),
-            timeWidget,
-          ],
-        );
+      final batteryWidget = FutureBuilder(
+          future: Battery().batteryLevel,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                        0, (textStyle.fontSize ?? 10) * 0.08, 2, 0),
+                    child: Text('${snapshot.data}', style: batteryTextStyle),
+                  ),
+                  Icon(
+                    HeroIcons.battery_0,
+                    size: batteryIconSize,
+                    color: iconColor,
+                  ),
+                ],
+              );
+            } else {
+              return const SizedBox();
+            }
+          });
 
-    Widget getWidget(ReadingInfoEnum readingInfoEnum) {
+      Widget batteryAndTimeWidget() => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              batteryWidget,
+              const SizedBox(width: 5),
+              timeWidget,
+            ],
+          );
+
       switch (readingInfoEnum) {
         case ReadingInfoEnum.chapterTitle:
           return chapterTitleWidget;
@@ -1084,40 +1155,56 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       }
     }
 
+    final readingInfo = Prefs().readingInfo;
+
+    final headerTextStyle = TextStyle(
+      color: readingInfoColor,
+      fontSize: readingInfo.header.fontSize,
+    );
+    final footerTextStyle = TextStyle(
+      color: readingInfoColor,
+      fontSize: readingInfo.footer.fontSize,
+    );
+
     List<Widget> headerWidgets = [
-      getWidget(Prefs().readingInfo.headerLeft),
-      getWidget(Prefs().readingInfo.headerCenter),
-      getWidget(Prefs().readingInfo.headerRight),
+      getWidget(readingInfo.header.left, headerTextStyle),
+      getWidget(readingInfo.header.center, headerTextStyle),
+      getWidget(readingInfo.header.right, headerTextStyle),
     ];
 
     List<Widget> footerWidgets = [
-      getWidget(Prefs().readingInfo.footerLeft),
-      getWidget(Prefs().readingInfo.footerCenter),
-      getWidget(Prefs().readingInfo.footerRight),
+      getWidget(readingInfo.footer.left, footerTextStyle),
+      getWidget(readingInfo.footer.center, footerTextStyle),
+      getWidget(readingInfo.footer.right, footerTextStyle),
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.only(top: Prefs().pageHeaderMargin),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: headerWidgets,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(
+            top: readingInfo.header.verticalMargin,
+            left: readingInfo.header.leftMargin,
+            right: readingInfo.header.rightMargin,
           ),
-          const Spacer(),
-          Padding(
-            padding: EdgeInsets.only(bottom: Prefs().pageFooterMargin),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: footerWidgets,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: headerWidgets,
           ),
-        ],
-      ),
+        ),
+        const Spacer(),
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: readingInfo.footer.verticalMargin,
+            left: readingInfo.footer.leftMargin,
+            right: readingInfo.footer.rightMargin,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: footerWidgets,
+          ),
+        ),
+      ],
     );
   }
 

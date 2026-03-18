@@ -1,3 +1,4 @@
+import 'package:anx_reader/enums/ai_reasoning_effort.dart';
 import 'dart:convert';
 
 import 'package:langchain_anthropic/langchain_anthropic.dart';
@@ -16,6 +17,7 @@ class LangchainAiConfig {
     this.topP,
     this.maxTokens,
     this.maxOutputTokens,
+    this.reasoningEffort = AiReasoningEffort.auto,
     this.additional,
   }) : headers = Map.unmodifiable(headers ?? const {});
 
@@ -28,6 +30,7 @@ class LangchainAiConfig {
   final double? topP;
   final int? maxTokens;
   final int? maxOutputTokens;
+  final AiReasoningEffort reasoningEffort;
   final Map<String, dynamic>? additional;
 
   ChatOpenAIOptions toOpenAIOptions() {
@@ -36,6 +39,7 @@ class LangchainAiConfig {
       temperature: temperature,
       topP: topP,
       maxTokens: maxTokens,
+      reasoningEffort: reasoningEffort.toOpenAiReasoningEffort(),
     );
   }
 
@@ -82,7 +86,25 @@ class LangchainAiConfig {
       topP: parseDouble(raw['top_p']),
       maxTokens: parseInt(raw['max_tokens']),
       maxOutputTokens: parseInt(raw['max_output_tokens']),
+      reasoningEffort: AiReasoningEffort.fromCode(raw['reasoning_effort']),
       additional: additional,
+    );
+  }
+
+  /// Create LangchainAiConfig from AiProvider model with a specific API key
+  factory LangchainAiConfig.fromProvider({
+    required String providerId,
+    required String model,
+    required String apiKey,
+    required String url,
+    AiReasoningEffort reasoningEffort = AiReasoningEffort.auto,
+  }) {
+    return LangchainAiConfig(
+      identifier: providerId,
+      apiKey: apiKey,
+      model: model,
+      baseUrl: _deriveBaseUrl(url),
+      reasoningEffort: reasoningEffort,
     );
   }
 
@@ -95,6 +117,7 @@ class LangchainAiConfig {
     double? topP,
     int? maxTokens,
     int? maxOutputTokens,
+    AiReasoningEffort? reasoningEffort,
     Map<String, dynamic>? additional,
   }) {
     return LangchainAiConfig(
@@ -107,6 +130,7 @@ class LangchainAiConfig {
       topP: topP ?? this.topP,
       maxTokens: maxTokens ?? this.maxTokens,
       maxOutputTokens: maxOutputTokens ?? this.maxOutputTokens,
+      reasoningEffort: reasoningEffort ?? this.reasoningEffort,
       additional: additional ?? this.additional,
     );
   }
@@ -204,8 +228,22 @@ LangchainAiConfig mergeConfigs(
     topP: override.topP ?? base.topP,
     maxTokens: override.maxTokens ?? base.maxTokens,
     maxOutputTokens: override.maxOutputTokens ?? base.maxOutputTokens,
+    reasoningEffort: override.reasoningEffort != AiReasoningEffort.auto
+        ? override.reasoningEffort
+        : base.reasoningEffort,
     additional: mergeMaps(base.additional, override.additional),
   );
+}
+
+extension on AiReasoningEffort {
+  ChatOpenAIReasoningEffort? toOpenAiReasoningEffort() {
+    return switch (this) {
+      AiReasoningEffort.auto => null,
+      AiReasoningEffort.low => ChatOpenAIReasoningEffort.low,
+      AiReasoningEffort.medium => ChatOpenAIReasoningEffort.medium,
+      AiReasoningEffort.high => ChatOpenAIReasoningEffort.high,
+    };
+  }
 }
 
 Map<String, dynamic>? mergeMaps(

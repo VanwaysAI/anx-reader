@@ -1,19 +1,25 @@
 import 'dart:async';
 
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/enums/hint_key.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
+import 'package:anx_reader/models/ai_provider.dart';
 import 'package:anx_reader/providers/ai_chat.dart';
 import 'package:anx_reader/providers/ai_history.dart';
+import 'package:anx_reader/providers/ai_providers.dart';
 import 'package:anx_reader/service/ai/ai_services.dart';
 import 'package:anx_reader/service/ai/ai_history.dart';
 import 'package:anx_reader/service/ai/index.dart';
+import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/utils/ai_reasoning_parser.dart';
+import 'package:anx_reader/widgets/ai/model_picker_dialog.dart';
 import 'package:anx_reader/widgets/ai/tool_step_tile.dart';
 import 'package:anx_reader/widgets/ai/tool_tiles/apply_book_tags_step_tile.dart';
 import 'package:anx_reader/widgets/ai/tool_tiles/mindmap_step_tile.dart';
 import 'package:anx_reader/widgets/ai/tool_tiles/organize_bookshelf_step_tile.dart';
+import 'package:anx_reader/widgets/common/anx_button.dart';
 import 'package:anx_reader/widgets/common/container/filled_container.dart';
 import 'package:anx_reader/widgets/delete_confirm.dart';
 import 'package:anx_reader/widgets/markdown/styled_markdown.dart';
@@ -51,10 +57,9 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
   StreamSubscription<List<ChatMessage>>? _messageSubscription;
   final ScrollController _scrollController = ScrollController();
   bool _isStreaming = false;
-  late List<AiServiceOption> _serviceOptions;
-  late String _selectedServiceId;
   late List<String> _suggestedPrompts;
   late List<String> _starterPrompts;
+  double _fontSize = 14.0;
 
   List<Map<String, String>> _getQuickPrompts(BuildContext context) {
     return [
@@ -98,13 +103,7 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
       L10n.of(navigatorKey.currentContext!).quickPrompt11,
       L10n.of(navigatorKey.currentContext!).quickPrompt12,
     ];
-    _serviceOptions = buildDefaultAiServices();
-    _selectedServiceId = Prefs().selectedAiService;
-    final availableIds = _serviceOptions.map((option) => option.identifier);
-    if (!availableIds.contains(_selectedServiceId)) {
-      _selectedServiceId = _serviceOptions.first.identifier;
-      Prefs().selectedAiService = _selectedServiceId;
-    }
+    _fontSize = Prefs().aiChatFontSize;
     inputController.text = widget.initialMessage ?? '';
     _suggestedPrompts = _pickSuggestedPrompts();
     if (widget.sendImmediate) {
@@ -122,30 +121,36 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
     super.dispose();
   }
 
-  AiServiceOption get _currentService => _serviceOptions.firstWhere(
-        (option) => option.identifier == _selectedServiceId,
-        orElse: () => _serviceOptions.first,
-      );
-
-  String _modelLabel(String serviceId) {
-    final option = _serviceOptions.firstWhere(
-      (element) => element.identifier == serviceId,
-      orElse: () => _serviceOptions.first,
-    );
-    final stored = Prefs().getAiConfig(serviceId);
-    final model = stored['model'];
-    if (model != null && model.trim().isNotEmpty) {
-      return model;
+  AiProvider? _currentProvider(List<AiProvider> enabledProviders) {
+    final selectedId = Prefs().selectedAiService;
+    try {
+      return enabledProviders.firstWhere((p) => p.id == selectedId);
+    } catch (_) {
+      return enabledProviders.isNotEmpty ? enabledProviders.first : null;
     }
-    return option.defaultModel;
   }
 
-  void _onServiceSelected(String identifier) {
-    if (_isStreaming || identifier == _selectedServiceId) return;
-    Prefs().selectedAiService = identifier;
-    setState(() {
-      _selectedServiceId = identifier;
-    });
+  String _modelLabel(AiProvider provider) {
+    final model = provider.model;
+    if (model.trim().isNotEmpty) return model;
+    // Fallback: look up default model from built-in templates
+    final defaults = buildDefaultAiServices();
+    for (final d in defaults) {
+      if (d.identifier == provider.id) return d.defaultModel;
+    }
+    return '';
+  }
+
+  void _onProviderSelected(String providerId) {
+    if (_isStreaming) return;
+    ref.read(aiProvidersProvider.notifier).setSelectedProvider(providerId);
+  }
+
+  AiProvider? _providerById(List<AiProvider> providers, String id) {
+    for (final p in providers) {
+      if (p.id == id) return p;
+    }
+    return null;
   }
 
   List<String> _pickSuggestedPrompts() {
@@ -207,11 +212,12 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
   }
 
   Widget _buildHistoryTile(BuildContext context, AiChatHistoryEntry entry) {
-    final option = _serviceOptionById(entry.serviceId);
+    final allProviders = ref.watch(aiProvidersProvider);
+    final provider = _providerById(allProviders, entry.serviceId);
     final statusColor =
         entry.completed ? Colors.green : Theme.of(context).colorScheme.tertiary;
     final title = _deriveTitle(entry);
-    final subtitle = _buildHistorySubtitle(option, entry);
+    final subtitle = _buildHistorySubtitle(provider, entry);
 
     return FilledContainer(
       margin: EdgeInsets.symmetric(horizontal: 8),
@@ -262,22 +268,23 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
     );
   }
 
-  String _buildHistorySubtitle(
-      AiServiceOption? option, AiChatHistoryEntry entry) {
-    final serviceLabel = option?.title ?? entry.serviceId;
+  String _buildHistorySubtitle(AiProvider? provider, AiChatHistoryEntry entry) {
+    final serviceLabel = provider?.title ?? entry.serviceId;
     if (entry.model.isEmpty) {
       return serviceLabel;
     }
     return '$serviceLabel · ${entry.model}';
   }
 
-  AiServiceOption? _serviceOptionById(String id) {
-    for (final option in _serviceOptions) {
-      if (option.identifier == id) {
-        return option;
-      }
-    }
-    return null;
+  Widget? _providerLogo(AiProvider? provider) {
+    final logo = provider?.logoAsset;
+    if (logo == null || logo.isEmpty) return null;
+    return Image.asset(
+      logo,
+      width: 20,
+      height: 20,
+      errorBuilder: (_, __, ___) => const SizedBox(),
+    );
   }
 
   String _deriveTitle(AiChatHistoryEntry entry) {
@@ -473,6 +480,65 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
     });
   }
 
+  void _showFontSizeMenu(BuildContext context) {
+    final renderBox = context.findRenderObject() as RenderBox?;
+    final offset = renderBox?.localToGlobal(Offset.zero) ?? Offset.zero;
+    final size = renderBox?.size ?? Size.zero;
+
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + size.height,
+        offset.dx + size.width,
+        offset.dy + size.height + 1,
+      ),
+      items: [
+        PopupMenuItem(
+          enabled: false,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: StatefulBuilder(
+            builder: (context, setMenuState) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    L10n.of(context).aiChatFontSize,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        '${_fontSize.round()}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      Expanded(
+                        child: Slider(
+                          value: _fontSize,
+                          min: 10.0,
+                          max: 24.0,
+                          divisions: 14,
+                          onChanged: (value) {
+                            setMenuState(() {});
+                            setState(() {
+                              _fontSize = value;
+                            });
+                            Prefs().aiChatFontSize = value;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   ChatMessage? _getLastAssistantMessage() {
     final messages = ref.watch(aiChatProvider).asData?.value;
     if (messages == null || messages.isEmpty) {
@@ -490,28 +556,30 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
   @override
   Widget build(BuildContext context) {
     final quickPrompts = _getQuickPrompts(context);
+    final allProviders = ref.watch(aiProvidersProvider);
+    final enabledProviders = allProviders.where((p) => p.enabled).toList();
+    final currentProvider = _currentProvider(enabledProviders);
+    final selectedId = Prefs().selectedAiService;
 
     var aiService = PopupMenuButton<String>(
       enabled: !_isStreaming,
-      onSelected: _onServiceSelected,
+      onSelected: _onProviderSelected,
       itemBuilder: (context) {
-        return _serviceOptions.map((option) {
-          final isSelected = option.identifier == _selectedServiceId;
-          final label = _modelLabel(option.identifier);
+        return enabledProviders.map((provider) {
+          final isSelected = provider.id == selectedId;
+          final label = _modelLabel(provider);
+          final logo = _providerLogo(provider);
           return PopupMenuItem<String>(
-            value: option.identifier,
+            value: provider.id,
             child: Row(
               children: [
-                Image.asset(
-                  option.logo,
-                  width: 20,
-                  height: 20,
-                  errorBuilder: (_, __, ___) => const SizedBox(),
-                ),
+                if (logo != null) logo else const SizedBox(width: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${option.title} · $label',
+                    label.isNotEmpty
+                        ? '${provider.title} · $label'
+                        : provider.title,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -524,16 +592,19 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Image.asset(
-            _currentService.logo,
-            width: 20,
-            height: 20,
-            errorBuilder: (_, __, ___) => const SizedBox(),
-          ),
+          if (_providerLogo(currentProvider) != null)
+            _providerLogo(currentProvider)!,
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              '${_currentService.title} · ${_modelLabel(_selectedServiceId)}',
+              currentProvider != null
+                  ? () {
+                      final label = _modelLabel(currentProvider);
+                      return label.isNotEmpty
+                          ? '${currentProvider.title} · $label'
+                          : currentProvider.title;
+                    }()
+                  : '',
               style: Theme.of(context).textTheme.bodySmall,
               overflow: TextOverflow.ellipsis,
             ),
@@ -592,6 +663,28 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
                   child: Row(
                     children: [
                       Flexible(child: aiService),
+                      if (currentProvider != null)
+                        IconButton(
+                          icon: const Icon(Icons.tune, size: 16),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () async {
+                            final selected = await showModelPickerDialog(
+                              context: context,
+                              provider: currentProvider,
+                              currentModel: currentProvider.model,
+                            );
+                            if (selected != null &&
+                                selected != currentProvider.model) {
+                              ref
+                                  .read(aiProvidersProvider.notifier)
+                                  .updateProvider(
+                                    currentProvider.copyWith(model: selected),
+                                  );
+                            }
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -699,46 +792,110 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
             icon: const Icon(Icons.edit_document),
             onPressed: _clearMessage,
           ),
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () => _showFontSizeMenu(context),
+            ),
+          ),
           if (widget.trailing != null) ...widget.trailing!,
         ],
       ),
       drawer: Drawer(
         child: _buildHistoryDrawer(context),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _messageStream != null
-                ? StreamBuilder<List<ChatMessage>>(
-                    stream: _messageStream,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Skeletonizer.zone(child: Bone.multiText());
-                      }
+      body: EnvVar.isAppStore &&
+              Prefs().shouldShowHint(HintKey.aiDataSharingConsent)
+          ? _buildDataSharingConsent(context)
+          : Column(
+              children: [
+                Expanded(
+                  child: _messageStream != null
+                      ? StreamBuilder<List<ChatMessage>>(
+                          stream: _messageStream,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return Skeletonizer.zone(child: Bone.multiText());
+                            }
 
-                      final messages = snapshot.data!;
-                      if (messages.isEmpty) {
-                        return buildEmptyState();
-                      }
+                            final messages = snapshot.data!;
+                            if (messages.isEmpty) {
+                              return buildEmptyState();
+                            }
 
-                      return _buildMessageList(messages);
-                    },
-                  )
-                : ref.watch(aiChatProvider).when(
-                      data: (messages) {
-                        if (messages.isEmpty) {
-                          return buildEmptyState();
-                        }
+                            return _buildMessageList(messages);
+                          },
+                        )
+                      : ref.watch(aiChatProvider).when(
+                            data: (messages) {
+                              if (messages.isEmpty) {
+                                return buildEmptyState();
+                              }
 
-                        return _buildMessageList(messages);
-                      },
-                      loading: () => Skeletonizer.zone(child: Bone.multiText()),
-                      error: (error, stack) =>
-                          Center(child: Text('error: $error')),
+                              return _buildMessageList(messages);
+                            },
+                            loading: () =>
+                                Skeletonizer.zone(child: Bone.multiText()),
+                            error: (error, stack) =>
+                                Center(child: Text('error: $error')),
+                          ),
+                ),
+                inputBox,
+              ],
+            ),
+    );
+  }
+
+  Widget _buildDataSharingConsent(BuildContext context) {
+    final theme = Theme.of(context);
+    final maxWidth = MediaQuery.of(context).size.width * 0.9;
+    final constrainedWidth = maxWidth > 500 ? 500.0 : maxWidth;
+
+    return Container(
+      color: theme.colorScheme.surface,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constrainedWidth),
+            child: FilledContainer(
+              padding: const EdgeInsets.all(24),
+              radius: 20,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.privacy_tip_outlined,
+                    size: 56,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    L10n.of(context).aiDataSharingTitle,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    L10n.of(context).aiDataSharingContent,
+                    style: theme.textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  AnxButton(
+                    onPressed: () {
+                      Prefs().setShowHint(HintKey.aiDataSharingConsent, false);
+                      setState(() {});
+                    },
+                    child: Text(L10n.of(context).aiDataSharingAgree),
+                  ),
+                ],
+              ),
+            ),
           ),
-          inputBox,
-        ],
+        ),
       ),
     );
   }
@@ -762,7 +919,7 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
     bool isStreaming,
   ) {
     final isUser = message is HumanChatMessage;
-    final content = message.contentAsString;
+    final content = chatMessageDisplayContent(message);
     final parsed = parseReasoningContent(content);
     final isLongMessage = content.length > 300;
     final lastAssistantMessage = _getLastAssistantMessage();
@@ -879,9 +1036,41 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
           : const SizedBox.shrink();
     }
 
+    final reasoningWidgets = _buildTimelineWidgets(
+      parsed.reasoningTimeline,
+      fontSize: (_fontSize - 1).clamp(11.0, _fontSize).toDouble(),
+    );
+    final answerWidgets = _buildTimelineWidgets(
+      parsed.answerTimeline,
+      fontSize: _fontSize,
+    );
     final widgets = <Widget>[];
-    for (var i = 0; i < parsed.timeline.length; i++) {
-      final entry = parsed.timeline[i];
+
+    if (reasoningWidgets.isNotEmpty) {
+      widgets.add(_buildThinkingPanel(reasoningWidgets));
+    }
+    if (answerWidgets.isNotEmpty) {
+      if (widgets.isNotEmpty) {
+        widgets.add(const SizedBox(height: 8));
+      }
+      widgets.addAll(answerWidgets);
+    } else if (widgets.isEmpty && isStreaming) {
+      widgets.add(Skeletonizer.zone(child: Bone.multiText()));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+
+  List<Widget> _buildTimelineWidgets(
+    List<ParsedReasoningEntry> timeline, {
+    required double fontSize,
+  }) {
+    final widgets = <Widget>[];
+    for (var i = 0; i < timeline.length; i++) {
+      final entry = timeline[i];
       switch (entry.type) {
         case ParsedReasoningEntryType.reply:
           if (entry.text != null && entry.text!.trim().isNotEmpty) {
@@ -889,6 +1078,7 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
               StyledMarkdown(
                 data: entry.text!,
                 selectable: true,
+                fontSize: fontSize,
               ),
             );
           }
@@ -900,14 +1090,63 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
           break;
       }
 
-      if (i != parsed.timeline.length - 1) {
+      if (i != timeline.length - 1) {
         widgets.add(const SizedBox(height: 8));
       }
     }
+    return widgets;
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: widgets,
+  Widget _buildThinkingPanel(List<Widget> children) {
+    final theme = Theme.of(context);
+    final accentColor = theme.colorScheme.secondary.withValues(alpha: 0.82);
+    final subtleColor = theme.colorScheme.secondary.withValues(alpha: 0.68);
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        dense: true,
+        visualDensity: VisualDensity.compact,
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.fromLTRB(28, 2, 0, 8),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        iconColor: subtleColor,
+        collapsedIconColor: subtleColor,
+        leading: Icon(
+          Icons.psychology_alt_outlined,
+          size: 15,
+          color: accentColor,
+        ),
+        title: Text(
+          L10n.of(context).aiThinkingHint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: accentColor,
+            fontSize: 12,
+          ),
+        ),
+        children: [
+          Container(
+            margin: const EdgeInsets.only(left: 7),
+            padding: const EdgeInsets.only(left: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: subtleColor.withValues(alpha: 0.55),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Opacity(
+              opacity: 0.9,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: children,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -928,18 +1167,20 @@ class AiChatStreamState extends ConsumerState<AiChatStream> {
     if (!isLongMessage) {
       return SelectableText(
         text,
+        style: TextStyle(fontSize: _fontSize),
         selectionControls: MaterialTextSelectionControls(),
       );
     }
 
-    return _CollapsibleText(text: text);
+    return _CollapsibleText(text: text, fontSize: _fontSize);
   }
 }
 
 class _CollapsibleText extends StatefulWidget {
-  const _CollapsibleText({required this.text});
+  const _CollapsibleText({required this.text, this.fontSize = 14.0});
 
   final String text;
+  final double fontSize;
 
   @override
   State<_CollapsibleText> createState() => _CollapsibleTextState();
@@ -956,6 +1197,7 @@ class _CollapsibleTextState extends State<_CollapsibleText> {
         if (_isExpanded)
           SelectableText(
             widget.text,
+            style: TextStyle(fontSize: widget.fontSize),
             selectionControls: MaterialTextSelectionControls(),
           )
         else
@@ -963,6 +1205,7 @@ class _CollapsibleTextState extends State<_CollapsibleText> {
             children: [
               SelectableText(
                 widget.text.substring(0, 300),
+                style: TextStyle(fontSize: widget.fontSize),
                 selectionControls: MaterialTextSelectionControls(),
               ),
               Positioned(
