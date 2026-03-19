@@ -87,7 +87,7 @@ class IapPlaceholderContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '当前功能暂时免费，预计免费使用期持续至 2026 年 3 月 1 日。',
+                  '当前功能暂时免费，预计免费使用期持续至 2026 年 4 月 1 日。',
                   style: TextStyle(
                     fontSize: 16,
                     height: 1.7,
