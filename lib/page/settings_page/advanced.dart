@@ -6,8 +6,9 @@ import 'package:anx_reader/page/settings_page/subpage/chapter_split_rules_page.d
 import 'package:anx_reader/page/settings_page/subpage/log_page.dart';
 import 'package:anx_reader/page/changelog_screen.dart';
 import 'package:anx_reader/page/onboarding_screen.dart';
-import 'package:anx_reader/utils/app_version.dart';
 import 'package:anx_reader/service/md5_service.dart';
+import 'package:anx_reader/service/network/http_proxy_overrides.dart';
+import 'package:anx_reader/utils/app_version.dart';
 import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/settings/settings_section.dart';
 import 'package:anx_reader/widgets/settings/settings_tile.dart';
@@ -183,7 +184,9 @@ class _AdvancedSettingState extends State<AdvancedSetting> {
               leading: const Icon(Icons.http),
               value: Text(Prefs().httpProxyHost.isEmpty
                   ? L10n.of(context).settingsAdvancedHttpProxyNotConfigured
-                  : '${Prefs().httpProxyHost}:${Prefs().httpProxyPort}'),
+                  : Prefs().httpProxyEnabled
+                      ? '${Prefs().httpProxyHost}:${Prefs().httpProxyPort} (Test: ${Prefs().httpProxyTestUrl})'
+                      : '${Prefs().httpProxyHost}:${Prefs().httpProxyPort}'),
               onPressed: _showHttpProxyDialog,
             ),
           ],
@@ -374,6 +377,7 @@ class _HttpProxyDialog extends StatefulWidget {
 class _HttpProxyDialogState extends State<_HttpProxyDialog> {
   late final TextEditingController hostController;
   late final TextEditingController portController;
+  late final TextEditingController testUrlController;
 
   @override
   void initState() {
@@ -381,13 +385,45 @@ class _HttpProxyDialogState extends State<_HttpProxyDialog> {
     hostController = TextEditingController(text: Prefs().httpProxyHost);
     portController =
         TextEditingController(text: Prefs().httpProxyPort.toString());
+    testUrlController =
+        TextEditingController(text: Prefs().httpProxyTestUrl);
   }
 
   @override
   void dispose() {
     hostController.dispose();
     portController.dispose();
+    testUrlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _testConnection() async {
+    final host = hostController.text.trim();
+    final port = int.tryParse(portController.text.trim());
+    final testUrl = testUrlController.text.trim();
+
+    if (host.isEmpty || port == null || port <= 0 || port > 65535) {
+      AnxToast.show(L10n.of(context).settingsAdvancedHttpProxyInvalidInput);
+      return;
+    }
+
+    if (testUrl.isEmpty) {
+      AnxToast.show(L10n.of(context).commonInputCannotBeEmpty);
+      return;
+    }
+
+    AnxToast.show(L10n.of(context).settingsAdvancedHttpProxyTesting);
+
+    final success =
+        await AnxHttpProxyOverrides.testProxy(host, port, testUrl);
+
+    if (!mounted) return;
+
+    if (success) {
+      AnxToast.show(L10n.of(context).settingsAdvancedHttpProxyTestSuccess);
+    } else {
+      AnxToast.show(L10n.of(context).settingsAdvancedHttpProxyTestFailed);
+    }
   }
 
   @override
@@ -416,9 +452,21 @@ class _HttpProxyDialogState extends State<_HttpProxyDialog> {
               hintText: L10n.of(context).settingsAdvancedHttpProxyPortHint,
             ),
           ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: testUrlController,
+            decoration: InputDecoration(
+              border: const OutlineInputBorder(),
+              labelText: L10n.of(context).settingsAdvancedHttpProxyTestUrl,
+            ),
+          ),
         ],
       ),
       actions: [
+        TextButton(
+          onPressed: _testConnection,
+          child: Text(L10n.of(context).settingsAdvancedHttpProxyTest),
+        ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(L10n.of(context).commonCancel),
@@ -427,6 +475,7 @@ class _HttpProxyDialogState extends State<_HttpProxyDialog> {
           onPressed: () {
             final host = hostController.text.trim();
             final port = int.tryParse(portController.text.trim());
+            final testUrl = testUrlController.text.trim();
             if (host.isEmpty || port == null || port <= 0 || port > 65535) {
               AnxToast.show(
                   L10n.of(context).settingsAdvancedHttpProxyInvalidInput);
@@ -435,6 +484,8 @@ class _HttpProxyDialogState extends State<_HttpProxyDialog> {
 
             Prefs().httpProxyHost = host;
             Prefs().httpProxyPort = port;
+            Prefs().httpProxyTestUrl =
+                testUrl.isEmpty ? 'https://google.com' : testUrl;
             widget.onSaved();
             Navigator.of(context).pop();
           },

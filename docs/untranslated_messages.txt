@@ -14,7 +14,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "de": [
@@ -32,7 +37,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "es": [
@@ -50,7 +60,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "fr": [
@@ -68,7 +83,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "it": [
@@ -86,7 +106,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "ja": [
@@ -104,7 +129,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "ko": [
@@ -122,7 +152,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "pt": [
@@ -140,7 +175,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "ro": [
@@ -158,7 +198,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "ru": [
@@ -176,7 +221,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "tr": [
@@ -194,7 +244,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "zh": [
@@ -203,16 +258,7 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh",
-    "settingsAdvancedNetwork",
-    "settingsAdvancedHttpProxyEnabled",
-    "settingsAdvancedHttpProxyConfig",
-    "settingsAdvancedHttpProxyHost",
-    "settingsAdvancedHttpProxyHostHint",
-    "settingsAdvancedHttpProxyPort",
-    "settingsAdvancedHttpProxyPortHint",
-    "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAiProviderReasoningEffortHigh"
   ],
 
   "zh_LZH": [
@@ -230,7 +276,12 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ],
 
   "zh_TW": [
@@ -248,6 +299,11 @@
     "settingsAdvancedHttpProxyPort",
     "settingsAdvancedHttpProxyPortHint",
     "settingsAdvancedHttpProxyNotConfigured",
-    "settingsAdvancedHttpProxyInvalidInput"
+    "settingsAdvancedHttpProxyInvalidInput",
+    "settingsAdvancedHttpProxyTestUrl",
+    "settingsAdvancedHttpProxyTest",
+    "settingsAdvancedHttpProxyTesting",
+    "settingsAdvancedHttpProxyTestSuccess",
+    "settingsAdvancedHttpProxyTestFailed"
   ]
 }

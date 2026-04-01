@@ -26,4 +26,26 @@ class AnxHttpProxyOverrides extends HttpOverrides {
     };
     return client;
   }
+
+  static Future<bool> testProxy(
+      String host, int port, String testUrl) async {
+    try {
+      final uri = Uri.parse(testUrl);
+      final client = HttpClient();
+      client.findProxy = (_) => 'PROXY $host:$port; DIRECT';
+      client.connectionTimeout = const Duration(seconds: 8);
+
+      final request = await client.getUrl(uri).timeout(
+            const Duration(seconds: 8),
+          );
+      final response = await request.close().timeout(
+            const Duration(seconds: 8),
+          );
+      await response.drain<void>();
+      client.close();
+      return response.statusCode >= 200 && response.statusCode < 400;
+    } catch (_) {
+      return false;
+    }
+  }
 }

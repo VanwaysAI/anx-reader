@@ -1517,6 +1517,15 @@ class Prefs extends ChangeNotifier {
     notifyListeners();
   }
 
+  String get httpProxyTestUrl {
+    return prefs.getString('httpProxyTestUrl') ?? 'https://google.com';
+  }
+
+  set httpProxyTestUrl(String url) {
+    prefs.setString('httpProxyTestUrl', url);
+    notifyListeners();
+  }
+
   String? get lastAppVersion {
     return prefs.getString('lastAppVersion');
   }
