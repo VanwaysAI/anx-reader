@@ -726,7 +726,39 @@ const getCSS = ({ fontSize,
     aside[epub|type~="rearnote"] {
         display: none;
     }
-    
+
+    /* Translation styling for bilingual mode */
+    .translated-text {
+        display: block !important;
+        margin-top: 0.5em !important;
+        margin-bottom: 0.5em !important;
+        padding-top: 0.3em !important;
+        border-top: 1px dashed rgba(128, 128, 128, 0.3) !important;
+        font-size: 0.95em !important;
+        color: inherit !important;
+        opacity: 0.85 !important;
+        line-height: inherit !important;
+        text-align: inherit !important;
+    }
+
+    .translated-text:empty {
+        display: none !important;
+    }
+
+    .translated-paragraph {
+        display: block !important;
+        margin-bottom: 0.3em !important;
+    }
+
+    /* Hide original text in translation-only mode */
+    .translation-source-hidden {
+        visibility: hidden !important;
+    }
+
+    .translation-source-hidden .translated-text {
+        visibility: visible !important;
+    }
+
     ${customCSSEnabled && customCSS ? customCSS : ''}
 `}
 

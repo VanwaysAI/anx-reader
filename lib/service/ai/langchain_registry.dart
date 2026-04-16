@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/models/ai_provider.dart';
 import 'package:anx_reader/providers/current_reading.dart';
+import 'package:anx_reader/service/ai/qwen_http_client.dart';
 import 'package:anx_reader/service/ai/tools/ai_tool_registry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:langchain_anthropic/langchain_anthropic.dart';
 import 'package:langchain_core/chat_models.dart';
 import 'package:langchain_core/tools.dart';
@@ -76,12 +78,31 @@ class LangchainAiRegistry {
   }
 
   BaseChatModel _buildOpenAi(LangchainAiConfig config) {
+    // Use custom HTTP client for Qwen models to disable thinking mode
+    final isQwen = _isQwenModel(config.model, config.baseUrl);
+    final httpClient = config.enableThinking
+        ? null // Keep thinking enabled (default behavior)
+        : isQwen
+            ? QwenThinkingHttpClient(http.Client())
+            : null;
+
     return ChatOpenAI(
       apiKey: config.apiKey.isEmpty ? null : config.apiKey,
       baseUrl: config.baseUrl ?? 'https://api.openai.com/v1',
       headers: config.headers.isEmpty ? null : config.headers,
       defaultOptions: config.toOpenAIOptions(),
+      client: httpClient,
     );
+  }
+
+  /// Check if the model is a Qwen model that needs enable_thinking=false
+  bool _isQwenModel(String model, String? baseUrl) {
+    final lowerModel = model.toLowerCase();
+    final lowerUrl = baseUrl?.toLowerCase() ?? '';
+    return lowerModel.contains('qwen') ||
+        lowerModel.contains('qwq') ||
+        lowerUrl.contains('dashscope') ||
+        lowerUrl.contains('aliyun');
   }
 
   BaseChatModel _buildAnthropic(LangchainAiConfig config) {

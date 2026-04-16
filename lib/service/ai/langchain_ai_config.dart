@@ -18,6 +18,7 @@ class LangchainAiConfig {
     this.maxTokens,
     this.maxOutputTokens,
     this.reasoningEffort = AiReasoningEffort.auto,
+    this.enableThinking = false,
     this.additional,
   }) : headers = Map.unmodifiable(headers ?? const {});
 
@@ -31,6 +32,7 @@ class LangchainAiConfig {
   final int? maxTokens;
   final int? maxOutputTokens;
   final AiReasoningEffort reasoningEffort;
+  final bool enableThinking;
   final Map<String, dynamic>? additional;
 
   ChatOpenAIOptions toOpenAIOptions() {
@@ -98,6 +100,7 @@ class LangchainAiConfig {
     required String apiKey,
     required String url,
     AiReasoningEffort reasoningEffort = AiReasoningEffort.auto,
+    bool enableThinking = false,
   }) {
     return LangchainAiConfig(
       identifier: providerId,
@@ -105,6 +108,7 @@ class LangchainAiConfig {
       model: model,
       baseUrl: _deriveBaseUrl(url),
       reasoningEffort: reasoningEffort,
+      enableThinking: enableThinking,
     );
   }
 
@@ -118,6 +122,7 @@ class LangchainAiConfig {
     int? maxTokens,
     int? maxOutputTokens,
     AiReasoningEffort? reasoningEffort,
+    bool? enableThinking,
     Map<String, dynamic>? additional,
   }) {
     return LangchainAiConfig(
@@ -131,6 +136,7 @@ class LangchainAiConfig {
       maxTokens: maxTokens ?? this.maxTokens,
       maxOutputTokens: maxOutputTokens ?? this.maxOutputTokens,
       reasoningEffort: reasoningEffort ?? this.reasoningEffort,
+      enableThinking: enableThinking ?? this.enableThinking,
       additional: additional ?? this.additional,
     );
   }

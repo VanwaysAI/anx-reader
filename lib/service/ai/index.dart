@@ -10,6 +10,7 @@ import 'package:anx_reader/service/ai/ai_key_rotator.dart';
 import 'package:anx_reader/service/ai/langchain_ai_config.dart';
 import 'package:anx_reader/service/ai/langchain_registry.dart';
 import 'package:anx_reader/service/ai/langchain_runner.dart';
+import 'package:anx_reader/service/ai/request_queue.dart';
 import 'package:anx_reader/utils/ai_reasoning_parser.dart';
 import 'package:anx_reader/utils/log/common.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:langchain_core/chat_models.dart';
 import 'package:langchain_core/prompts.dart';
 
 final CancelableLangchainRunner _runner = CancelableLangchainRunner();
+final AiRequestQueueManager _queueManager = AiRequestQueueManager.instance;
 
 // Global request timestamps list for RPM throttling
 final List<DateTime> _aiRequestTimestamps = [];
@@ -25,14 +27,21 @@ final List<DateTime> _aiRequestTimestamps = [];
 Future<void> _throttleIfNeeded() async {
   final rpm = Prefs().aiRpm;
   if (rpm <= 0) return;
+
+  // Apply minimum interval between requests
+  final minInterval = Duration(milliseconds: (60000 / rpm).round());
+  await Future.delayed(minInterval);
+
   final now = DateTime.now();
   final windowStart = now.subtract(const Duration(minutes: 1));
   _aiRequestTimestamps.removeWhere((ts) => ts.isBefore(windowStart));
+
   if (_aiRequestTimestamps.length >= rpm) {
     final oldest = _aiRequestTimestamps.first;
     final waitUntil = oldest.add(const Duration(minutes: 1));
     final waitDuration = waitUntil.difference(DateTime.now());
     if (waitDuration > Duration.zero) {
+      AnxLog.info('Rate limit reached, waiting ${waitDuration.inSeconds}s');
       await Future.delayed(waitDuration);
     }
     final newNow = DateTime.now();
@@ -100,6 +109,7 @@ Stream<String> _generateStream({
             apiKey: apiKey,
             url: provider.url,
             reasoningEffort: provider.reasoningEffort,
+            enableThinking: provider.enableThinking,
           );
 
           AnxLog.info(
@@ -115,6 +125,8 @@ Stream<String> _generateStream({
             pipeline: pipeline,
             sanitizedMessages: sanitizedMessages,
             useAgent: useAgent,
+            registry: registry,
+            config: config,
           );
 
           // Advance key index for round-robin rotation after successful call
@@ -165,6 +177,7 @@ Stream<String> _generateStream({
               apiKey: apiKey,
               url: provider.url,
               reasoningEffort: provider.reasoningEffort,
+              enableThinking: provider.enableThinking,
             );
 
             AnxLog.info(
@@ -181,6 +194,8 @@ Stream<String> _generateStream({
               pipeline: pipeline,
               sanitizedMessages: sanitizedMessages,
               useAgent: useAgent,
+              registry: registry,
+              config: config,
             );
 
             // Advance key index in persistent storage for round-robin rotation
@@ -235,35 +250,116 @@ Stream<String> _generateStream({
     pipeline: pipeline,
     sanitizedMessages: sanitizedMessages,
     useAgent: useAgent,
+    registry: registry,
+    config: config,
   );
 }
 
 /// Execute the AI stream with the given model and pipeline
+/// Pass registry and config to allow creating fresh model on retry
 Stream<String> _executeStream({
   required BaseChatModel model,
   required LangchainPipeline pipeline,
   required List<ChatMessage> sanitizedMessages,
   required bool useAgent,
+  required LangchainAiRegistry registry,
+  required LangchainAiConfig config,
 }) async* {
-  Stream<String> stream;
+  var buffer = '';
+  int retryCount = 0;
+  const maxRetries = 3;
+  BaseChatModel currentModel = model;
+
+  try {
+    Stream<String> stream = _createStream(
+      model: currentModel,
+      pipeline: pipeline,
+      sanitizedMessages: sanitizedMessages,
+      useAgent: useAgent,
+    );
+
+    await for (final chunk in stream) {
+      buffer = chunk;
+      yield buffer;
+    }
+  } catch (error, stack) {
+    final errorType = parseRateLimitError(error);
+
+    // Check if we should retry
+    if (errorType != RateLimitErrorType.unknown && retryCount < maxRetries) {
+      retryCount++;
+      final delay = calculateRetryDelay(errorType, retryCount);
+
+      AnxLog.info(
+        'AI request failed, retry $retryCount/$maxRetries after ${delay.inSeconds}s: $error',
+      );
+
+      yield 'Retrying... ($retryCount/$maxRetries)';
+
+      await Future.delayed(delay);
+
+      // Close the old model if needed
+      try {
+        currentModel.close();
+      } catch (_) {}
+
+      // Create a fresh pipeline and model for retry
+      final freshPipeline = registry.resolve(config, useAgent: useAgent);
+      currentModel = freshPipeline.model;
+
+      // Retry the stream
+      try {
+        final retryStream = _createStream(
+          model: currentModel,
+          pipeline: freshPipeline,
+          sanitizedMessages: sanitizedMessages,
+          useAgent: useAgent,
+        );
+
+        await for (final chunk in retryStream) {
+          buffer = chunk;
+          yield buffer;
+        }
+      } catch (retryError, retryStack) {
+        final mapped = _mapError(retryError);
+        AnxLog.severe('AI retry error: $mapped\n$retryStack');
+        yield mapped;
+      }
+    } else {
+      final mapped = _mapError(error);
+      AnxLog.severe('AI error: $mapped\n$stack');
+      yield mapped;
+    }
+  } finally {
+    try {
+      currentModel.close();
+    } catch (_) {}
+  }
+}
+
+/// Create stream based on useAgent flag
+Stream<String> _createStream({
+  required BaseChatModel model,
+  required LangchainPipeline pipeline,
+  required List<ChatMessage> sanitizedMessages,
+  required bool useAgent,
+}) {
   if (useAgent) {
     final inputMessage = _latestUserMessage(sanitizedMessages);
     if (inputMessage == null) {
-      yield 'No user input provided';
-      return;
+      return Stream.value('No user input provided');
     }
 
     final tools = pipeline.tools;
     if (tools.isEmpty) {
-      yield 'Agent mode not supported for this provider.';
-      return;
+      return Stream.value('Agent mode not supported for this provider.');
     }
 
     final historyMessages = sanitizedMessages
         .sublist(0, sanitizedMessages.length - 1)
         .toList(growable: false);
 
-    stream = _runner.streamAgent(
+    return _runner.streamAgent(
       model: model,
       tools: tools,
       history: historyMessages,
@@ -272,24 +368,7 @@ Stream<String> _executeStream({
     );
   } else {
     final prompt = PromptValue.chat(sanitizedMessages);
-    stream = _runner.stream(model: model, prompt: prompt);
-  }
-
-  var buffer = '';
-
-  try {
-    await for (final chunk in stream) {
-      buffer = chunk;
-      yield buffer;
-    }
-  } catch (error, stack) {
-    final mapped = _mapError(error);
-    AnxLog.severe('AI error: $mapped\n$stack');
-    yield mapped;
-  } finally {
-    try {
-      model.close();
-    } catch (_) {}
+    return _runner.stream(model: model, prompt: prompt);
   }
 }
 

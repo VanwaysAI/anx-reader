@@ -141,6 +141,30 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       ''');
   }
 
+  void _triggerVisibleTranslation() {
+    webViewController.evaluateJavascript(source: '''
+      if (window.translator && typeof window.translator.translateVisibleElements === 'function') {
+        window.translator.translateVisibleElements();
+      }
+      ''');
+  }
+
+  Future<void> translateSelectedParagraph({required String cfi}) async {
+    print('translateSelectedParagraph called with cfi: $cfi');
+    // Escape single quotes in CFI for JS string
+    final escapedCfi = cfi.replaceAll("'", "\\'");
+    final result = await webViewController.evaluateJavascript(source: '''
+      console.log('JS translateSelectedParagraph called, cfi: '$escapedCfi');
+      console.log('window.translator:', window.translator);
+      if (window.translator && typeof window.translator.translateSelectedParagraph === 'function') {
+        window.translator.translateSelectedParagraph('$escapedCfi');
+      } else {
+        console.warn('translator not available');
+      }
+      ''');
+    print('JS result: $result');
+  }
+
   Future<void> goToPercentage(double value) async {
     await webViewController.evaluateJavascript(source: '''
       goToPercent($value); 
@@ -662,6 +686,14 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           widget.updateParent();
           saveReadingProgress();
           readingPageKey.currentState?.resetAwakeTimer();
+
+          // Auto-translate visible elements on page/chapter change if translation mode is enabled
+          final currentMode = Prefs().getBookTranslationMode(widget.book.id);
+          if (currentMode != TranslationModeEnum.off) {
+            Future.delayed(const Duration(milliseconds: 300), () {
+              _triggerVisibleTranslation();
+            });
+          }
         });
     controller.addJavaScriptHandler(
         handlerName: 'onClick',
