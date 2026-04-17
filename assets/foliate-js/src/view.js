@@ -592,13 +592,21 @@ export class View extends HTMLElement {
   setTranslationMode(mode) {
     this.#translator.setTranslationMode(mode)
   }
-  
+
   getTranslationMode() {
     return this.#translator.getTranslationMode()
   }
-  
+
   clearTranslations() {
     this.#translator.clearTranslations()
+  }
+
+  translateSelectedParagraph(cfi) {
+    return this.#translator.translateSelectedParagraph(cfi)
+  }
+
+  getTranslator() {
+    return this.#translator
   }
 }
 

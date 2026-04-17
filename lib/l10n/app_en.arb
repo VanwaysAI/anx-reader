@@ -89,6 +89,7 @@
   "contextMenuCopy": "Copy",
   "contextMenuSearch": "Search",
   "contextMenuTranslate": "Translate",
+  "contextMenuParagraphTranslate": "Paragraph",
   "contextMenuWriteIdea": "Write Idea",
   "contextMenuDelete": "Delete",
   "contextMenuConfirm": "Confirm",

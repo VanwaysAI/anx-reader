@@ -526,7 +526,6 @@ export class Translator {
   // Translate a selected paragraph and insert inline below original
   async translateSelectedParagraph(cfi) {
     console.log('translateSelectedParagraph called, cfi:', cfi)
-    console.log('translationMode:', this.#translationMode)
 
     // Find the paragraph element from CFI
     const element = this.#findElementByCfi(cfi)
@@ -572,24 +571,14 @@ export class Translator {
     }
   }
 
-  // Find element from CFI - use current selection since it's still active
+  // Find element from CFI - prioritize CFI resolution, selection as fallback
   #findElementByCfi(cfi) {
     try {
-      // First try to use the current selection (most reliable)
-      const selection = window.getSelection()
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0)
-        if (range && range.startContainer) {
-          return range.startContainer.parentElement
-        }
-      }
-
-      // Fallback: try to resolve CFI using view's resolveCFI
+      // Primary: resolve CFI directly (authoritative identifier)
       if (window.reader && window.reader.view) {
         const view = window.reader.view
-        const resolved = view.resolveCFI(cfi)
+        const resolved = view.resolveCFI?.(cfi)
         if (resolved && resolved.anchor) {
-          // Get the current document from renderer
           const contents = view.renderer?.getContents?.()
           if (contents && contents.length > 0) {
             const doc = contents[0].doc
@@ -600,6 +589,15 @@ export class Translator {
               }
             }
           }
+        }
+      }
+
+      // Fallback: use current selection (works when selection is still active)
+      const selection = window.getSelection()
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0)
+        if (range && range.startContainer) {
+          return range.startContainer.parentElement
         }
       }
     } catch (e) {

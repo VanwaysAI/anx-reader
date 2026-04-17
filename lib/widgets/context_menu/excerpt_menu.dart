@@ -289,31 +289,22 @@ class ExcerptMenuState extends State<ExcerptMenu> {
             icon: const Icon(EvaIcons.globe),
             text: L10n.of(context).contextMenuSearch,
           ),
-          // toggle translation menu
+          // toggle translation menu (word/text translation overlay)
+          IconAndText(
+            compact: true,
+            onTap: widget.toggleTranslationMenu,
+            icon: const Icon(Icons.translate),
+            text: L10n.of(context).contextMenuTranslate,
+          ),
+          // paragraph translation (inline insert below original)
           IconAndText(
             compact: true,
             onTap: () {
-              final content = widget.annoContent.trim();
-              // Check if it's a single word (no spaces, short length)
-              final isSingleWord = !content.contains(RegExp(r'\s')) && content.length < 30;
-
-              print('Translation tap: content="$content", isSingleWord=$isSingleWord, cfi=${widget.annoCfi}');
-
-              if (isSingleWord) {
-                // Word translation: show dictionary overlay
-                widget.toggleTranslationMenu();
-              } else {
-                // Paragraph translation: inline insert below original
-                widget.onClose();
-                final playerState = epubPlayerKey.currentState;
-                print('epubPlayerKey.currentState: $playerState');
-                if (playerState != null) {
-                  playerState.translateSelectedParagraph(cfi: widget.annoCfi);
-                }
-              }
+              widget.onClose();
+              epubPlayerKey.currentState?.translateSelectedParagraph(cfi: widget.annoCfi);
             },
-            icon: const Icon(Icons.translate),
-            text: L10n.of(context).contextMenuTranslate,
+            icon: const Icon(Icons.text_fields),
+            text: L10n.of(context).contextMenuParagraphTranslate,
           ),
           // narrate
           IconAndText(

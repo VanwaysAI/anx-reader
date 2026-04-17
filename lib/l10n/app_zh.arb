@@ -89,6 +89,7 @@
   "contextMenuCopy": "复制",
   "contextMenuSearch": "搜索",
   "contextMenuTranslate": "翻译",
+  "contextMenuParagraphTranslate": "段落翻译",
   "contextMenuWriteIdea": "批注",
   "contextMenuDelete": "删除",
   "contextMenuConfirm": "确认",

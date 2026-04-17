@@ -150,19 +150,18 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   }
 
   Future<void> translateSelectedParagraph({required String cfi}) async {
-    print('translateSelectedParagraph called with cfi: $cfi');
-    // Escape single quotes in CFI for JS string
-    final escapedCfi = cfi.replaceAll("'", "\\'");
-    final result = await webViewController.evaluateJavascript(source: '''
-      console.log('JS translateSelectedParagraph called, cfi: '$escapedCfi');
-      console.log('window.translator:', window.translator);
-      if (window.translator && typeof window.translator.translateSelectedParagraph === 'function') {
-        window.translator.translateSelectedParagraph('$escapedCfi');
-      } else {
-        console.warn('translator not available');
-      }
+    // Use JSON encoding for proper escaping of all special characters
+    final jsCfi = jsonEncode(cfi);
+    await webViewController.evaluateJavascript(source: '''
+      (function() {
+        var cfiStr = $jsCfi;
+        if (window.reader && window.reader.view && typeof window.reader.view.translateSelectedParagraph === 'function') {
+          window.reader.view.translateSelectedParagraph(cfiStr);
+        } else {
+          console.warn('reader.view.translateSelectedParagraph not available');
+        }
+      })();
       ''');
-    print('JS result: $result');
   }
 
   Future<void> goToPercentage(double value) async {
@@ -691,6 +690,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           final currentMode = Prefs().getBookTranslationMode(widget.book.id);
           if (currentMode != TranslationModeEnum.off) {
             Future.delayed(const Duration(milliseconds: 300), () {
+              if (!mounted) return;
               _triggerVisibleTranslation();
             });
           }
