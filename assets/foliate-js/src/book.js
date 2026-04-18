@@ -173,10 +173,15 @@ const handleSelection = (view, doc, index) => {
 
 const AUTO_PAGE_LOG_PREFIX = '[ANX_AUTO_PAGE]';
 const AUTO_PAGE_DELAY_MS = 320;
-const AUTO_PAGE_BOTTOM_THRESHOLD = 0.96;
 
 const logAutoPage = (event, payload = {}) => {
-  console.log(`${AUTO_PAGE_LOG_PREFIX} ${event}`, payload);
+  let payloadText = '';
+  try {
+    payloadText = JSON.stringify(payload);
+  } catch {
+    payloadText = String(payload);
+  }
+  console.log(`${AUTO_PAGE_LOG_PREFIX} ${event} ${payloadText}`);
 };
 
 const getAutoPageState = (view) => {
@@ -464,8 +469,7 @@ const setSelectionHandler = (view, doc, index) => {
       }
       const rangeReachedPageEnd = compareToPageEnd >= 0;
       const selectionPos = getPosition(selRange);
-      const reachedScreenBottom = selectionPos.bottom >= AUTO_PAGE_BOTTOM_THRESHOLD;
-      const reachedCurrentPageBottom = rangeReachedPageEnd && reachedScreenBottom;
+      const reachedCurrentPageBottom = rangeReachedPageEnd;
 
       logAutoPage('selection-eval', {
         index,
@@ -474,7 +478,6 @@ const setSelectionHandler = (view, doc, index) => {
         compareToPageEnd,
         rangeReachedPageEnd,
         selectionBottom: Number(selectionPos.bottom.toFixed(4)),
-        reachedScreenBottom,
         reachedCurrentPageBottom,
         alreadyTriggeredThisPage: state.triggeredPages.has(pageKey),
         pendingFromPageKey: state.pendingFromPageKey,
