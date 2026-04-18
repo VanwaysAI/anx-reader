@@ -171,33 +171,23 @@ const handleSelection = (view, doc, index) => {
   });
 };
 
-const AUTO_PAGE_LOG_PREFIX = '[ANX_AUTO_PAGE]';
 const AUTO_PAGE_DELAY_MS = 1000;
 const AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD = 0.9;
 const AUTO_PAGE_POST_NEXT_RECHECK_INTERVAL_MS = 120;
 const AUTO_PAGE_POST_NEXT_RECHECK_MAX_ATTEMPTS = 12;
-
-const logAutoPage = (event, payload = {}) => {
-  let payloadText = '';
-  try {
-    payloadText = JSON.stringify(payload);
-  } catch {
-    payloadText = String(payload);
-  }
-  console.log(`${AUTO_PAGE_LOG_PREFIX} ${event} ${payloadText}`);
-};
+const AUTO_PAGE_POST_NEXT_RECHECK_INITIAL_DELAY_MS = 80;
 
 const getAutoPageState = (view) => {
   if (!view.__anxAutoPageState) {
     view.__anxAutoPageState = {
       sessionId: 0,
+      currentPageKey: null,
       triggeredPages: new Set(),
       pendingFromPageKey: null,
       pendingTimer: null,
       postNextRecheckTimer: null,
       postNextRecheckAttempts: 0,
       awaitingPageAdvanceFromKey: null,
-      lastPageKey: null,
     };
   }
   return view.__anxAutoPageState;
@@ -215,30 +205,28 @@ const clearAutoPagePostNextRecheck = (state) => {
   state.postNextRecheckTimer = null;
 };
 
-const startAutoPageSession = (view, reason) => {
+const resetAutoPageSessionState = (state) => {
+  state.currentPageKey = null;
+  state.triggeredPages.clear();
+  state.pendingFromPageKey = null;
+  state.postNextRecheckAttempts = 0;
+  state.awaitingPageAdvanceFromKey = null;
+};
+
+const startAutoPageSession = (view) => {
   const state = getAutoPageState(view);
   clearAutoPageTimer(state);
   clearAutoPagePostNextRecheck(state);
   state.sessionId += 1;
-  state.triggeredPages.clear();
-  state.pendingFromPageKey = null;
-  state.postNextRecheckAttempts = 0;
-  state.awaitingPageAdvanceFromKey = null;
-  state.lastPageKey = null;
-  logAutoPage('session-start', { reason, sessionId: state.sessionId });
+  resetAutoPageSessionState(state);
   return state;
 };
 
-const stopAutoPageSession = (view, reason) => {
+const stopAutoPageSession = (view) => {
   const state = getAutoPageState(view);
   clearAutoPageTimer(state);
   clearAutoPagePostNextRecheck(state);
-  state.triggeredPages.clear();
-  state.pendingFromPageKey = null;
-  state.postNextRecheckAttempts = 0;
-  state.awaitingPageAdvanceFromKey = null;
-  state.lastPageKey = null;
-  logAutoPage('session-stop', { reason, sessionId: state.sessionId });
+  resetAutoPageSessionState(state);
 };
 
 const getAutoPageLocationKey = (lastLocation, index) => {
@@ -270,7 +258,7 @@ const setSelectionHandler = (view, doc, index) => {
     lastPointerUpRange = null;
     doc.__anxSelectionClearedAt = Date.now();
     doc.__anxSuppressClick = true;
-    stopAutoPageSession(view, 'selection-cleared');
+    stopAutoPageSession(view);
     callFlutter('onSelectionCleared');
   };
 
@@ -425,11 +413,7 @@ const setSelectionHandler = (view, doc, index) => {
       const container = view.shadowRoot.querySelector('foliate-paginator').shadowRoot.querySelector("#container");
       if (!container) return;
       globalThis.originalScrollLeft = container.scrollLeft;
-      startAutoPageSession(view, 'selectstart');
-      logAutoPage('selectstart', {
-        index,
-        scrollLeft: container.scrollLeft,
-      });
+      startAutoPageSession(view);
     });
 
 
@@ -440,72 +424,38 @@ const setSelectionHandler = (view, doc, index) => {
 
       const selRange = getSelectionRange(doc.getSelection())
       if (!selRange) return
-      if (!lastLocation.range) {
-        logAutoPage('skip-no-last-location-range', { index });
-        return;
-      }
+      if (!lastLocation.range) return;
 
       const container = view.shadowRoot.querySelector('foliate-paginator').shadowRoot.querySelector("#container");
-      if (!container) {
-        logAutoPage('skip-no-container', { index });
-        return;
-      }
+      if (!container) return;
 
       const state = getAutoPageState(view);
       if (state.sessionId === 0) {
-        startAutoPageSession(view, 'implicit-selectionchange');
+        startAutoPageSession(view);
       }
 
       const pageKey = getAutoPageLocationKey(lastLocation, index);
-      if (state.lastPageKey !== pageKey) {
-        logAutoPage('page-changed', {
-          from: state.lastPageKey,
-          to: pageKey,
-          sessionId: state.sessionId,
-        });
+      if (state.currentPageKey !== pageKey) {
         if (
           state.awaitingPageAdvanceFromKey
           && state.awaitingPageAdvanceFromKey !== pageKey
         ) {
-          logAutoPage('page-advance-confirmed', {
-            index,
-            sessionId: state.sessionId,
-            fromPageKey: state.awaitingPageAdvanceFromKey,
-            toPageKey: pageKey,
-          });
           state.awaitingPageAdvanceFromKey = null;
           state.postNextRecheckAttempts = 0;
           clearAutoPagePostNextRecheck(state);
         }
-        state.lastPageKey = pageKey;
+        state.currentPageKey = pageKey;
       }
 
       if (state.pendingFromPageKey && state.pendingFromPageKey !== pageKey) {
-        const previousPendingPageKey = state.pendingFromPageKey;
-        const hadPendingTimer = !!state.pendingTimer;
         clearAutoPageTimer(state);
-        logAutoPage('pending-cancel-page-changed', {
-          from: state.pendingFromPageKey,
-          to: pageKey,
-          sessionId: state.sessionId,
-          hadPendingTimer,
-        });
         state.pendingFromPageKey = null;
-        logAutoPage('pending-page-advanced', {
-          from: previousPendingPageKey,
-          to: pageKey,
-          sessionId: state.sessionId,
-        });
       }
 
-      let compareToPageEnd = -1;
+      let compareToPageEnd;
       try {
         compareToPageEnd = selRange.compareBoundaryPoints(Range.END_TO_END, lastLocation.range);
-      } catch (error) {
-        logAutoPage('skip-compare-boundary-failed', {
-          index,
-          error: String(error),
-        });
+      } catch {
         return;
       }
       const rangeReachedPageEnd = compareToPageEnd >= 0;
@@ -513,64 +463,17 @@ const setSelectionHandler = (view, doc, index) => {
       const nearScreenBottom = selectionPos.bottom >= AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD;
       const reachedCurrentPageBottom = rangeReachedPageEnd && nearScreenBottom;
 
-      logAutoPage('selection-eval', {
-        index,
-        sessionId: state.sessionId,
-        pageKey,
-        compareToPageEnd,
-        rangeReachedPageEnd,
-        selectionBottom: Number(selectionPos.bottom.toFixed(4)),
-        nearScreenBottom,
-        reachedCurrentPageBottom,
-        alreadyTriggeredThisPage: state.triggeredPages.has(pageKey),
-        pendingFromPageKey: state.pendingFromPageKey,
-        hasPendingTimer: !!state.pendingTimer,
-        awaitingPageAdvanceFromKey: state.awaitingPageAdvanceFromKey,
-        postNextRecheckAttempts: state.postNextRecheckAttempts,
-      });
-
       if (!reachedCurrentPageBottom && state.pendingFromPageKey === pageKey) {
-        const hadPendingTimer = !!state.pendingTimer;
         clearAutoPageTimer(state);
         state.pendingFromPageKey = null;
-        logAutoPage('pending-cancel-left-bottom', {
-          index,
-          sessionId: state.sessionId,
-          pageKey,
-          hadPendingTimer,
-          compareToPageEnd,
-          selectionBottom: Number(selectionPos.bottom.toFixed(4)),
-          threshold: AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD,
-        });
       }
 
       if (reachedCurrentPageBottom) {
-        if (state.pendingFromPageKey === pageKey && state.pendingTimer) {
-          logAutoPage('skip-pending-same-page', {
-            index,
-            sessionId: state.sessionId,
-            pageKey,
-            reason: 'pending-timer-active',
-          });
-          return;
-        }
-        if (state.pendingFromPageKey === pageKey && !state.pendingTimer) {
-          logAutoPage('pending-stale-cleared', {
-            index,
-            sessionId: state.sessionId,
-            pageKey,
-            reason: 'pending-page-marker-without-timer',
-          });
+        if (state.pendingFromPageKey === pageKey) {
+          if (state.pendingTimer) return;
           state.pendingFromPageKey = null;
         }
-        if (state.triggeredPages.has(pageKey)) {
-          logAutoPage('skip-already-triggered-page', {
-            index,
-            sessionId: state.sessionId,
-            pageKey,
-          });
-          return;
-        }
+        if (state.triggeredPages.has(pageKey)) return;
 
         state.pendingFromPageKey = pageKey;
         clearAutoPagePostNextRecheck(state);
@@ -580,21 +483,8 @@ const setSelectionHandler = (view, doc, index) => {
         const scheduledSessionId = state.sessionId;
         state.pendingTimer = setTimeout(async () => {
           state.pendingTimer = null;
-          if (scheduledSessionId !== state.sessionId) {
-            logAutoPage('skip-stale-timer', {
-              index,
-              scheduledSessionId,
-              currentSessionId: state.sessionId,
-              pageKey,
-            });
-            return;
-          }
+          if (scheduledSessionId !== state.sessionId) return;
           state.triggeredPages.add(pageKey);
-          logAutoPage('next-page-trigger', {
-            index,
-            sessionId: state.sessionId,
-            fromPageKey: pageKey,
-          });
           try {
             await view.next();
             const latestContainer = view.shadowRoot.querySelector('foliate-paginator').shadowRoot.querySelector("#container");
@@ -604,91 +494,32 @@ const setSelectionHandler = (view, doc, index) => {
           } finally {
             if (state.pendingFromPageKey === pageKey) {
               state.pendingFromPageKey = null;
-              logAutoPage('pending-clear-after-next', {
-                index,
-                sessionId: state.sessionId,
-                fromPageKey: pageKey,
-              });
             }
-            logAutoPage('next-page-finished', {
-              index,
-              sessionId: state.sessionId,
-              fromPageKey: pageKey,
-            });
             state.awaitingPageAdvanceFromKey = pageKey;
             state.postNextRecheckAttempts = 0;
             clearAutoPagePostNextRecheck(state);
-            logAutoPage('post-next-selection-recheck-start', {
-              index,
-              sessionId: state.sessionId,
-              fromPageKey: pageKey,
-              intervalMs: AUTO_PAGE_POST_NEXT_RECHECK_INTERVAL_MS,
-              maxAttempts: AUTO_PAGE_POST_NEXT_RECHECK_MAX_ATTEMPTS,
-            });
             const runPostNextSelectionRecheck = () => {
               state.postNextRecheckTimer = null;
-              if (scheduledSessionId !== state.sessionId) {
-                logAutoPage('post-next-selection-recheck-stop', {
-                  index,
-                  scheduledSessionId,
-                  currentSessionId: state.sessionId,
-                  fromPageKey: pageKey,
-                  reason: 'session-changed',
-                });
-                return;
-              }
-              if (state.awaitingPageAdvanceFromKey !== pageKey) {
-                logAutoPage('post-next-selection-recheck-stop', {
-                  index,
-                  sessionId: state.sessionId,
-                  fromPageKey: pageKey,
-                  reason: 'page-advance-confirmed',
-                });
-                return;
-              }
+              if (scheduledSessionId !== state.sessionId) return;
+              if (state.awaitingPageAdvanceFromKey !== pageKey) return;
               state.postNextRecheckAttempts += 1;
-              const attempt = state.postNextRecheckAttempts;
               try {
                 doc.dispatchEvent(new Event('selectionchange'));
-                logAutoPage('post-next-selection-recheck-dispatched', {
-                  index,
-                  sessionId: state.sessionId,
-                  fromPageKey: pageKey,
-                  attempt,
-                });
-              } catch (error) {
-                logAutoPage('post-next-selection-recheck-failed', {
-                  index,
-                  sessionId: state.sessionId,
-                  fromPageKey: pageKey,
-                  attempt,
-                  error: String(error),
-                });
-              }
-              if (attempt >= AUTO_PAGE_POST_NEXT_RECHECK_MAX_ATTEMPTS) {
-                logAutoPage('post-next-selection-recheck-exhausted', {
-                  index,
-                  sessionId: state.sessionId,
-                  fromPageKey: pageKey,
-                  attempts: attempt,
-                });
+              } catch {
                 return;
               }
+              if (state.postNextRecheckAttempts >= AUTO_PAGE_POST_NEXT_RECHECK_MAX_ATTEMPTS) return;
               state.postNextRecheckTimer = setTimeout(
                 runPostNextSelectionRecheck,
                 AUTO_PAGE_POST_NEXT_RECHECK_INTERVAL_MS,
               );
             };
-            state.postNextRecheckTimer = setTimeout(runPostNextSelectionRecheck, 80);
+            state.postNextRecheckTimer = setTimeout(
+              runPostNextSelectionRecheck,
+              AUTO_PAGE_POST_NEXT_RECHECK_INITIAL_DELAY_MS,
+            );
           }
         }, AUTO_PAGE_DELAY_MS);
-
-        logAutoPage('next-page-scheduled', {
-          index,
-          sessionId: state.sessionId,
-          pageKey,
-          delayMs: AUTO_PAGE_DELAY_MS,
-        });
         return;
       }
 
@@ -698,12 +529,6 @@ const setSelectionHandler = (view, doc, index) => {
 
         if (view.lastLocation.range.startContainer === selRange.endContainer) {
           container.scrollLeft = globalThis.originalScrollLeft;
-          logAutoPage('prevent-scroll-restore', {
-            index,
-            sessionId: getAutoPageState(view).sessionId,
-            pageKey: getAutoPageLocationKey(view.lastLocation, index),
-            restoredScrollLeft: globalThis.originalScrollLeft,
-          });
         }
       };
 
