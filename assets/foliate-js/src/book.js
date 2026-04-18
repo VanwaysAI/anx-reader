@@ -530,12 +530,14 @@ const setSelectionHandler = (view, doc, index) => {
       });
 
       if (!reachedCurrentPageBottom && state.pendingFromPageKey === pageKey) {
+        const hadPendingTimer = !!state.pendingTimer;
         clearAutoPageTimer(state);
         state.pendingFromPageKey = null;
         logAutoPage('pending-cancel-left-bottom', {
           index,
           sessionId: state.sessionId,
           pageKey,
+          hadPendingTimer,
           compareToPageEnd,
           selectionBottom: Number(selectionPos.bottom.toFixed(4)),
           threshold: AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD,
@@ -570,7 +572,6 @@ const setSelectionHandler = (view, doc, index) => {
           return;
         }
 
-        state.triggeredPages.add(pageKey);
         state.pendingFromPageKey = pageKey;
         clearAutoPagePostNextRecheck(state);
         state.awaitingPageAdvanceFromKey = null;
@@ -588,6 +589,7 @@ const setSelectionHandler = (view, doc, index) => {
             });
             return;
           }
+          state.triggeredPages.add(pageKey);
           logAutoPage('next-page-trigger', {
             index,
             sessionId: state.sessionId,
