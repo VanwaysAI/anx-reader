@@ -172,7 +172,7 @@ const handleSelection = (view, doc, index) => {
 };
 
 const AUTO_PAGE_LOG_PREFIX = '[ANX_AUTO_PAGE]';
-const AUTO_PAGE_DELAY_MS = 320;
+const AUTO_PAGE_DELAY_MS = 1000;
 
 const logAutoPage = (event, payload = {}) => {
   let payloadText = '';
