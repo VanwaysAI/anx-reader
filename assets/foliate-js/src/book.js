@@ -173,6 +173,7 @@ const handleSelection = (view, doc, index) => {
 
 const AUTO_PAGE_LOG_PREFIX = '[ANX_AUTO_PAGE]';
 const AUTO_PAGE_DELAY_MS = 1000;
+const AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD = 0.9;
 
 const logAutoPage = (event, payload = {}) => {
   let payloadText = '';
@@ -189,6 +190,7 @@ const getAutoPageState = (view) => {
     view.__anxAutoPageState = {
       sessionId: 0,
       triggeredPages: new Set(),
+      seenNonBottomPages: new Set(),
       pendingFromPageKey: null,
       pendingTimer: null,
       lastPageKey: null,
@@ -208,6 +210,7 @@ const startAutoPageSession = (view, reason) => {
   clearAutoPageTimer(state);
   state.sessionId += 1;
   state.triggeredPages.clear();
+  state.seenNonBottomPages.clear();
   state.pendingFromPageKey = null;
   state.lastPageKey = null;
   logAutoPage('session-start', { reason, sessionId: state.sessionId });
@@ -218,6 +221,7 @@ const stopAutoPageSession = (view, reason) => {
   const state = getAutoPageState(view);
   clearAutoPageTimer(state);
   state.triggeredPages.clear();
+  state.seenNonBottomPages.clear();
   state.pendingFromPageKey = null;
   state.lastPageKey = null;
   logAutoPage('session-stop', { reason, sessionId: state.sessionId });
@@ -469,7 +473,13 @@ const setSelectionHandler = (view, doc, index) => {
       }
       const rangeReachedPageEnd = compareToPageEnd >= 0;
       const selectionPos = getPosition(selRange);
-      const reachedCurrentPageBottom = rangeReachedPageEnd;
+      const nearScreenBottom = selectionPos.bottom >= AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD;
+      const reachedCurrentPageBottom = rangeReachedPageEnd && nearScreenBottom;
+      const hadNonBottomEvidence = state.seenNonBottomPages.has(pageKey);
+
+      if (!reachedCurrentPageBottom) {
+        state.seenNonBottomPages.add(pageKey);
+      }
 
       logAutoPage('selection-eval', {
         index,
@@ -478,12 +488,24 @@ const setSelectionHandler = (view, doc, index) => {
         compareToPageEnd,
         rangeReachedPageEnd,
         selectionBottom: Number(selectionPos.bottom.toFixed(4)),
+        nearScreenBottom,
         reachedCurrentPageBottom,
+        hadNonBottomEvidence,
         alreadyTriggeredThisPage: state.triggeredPages.has(pageKey),
         pendingFromPageKey: state.pendingFromPageKey,
       });
 
       if (reachedCurrentPageBottom) {
+        if (!hadNonBottomEvidence) {
+          logAutoPage('skip-no-non-bottom-evidence', {
+            index,
+            sessionId: state.sessionId,
+            pageKey,
+            selectionBottom: Number(selectionPos.bottom.toFixed(4)),
+            threshold: AUTO_PAGE_SCREEN_BOTTOM_THRESHOLD,
+          });
+          return;
+        }
         if (state.pendingFromPageKey === pageKey) {
           logAutoPage('skip-pending-same-page', {
             index,
