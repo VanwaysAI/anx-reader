@@ -34,6 +34,7 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
 
   AiProtocol _selectedProtocol = AiProtocol.openai;
   AiReasoningEffort _reasoningEffort = AiReasoningEffort.auto;
+  bool _enableThinking = false;
   List<AiApiKey> _apiKeys = [];
   bool _isModified = false;
   bool _isFetchingModels = false;
@@ -54,6 +55,7 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
     _modelController = TextEditingController(text: provider?.model ?? '');
     _selectedProtocol = provider?.protocol ?? AiProtocol.openai;
     _reasoningEffort = provider?.reasoningEffort ?? AiReasoningEffort.auto;
+    _enableThinking = provider?.enableThinking ?? false;
     _apiKeys = provider?.apiKeys.toList() ?? [];
 
     _nameController.addListener(() => setState(() => _isModified = true));
@@ -355,6 +357,38 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.settingsAiProviderEnableThinking,
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    Text(
+                      l10n.settingsAiProviderEnableThinkingHelp,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _enableThinking,
+                onChanged: (value) {
+                  setState(() {
+                    _enableThinking = value;
+                    _isModified = true;
+                  });
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -630,6 +664,7 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
       apiKeys: _apiKeys,
       model: _modelController.text,
       reasoningEffort: _reasoningEffort,
+      enableThinking: _enableThinking,
       keyIndex: 0,
       createdAt: widget.providerId != null
           ? ref
@@ -676,6 +711,7 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
         apiKeys: _apiKeys,
         model: _modelController.text,
         reasoningEffort: _reasoningEffort,
+        enableThinking: _enableThinking,
         keyIndex: 0,
         createdAt: widget.providerId != null
             ? ref

@@ -352,6 +352,8 @@
   "settingsAiProviderReasoningEffortLow": "Low",
   "settingsAiProviderReasoningEffortMedium": "Medium",
   "settingsAiProviderReasoningEffortHigh": "High",
+  "settingsAiProviderEnableThinking": "Enable Thinking",
+  "settingsAiProviderEnableThinkingHelp": "Disable to turn off thinking/reasoning mode for models like Qwen. Disabling can improve translation speed.",
   "storagePermissionDenied": "Storage permission denied",
   "galleryPermissionDenied": "Gallery permission denied",
   "gotoAuthorize": "Go to authorize",
