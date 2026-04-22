@@ -351,6 +351,8 @@
   "settingsAiProviderReasoningEffortLow": "低",
   "settingsAiProviderReasoningEffortMedium": "中",
   "settingsAiProviderReasoningEffortHigh": "高",
+  "settingsAiProviderEnableThinking": "启用思考",
+  "settingsAiProviderEnableThinkingHelp": "关闭思考模式可提升翻译速度，适用于 Qwen3 等默认开启思考的模型。",
   "storagePermissionDenied": "存储权限未授权",
   "galleryPermissionDenied": "相册权限未授权",
   "gotoAuthorize": "去授权",

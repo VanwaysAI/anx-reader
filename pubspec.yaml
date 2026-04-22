@@ -2,7 +2,7 @@ name: anx_reader
 description: "An e-book reader."
 publish_to: 'none'
 
-version: 1.14.1+6322
+version: 1.15.0+6323
 
 environment:
   sdk: '>=3.5.2 <4.0.0'
@@ -151,6 +151,11 @@ dependency_overrides:
       url: https://github.com/Anxcye/langchain_dart.git
       ref: 310fb6b3
       path: packages/langchain_anthropic
+  langchain_google:
+    git:
+      url: https://github.com/Anxcye/langchain_dart.git
+      ref: 310fb6b3
+      path: packages/langchain_google
 #  analyzer: ^8.0.0
 
 
