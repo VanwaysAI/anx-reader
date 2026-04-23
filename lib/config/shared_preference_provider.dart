@@ -1650,6 +1650,17 @@ class Prefs extends ChangeNotifier {
     prefs.setInt('wirelessTransferPort', port);
     notifyListeners();
   }
+
+  // Translation margin: how many pages ahead to pre-translate (in pixels)
+  // 800px ≈ 1.5 pages, 1600px ≈ 3 pages, 2400px ≈ 5 pages
+  int get translationMargin {
+    return prefs.getInt('translationMargin') ?? 1600; // 3 pages default
+  }
+
+  set translationMargin(int px) {
+    prefs.setInt('translationMargin', px);
+    notifyListeners();
+  }
 }
 
 ReadingInfoEnum _decodeReadingInfoEnum(

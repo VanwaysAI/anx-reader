@@ -32,13 +32,19 @@ export class Translator {
   #isTranslating = false
   #maxConcurrent = 3 // Maximum concurrent translations
   #requestDelay = 500 // Delay between requests in ms
+  #cache = {} // Persistent translation cache, keyed by stable element identifiers
+  #cacheLoadPromise = null
+  #rootMargin = '1600px' // ~3 pages ahead (default)
+  #maxCacheSize = 5000 // Maximum cache entries
+  #separator = '\x1f' // Unit Separator for batch translation
+  #maxBatchSize = 5 // Maximum paragraphs per batch
+  #maxBatchChars = 3000 // Maximum total characters per batch
 
   constructor() {
     this.#initializeObserver()
   }
 
   #initializeObserver() {
-    // Reduced rootMargin to ~1.5 pages instead of ~4 pages
     this.#observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
@@ -49,10 +55,23 @@ export class Translator {
         this.#processQueue()
       },
       {
-        rootMargin: '800px', // ~1.5 pages ahead
+        rootMargin: this.#rootMargin,
         threshold: 0
       }
     )
+  }
+
+  // Set the observation margin (e.g., '1600px' for ~3 pages)
+  setRootMargin(margin) {
+    this.#rootMargin = margin
+    if (this.#observer) {
+      this.#observer.disconnect()
+      this.#initializeObserver()
+      // Re-observe all elements with new margin
+      this.observedElements.forEach(element => {
+        try { this.#observer.observe(element) } catch (e) {}
+      })
+    }
   }
 
   // Queue translation requests
@@ -69,7 +88,7 @@ export class Translator {
     }
   }
 
-  // Process queue one at a time with delay
+  // Process queue using batch translation
   async #processQueue() {
     if (this.#isTranslating) return
     if (this.#translationQueue.length === 0) return
@@ -77,29 +96,14 @@ export class Translator {
 
     this.#isTranslating = true
 
-    // Process up to maxConcurrent items at once
-    const batch = this.#translationQueue.splice(0, this.#maxConcurrent)
+    // In bilingual mode, translate individually to ensure 1:1 paragraph pairing
+    // In translation-only mode, batch translate for efficiency
+    const useBatch = this.#translationMode === TranslationMode.TRANSLATION_ONLY
 
-    for (const item of batch) {
-      if (this.#translationMode === TranslationMode.OFF) break
-
-      try {
-        const translatedText = await translate(item.text)
-
-        this.#translatedElements.set(item.element, {
-          originalText: item.text,
-          translatedText: translatedText
-        })
-
-        this.#applyTranslation(item.element, translatedText)
-      } catch (error) {
-        console.warn('Translation failed:', error)
-      }
-
-      // Add delay between requests to avoid rate limiting
-      if (this.#translationQueue.length > 0) {
-        await new Promise(resolve => setTimeout(resolve, this.#requestDelay))
-      }
+    if (useBatch) {
+      await this.#processBatch()
+    } else {
+      await this.#processIndividual()
     }
 
     this.#isTranslating = false
@@ -108,6 +112,94 @@ export class Translator {
     if (this.#translationQueue.length > 0 && this.#translationMode !== TranslationMode.OFF) {
       setTimeout(() => this.#processQueue(), this.#requestDelay)
     }
+  }
+
+  // Process a batch of paragraphs for translation-only mode
+  async #processBatch() {
+    const batch = this.#buildBatch()
+    if (batch.length === 0) return
+
+    // Sort by DOM position before translation
+    batch.sort((a, b) => this.#compareDomPosition(a.element, b.element))
+
+    try {
+      if (batch.length > 1) {
+        const combinedText = batch.map(item => item.text).join(this.#separator)
+        const combinedResult = await translate(combinedText)
+        const translations = combinedResult.split(this.#separator)
+
+        for (let i = 0; i < batch.length; i++) {
+          const item = batch[i]
+          const translatedText = translations[i] !== undefined ? translations[i] : item.text
+          this.#applyTranslated(item.element, item.text, translatedText)
+        }
+      } else if (batch.length === 1) {
+        const item = batch[0]
+        const translatedText = await translate(item.text)
+        this.#applyTranslated(item.element, item.text, translatedText)
+      }
+      this.#persistCache()
+    } catch (error) {
+      console.warn('Batch translation failed, falling back to individual:', error)
+      for (const item of batch) {
+        try {
+          const translatedText = await translate(item.text)
+          this.#applyTranslated(item.element, item.text, translatedText)
+        } catch (e) {
+          console.warn('Translation failed:', e)
+        }
+      }
+    }
+  }
+
+  // Process individual paragraphs for bilingual mode (1:1 pairing)
+  async #processIndividual() {
+    const item = this.#translationQueue.shift()
+    if (!item) return
+
+    try {
+      const translatedText = await translate(item.text)
+      this.#applyTranslated(item.element, item.text, translatedText)
+    } catch (error) {
+      console.warn('Translation failed:', error)
+    }
+  }
+
+  // Apply translated text and update cache
+  #applyTranslated(element, originalText, translatedText) {
+    const cacheData = { originalText, translatedText }
+    this.#translatedElements.set(element, cacheData)
+    const cacheKey = this.#getCacheKey(element)
+    if (cacheKey) this.#cache[cacheKey] = cacheData
+    this.#applyTranslation(element, translatedText)
+  }
+
+  // Compare DOM position of two elements
+  #compareDomPosition(a, b) {
+    if (a === b) return 0
+    const position = a.compareDocumentPosition?.(b)
+    if (position === undefined) return 0
+    if (position & Node.DOCUMENT_POSITION_FOLLOWING) return -1
+    if (position & Node.DOCUMENT_POSITION_PRECEDING) return 1
+    return 0
+  }
+
+  // Build a batch of adjacent paragraphs for combined translation
+  #buildBatch() {
+    const batch = []
+    let totalChars = 0
+
+    while (
+      this.#translationQueue.length > 0 &&
+      batch.length < this.#maxBatchSize &&
+      totalChars < this.#maxBatchChars
+    ) {
+      const item = this.#translationQueue.shift()
+      batch.push(item)
+      totalChars += item.text.length
+    }
+
+    return batch
   }
 
   async setTranslationMode(mode) {
@@ -154,10 +246,10 @@ export class Translator {
       console.warn('No document provided to observeDocument')
       return
     }
-        
+
     const textElements = this.#walkTextNodes(doc.body || doc.documentElement)
     // console.log(`Found ${textElements.length} text elements to observe`)
-    
+
     textElements.forEach(element => {
       if (!this.observedElements.has(element)) {
         this.#observer.observe(element)
@@ -165,8 +257,31 @@ export class Translator {
         // console.log('Added element to observer:', element.tagName, element.textContent?.substring(0, 50))
       }
     })
-    
+
     // console.log(`Total observed elements: ${this.observedElements.size}`)
+
+    // Check cache for already-translated elements
+    this.#applyCachedTranslations()
+  }
+
+  // Apply cached translations to newly loaded document
+  #applyCachedTranslations() {
+    const cacheKeys = Object.keys(this.#cache)
+    if (cacheKeys.length === 0) return
+
+    this.observedElements.forEach(element => {
+      if (this.#translatedElements.has(element)) return
+
+      const cacheKey = this.#getCacheKey(element)
+      if (cacheKey && this.#cache[cacheKey]) {
+        const cached = this.#cache[cacheKey]
+        const text = element.innerText?.trim()
+        if (text && cached.originalText === text) {
+          this.#translatedElements.set(element, cached)
+          this.#applyTranslation(element, cached.translatedText)
+        }
+      }
+    })
   }
 
   clearTranslations() {
@@ -273,22 +388,137 @@ export class Translator {
   async #translateElement(element) {
     if (this.#translationMode === TranslationMode.OFF) return
     if (this.#translatedElements.has(element)) return
-    
+
     const text = element.innerText?.trim()
     if (!text) return
-    
+
+    // Check persistent cache first
+    const cacheKey = this.#getCacheKey(element)
+    if (cacheKey && this.#cache[cacheKey]) {
+      const cached = this.#cache[cacheKey]
+      // Verify cached text matches current text
+      if (cached.originalText === text) {
+        this.#translatedElements.set(element, cached)
+        this.#applyTranslation(element, cached.translatedText)
+        return
+      }
+    }
+
     try {
       const translatedText = await translate(text)
-      
-      // Mark as translated to prevent re-processing
-      this.#translatedElements.set(element, {
+
+      const cacheData = {
         originalText: text,
         translatedText: translatedText
-      })
-      
+      }
+      this.#translatedElements.set(element, cacheData)
+
+      // Store in persistent cache
+      if (cacheKey) {
+        this.#cache[cacheKey] = cacheData
+        // Persist to Flutter
+        this.#persistCache()
+      }
+
       this.#applyTranslation(element, translatedText)
     } catch (error) {
       console.warn('Translation failed:', error)
+    }
+  }
+
+  // Generate a stable cache key for an element
+  #getCacheKey(element) {
+    // Primary: CFI (most precise)
+    try {
+      if (window.reader && window.reader.view) {
+        const cfi = window.reader.view.getCFIFromDomElement?.(element)
+        if (cfi) return cfi
+      }
+    } catch (e) {}
+
+    // Fallback: stable structure path signature
+    const chapterId = this.#getChapterId()
+    const pathSignature = this.#getElementPath(element)
+    if (pathSignature) {
+      return `${chapterId}:${pathSignature}`
+    }
+
+    // Last resort: text hash (least reliable)
+    if (element.innerText) {
+      let hash = 0
+      const text = element.innerText.trim().substring(0, 100)
+      for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i)
+        hash |= 0
+      }
+      return `${chapterId}:hash_${hash}`
+    }
+    return null
+  }
+
+  // Extract chapter identifier from current location
+  #getChapterId() {
+    try {
+      if (window.reader?.view?.location?.cfi) {
+        // Use first 60 chars of CFI as chapter identifier
+        return window.reader.view.location.cfi.substring(0, 60)
+      }
+    } catch (e) {}
+    return 'unknown'
+  }
+
+  // Generate a stable path signature based on DOM structure
+  #getElementPath(element) {
+    const segments = []
+    let current = element
+    let depth = 0
+    while (current && current !== document.body && depth < 15) {
+      const tag = current.tagName?.toLowerCase()
+      if (tag && !['html', 'body'].includes(tag)) {
+        const siblings = Array.from(current.parentElement?.children || [])
+          .filter(c => c.tagName === current.tagName && !c.classList.contains('translated-text'))
+        const index = siblings.indexOf(current)
+        segments.unshift(`${tag}${index >= 0 ? index : ''}`)
+      }
+      current = current.parentElement
+      depth++
+    }
+    return segments.join('/')
+  }
+
+  // Persist cache to Flutter for storage across sessions
+  #persistCache() {
+    // Enforce cache size limit
+    const keys = Object.keys(this.#cache)
+    if (keys.length > this.#maxCacheSize) {
+      const excess = keys.length - this.#maxCacheSize
+      for (let i = 0; i < excess; i++) {
+        delete this.#cache[keys[i]]
+      }
+    }
+
+    try {
+      if (window.flutter_inappwebview) {
+        const cacheJson = JSON.stringify(this.#cache)
+        window.flutter_inappwebview.callHandler('saveTranslationCache', cacheJson)
+      }
+    } catch (e) {
+      // Silently fail - cache loss is not critical
+    }
+  }
+
+  // Load cache from Flutter on document ready
+  async loadCache() {
+    try {
+      if (window.flutter_inappwebview) {
+        const cacheJson = await window.flutter_inappwebview.callHandler('loadTranslationCache')
+        if (cacheJson) {
+          this.#cache = JSON.parse(cacheJson)
+          console.log(`Translation cache loaded: ${Object.keys(this.#cache).length} entries`)
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load translation cache:', e)
     }
   }
 
@@ -465,39 +695,64 @@ export class Translator {
 
   // Process queue completely and wait for all translations
   async #processQueueAndWait() {
-    // Set flag to prevent concurrent processing
     this.#isTranslating = true
+    const useBatch = this.#translationMode === TranslationMode.TRANSLATION_ONLY
 
     try {
       while (this.#translationQueue.length > 0 && this.#translationMode !== TranslationMode.OFF) {
-        // Process next batch
-        const batch = this.#translationQueue.splice(0, this.#maxConcurrent)
-
-        for (const item of batch) {
-          if (this.#translationMode === TranslationMode.OFF) break
+        if (useBatch) {
+          // Batch mode: build, sort, translate, apply
+          const batch = this.#buildBatch()
+          if (batch.length === 0) break
+          batch.sort((a, b) => this.#compareDomPosition(a.element, b.element))
 
           try {
-            const translatedText = await translate(item.text)
-
-            this.#translatedElements.set(item.element, {
-              originalText: item.text,
-              translatedText: translatedText
-            })
-
-            this.#applyTranslation(item.element, translatedText)
+            if (batch.length > 1) {
+              const combinedText = batch.map(item => item.text).join(this.#separator)
+              const combinedResult = await translate(combinedText)
+              const translations = combinedResult.split(this.#separator)
+              for (let i = 0; i < batch.length; i++) {
+                const item = batch[i]
+                const translatedText = translations[i] !== undefined ? translations[i] : item.text
+                this.#applyTranslated(item.element, item.text, translatedText)
+              }
+            } else {
+              const item = batch[0]
+              const translatedText = await translate(item.text)
+              this.#applyTranslated(item.element, item.text, translatedText)
+            }
+            this.#persistCache()
           } catch (error) {
-            console.warn('Translation failed:', error)
+            // Fallback to individual
+            for (const item of batch) {
+              try {
+                const translatedText = await translate(item.text)
+                this.#applyTranslated(item.element, item.text, translatedText)
+              } catch (e) {
+                console.warn('Translation failed:', e)
+              }
+            }
           }
+        } else {
+          // Individual mode: translate one at a time
+          const item = this.#translationQueue.shift()
+          if (!item) break
+          try {
+            const translatedText = await translate(item.text)
+            this.#applyTranslated(item.element, item.text, translatedText)
+          } catch (e) {
+            console.warn('Translation failed:', e)
+          }
+        }
 
-          // Add delay between requests to avoid rate limiting
+        // Delay between batches/individual
+        if (this.#translationQueue.length > 0) {
           await new Promise(resolve => setTimeout(resolve, this.#requestDelay))
         }
       }
     } finally {
-      // Always release the flag
       this.#isTranslating = false
 
-      // Trigger processing of any remaining items (e.g., from IntersectionObserver)
       if (this.#translationQueue.length > 0 && this.#translationMode !== TranslationMode.OFF) {
         setTimeout(() => this.#processQueue(), this.#requestDelay)
       }
@@ -521,6 +776,35 @@ export class Translator {
   async translateVisibleElements() {
     if (this.#translationMode === TranslationMode.OFF) return
     await this.#forceTranslateVisibleElements()
+  }
+
+  // Translate ONLY the currently visible page elements immediately
+  async translateCurrentPage() {
+    if (this.#translationMode === TranslationMode.OFF) return
+
+    // Find elements currently in the viewport (no margin buffer)
+    const visibleElements = []
+    this.observedElements.forEach(element => {
+      const rect = element.getBoundingClientRect()
+      const isFullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+      const isPartiallyVisible = rect.top < window.innerHeight && rect.bottom > 0
+
+      if (isFullyVisible || isPartiallyVisible) {
+        visibleElements.push(element)
+      }
+    })
+
+    // Queue visible elements at the FRONT of the translation queue
+    for (const element of visibleElements) {
+      if (!this.#translatedElements.has(element) && element.innerText?.trim()) {
+        this.#translationQueue.unshift({ element, text: element.innerText.trim() })
+      }
+    }
+
+    // Process the queue immediately
+    if (this.#translationQueue.length > 0) {
+      await this.#processQueueAndWait()
+    }
   }
 
   // Translate a selected paragraph and insert inline below original
