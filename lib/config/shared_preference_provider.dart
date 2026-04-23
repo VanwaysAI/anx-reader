@@ -1661,6 +1661,20 @@ class Prefs extends ChangeNotifier {
     prefs.setInt('translationMargin', px);
     notifyListeners();
   }
+
+  // AI Fallback provider
+  String? get aiFallbackProvider {
+    return prefs.getString('aiFallbackProvider');
+  }
+
+  set aiFallbackProvider(String? providerId) {
+    if (providerId != null) {
+      prefs.setString('aiFallbackProvider', providerId);
+    } else {
+      prefs.remove('aiFallbackProvider');
+    }
+    notifyListeners();
+  }
 }
 
 ReadingInfoEnum _decodeReadingInfoEnum(

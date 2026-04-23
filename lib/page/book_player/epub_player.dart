@@ -9,6 +9,7 @@ import 'package:anx_reader/enums/page_turn_mode.dart';
 import 'package:anx_reader/enums/reading_info.dart';
 import 'package:anx_reader/enums/translation_mode.dart';
 import 'package:anx_reader/enums/writing_mode.dart';
+import 'package:anx_reader/service/translate/index.dart' show TranslateService;
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
 import 'package:anx_reader/models/book.dart';
@@ -103,6 +104,8 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   String? _lastSelectionContextText;
   bool _selectionClearLocked = false;
   bool _selectionClearPending = false;
+  int _translationPending = 0;
+  int _translationCompleted = 0;
 
   // Scroll wheel debounce
   Timer? _scrollDebounceTimer;
@@ -912,8 +915,21 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           return await service.provider
               .translateTextOnly(text, from, to, isFullText: true);
         } catch (e) {
-          AnxLog.severe('Translation error: $e');
-          return 'Translation error: $e';
+          AnxLog.warning('Primary translation failed: $e, trying fallback');
+          // Fallback to Bing Web translation (no API key needed)
+          try {
+            final text = args[0] as String;
+            final fallback = TranslateService.bingWeb.provider;
+            final from = Prefs().fullTextTranslateFrom;
+            final to = Prefs().fullTextTranslateTo;
+            final result = await fallback
+                .translateTextOnly(text, from, to, isFullText: true);
+            AnxLog.info('Fallback translation succeeded');
+            return result;
+          } catch (fallbackError) {
+            AnxLog.severe('Fallback translation also failed: $fallbackError');
+            return 'Translation error: $e';
+          }
         }
       },
     );
@@ -941,6 +957,18 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           AnxLog.warning('Failed to load translation cache: $e');
           return '';
         }
+      },
+    );
+    // Translation progress handler
+    controller.addJavaScriptHandler(
+      handlerName: 'translationProgress',
+      callback: (args) {
+        if (!mounted) return;
+        final data = args[0] as Map<dynamic, dynamic>;
+        setState(() {
+          _translationPending = data['pending'] as int? ?? 0;
+          _translationCompleted = data['completed'] as int? ?? 0;
+        });
       },
     );
   }
@@ -1149,6 +1177,43 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     );
   }
 
+  Widget _buildTranslationProgressWidget() {
+    return Positioned(
+      top: 60,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value: _translationPending > 0 ? null : 1.0,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _translationPending > 0
+                    ? 'Translating $_translationPending...'
+                    : 'Translation complete',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget readingInfoWidget() {
     if (chapterCurrentPage == 0 && percentage == 0.0) {
       return const SizedBox();
@@ -1341,6 +1406,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
             buildWebviewWithIOSWorkaround(context, url, initialCfi),
             readingInfoWidget(),
             if (showHistory) _buildHistoryCapsule(),
+            if (_translationPending > 0) _buildTranslationProgressWidget(),
             if (Prefs().openBookAnimation)
               SizedBox.expand(
                   child: IgnorePointer(
