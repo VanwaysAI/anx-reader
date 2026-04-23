@@ -142,10 +142,10 @@ export class Translator {
       console.warn('Batch translation failed, falling back to individual:', error)
       for (const item of batch) {
         try {
-          const translatedText = await translate(item.text)
+          const translatedText = await this.#translateWithRetry(item.text)
           this.#applyTranslated(item.element, item.text, translatedText)
         } catch (e) {
-          console.warn('Translation failed:', e)
+          console.warn('Translation failed after retries:', e)
         }
       }
     }
@@ -157,11 +157,33 @@ export class Translator {
     if (!item) return
 
     try {
-      const translatedText = await translate(item.text)
+      const translatedText = await this.#translateWithRetry(item.text)
       this.#applyTranslated(item.element, item.text, translatedText)
     } catch (error) {
-      console.warn('Translation failed:', error)
+      console.warn('Translation failed after retries:', error)
     }
+  }
+
+  // Retry translation with exponential backoff
+  async #translateWithRetry(text, maxRetries = 3) {
+    let lastError
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+          // console.log(`Retrying translation (attempt ${attempt + 1}/${maxRetries + 1}), waiting ${delay}ms`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+        const result = await translate(text)
+        if (result && !result.startsWith('Translation failed') && !result.startsWith('Translation error')) {
+          return result
+        }
+        lastError = new Error(result)
+      } catch (e) {
+        lastError = e
+      }
+    }
+    throw lastError
   }
 
   // Apply translated text and update cache
@@ -717,30 +739,30 @@ export class Translator {
               }
             } else {
               const item = batch[0]
-              const translatedText = await translate(item.text)
+              const translatedText = await this.#translateWithRetry(item.text)
               this.#applyTranslated(item.element, item.text, translatedText)
             }
             this.#persistCache()
           } catch (error) {
-            // Fallback to individual
+            // Fallback to individual with retry
             for (const item of batch) {
               try {
-                const translatedText = await translate(item.text)
+                const translatedText = await this.#translateWithRetry(item.text)
                 this.#applyTranslated(item.element, item.text, translatedText)
               } catch (e) {
-                console.warn('Translation failed:', e)
+                console.warn('Translation failed after retries:', e)
               }
             }
           }
         } else {
-          // Individual mode: translate one at a time
+          // Individual mode: translate one at a time with retry
           const item = this.#translationQueue.shift()
           if (!item) break
           try {
-            const translatedText = await translate(item.text)
+            const translatedText = await this.#translateWithRetry(item.text)
             this.#applyTranslated(item.element, item.text, translatedText)
           } catch (e) {
-            console.warn('Translation failed:', e)
+            console.warn('Translation failed after retries:', e)
           }
         }
 
