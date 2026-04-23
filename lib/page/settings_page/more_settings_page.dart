@@ -9,6 +9,7 @@ import 'package:anx_reader/page/settings_page/reading.dart';
 import 'package:anx_reader/page/settings_page/settings_page.dart';
 import 'package:anx_reader/page/settings_page/storege.dart';
 import 'package:anx_reader/page/settings_page/sync.dart';
+import 'package:anx_reader/page/settings_page/wireless_transfer.dart';
 import 'package:anx_reader/page/settings_page/translate.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/widgets/settings/about.dart';
@@ -99,6 +100,15 @@ class _SubMoreSettingsState extends State<SubMoreSettings> {
                 "subtitles": [
                   L10n.of(context).settingsSyncWebdav,
                   L10n.of(context).exportAndImport,
+                ],
+              },
+              {
+                "title": L10n.of(context).settingsWirelessTransfer,
+                "icon": Icons.wifi_outlined,
+                "sections": const WirelessTransferPage(),
+                "subtitles": [
+                  L10n.of(context).settingsWirelessTransferStatus,
+                  L10n.of(context).settingsWirelessTransferAddress,
                 ],
               },
               {
