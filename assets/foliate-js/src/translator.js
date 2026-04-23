@@ -33,7 +33,6 @@ export class Translator {
   #maxConcurrent = 3 // Maximum concurrent translations
   #requestDelay = 500 // Delay between requests in ms
   #cache = {} // Persistent translation cache, keyed by stable element identifiers
-  #cacheLoadPromise = null
   #rootMargin = '1600px' // ~3 pages ahead (default)
   #maxCacheSize = 5000 // Maximum cache entries
   #separator = '\x1f' // Unit Separator for batch translation
