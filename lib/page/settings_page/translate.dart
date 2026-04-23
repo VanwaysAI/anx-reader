@@ -94,6 +94,43 @@ class _TranslateSettingState extends State<TranslateSetting> {
                       FullTextTranslationConfig(
                         setState: () => setState(() {}),
                       ),
+                      const Divider(),
+                      // Translation margin setting
+                      Row(
+                        children: [
+                          Icon(Icons.panorama, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            L10n.of(context).translationMargin,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: Prefs().translationMargin,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: [
+                          DropdownMenuItem(value: 800, child: Text(L10n.of(context).translationMargin1Page)),
+                          DropdownMenuItem(value: 1600, child: Text(L10n.of(context).translationMargin2Pages)),
+                          DropdownMenuItem(value: 2400, child: Text(L10n.of(context).translationMargin3Pages)),
+                          DropdownMenuItem(value: 3200, child: Text(L10n.of(context).translationMargin5Pages)),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            Prefs().translationMargin = value;
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        L10n.of(context).translationMarginTip,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                      const Divider(),
                       Row(
                         children: [
                           Icon(Icons.info_outline, color: Colors.orange),

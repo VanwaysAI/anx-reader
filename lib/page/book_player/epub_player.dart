@@ -149,6 +149,14 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       ''');
   }
 
+  void _triggerCurrentPageTranslation() {
+    webViewController.evaluateJavascript(source: '''
+      if (window.translator && typeof window.translator.translateCurrentPage === 'function') {
+        window.translator.translateCurrentPage();
+      }
+      ''');
+  }
+
   Future<void> translateSelectedParagraph({required String cfi}) async {
     // Use JSON encoding for proper escaping of all special characters
     final jsCfi = jsonEncode(cfi);
@@ -691,7 +699,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           if (currentMode != TranslationModeEnum.off) {
             Future.delayed(const Duration(milliseconds: 300), () {
               if (!mounted) return;
-              _triggerVisibleTranslation();
+              _triggerCurrentPageTranslation();
             });
           }
         });
@@ -909,6 +917,32 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         }
       },
     );
+    // Translation cache handlers
+    controller.addJavaScriptHandler(
+      handlerName: 'saveTranslationCache',
+      callback: (args) async {
+        try {
+          final cacheJson = args[0] as String;
+          final cacheKey = 'translationCache_${widget.book.id}';
+          Prefs().prefs.setString(cacheKey, cacheJson);
+        } catch (e) {
+          AnxLog.warning('Failed to save translation cache: $e');
+        }
+      },
+    );
+    controller.addJavaScriptHandler(
+      handlerName: 'loadTranslationCache',
+      callback: (args) async {
+        try {
+          final cacheKey = 'translationCache_${widget.book.id}';
+          final cacheJson = Prefs().prefs.getString(cacheKey);
+          return cacheJson ?? '';
+        } catch (e) {
+          AnxLog.warning('Failed to load translation cache: $e');
+          return '';
+        }
+      },
+    );
   }
 
   Future<void> onWebViewCreated(InAppWebViewController controller) async {
@@ -921,6 +955,15 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
     // Initialize translation mode based on book-specific settings
     Future.delayed(const Duration(milliseconds: 300), () {
+      // Load translation cache from persistent storage
+      webViewController.evaluateJavascript(source: '''
+        if (window.translator && typeof window.translator.loadCache === 'function') {
+          window.translator.loadCache();
+        }
+        if (window.translator && typeof window.translator.setRootMargin === 'function') {
+          window.translator.setRootMargin('${Prefs().translationMargin}px');
+        }
+      ''');
       setTranslationMode(Prefs().getBookTranslationMode(widget.book.id));
     });
   }
