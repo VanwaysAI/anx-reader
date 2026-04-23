@@ -3,6 +3,8 @@
 ## 1.15.0
 - Feat(ai): Add "Enable Thinking" toggle in AI provider advanced settings to disable reasoning mode for models like Qwen3, improving translation speed
 - 新增(ai): AI提供商高级设置中新增"启用思考"开关，可关闭Qwen3等模型的思考模式，提升翻译速度
+- Feat(wireless): Add wireless book transfer - upload books from browser via local network with auto-shutdown
+- 新增: 无线传书功能，通过局域网从浏览器上传书籍到设备，支持自动关闭
 
 ## 1.14.0
 - Fix(translate): Remove legacy Microsoft reverse-engineered translation service and migrate saved full-text translation preference to Microsoft Azure API

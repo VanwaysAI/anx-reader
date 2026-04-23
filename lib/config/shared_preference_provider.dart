@@ -1631,6 +1631,25 @@ class Prefs extends ChangeNotifier {
     prefs.setDouble('aiPanelHeight', height);
     notifyListeners();
   }
+
+  // Wireless Transfer settings
+  int get wirelessTransferAutoShutdown {
+    return prefs.getInt('wirelessTransferAutoShutdown') ?? 600; // 10 minutes
+  }
+
+  set wirelessTransferAutoShutdown(int seconds) {
+    prefs.setInt('wirelessTransferAutoShutdown', seconds);
+    notifyListeners();
+  }
+
+  int get wirelessTransferPort {
+    return prefs.getInt('wirelessTransferPort') ?? 8080;
+  }
+
+  set wirelessTransferPort(int port) {
+    prefs.setInt('wirelessTransferPort', port);
+    notifyListeners();
+  }
 }
 
 ReadingInfoEnum _decodeReadingInfoEnum(

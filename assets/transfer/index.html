@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anx Reader - Wireless Transfer</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f7;
+  color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+.container { max-width: 600px; width: 100%; }
+h1 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 32px;
+  font-size: 14px;
+}
+.drop-zone {
+  border: 2px dashed #ccc;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  background: #fff;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: #6366f1;
+  background: #f0f0ff;
+}
+.drop-zone-icon { font-size: 48px; margin-bottom: 16px; }
+.drop-zone-text { font-size: 16px; color: #555; margin-bottom: 8px; }
+.drop-zone-hint { font-size: 13px; color: #999; }
+input[type="file"] { display: none; }
+.file-list { margin-top: 24px; }
+.file-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.file-icon { font-size: 24px; flex-shrink: 0; }
+.file-info { flex: 1; min-width: 0; }
+.file-name {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.file-status { font-size: 12px; color: #666; margin-top: 4px; }
+.file-status.success { color: #16a34a; }
+.file-status.error { color: #dc2626; }
+.file-status.uploading { color: #6366f1; }
+.progress-bar {
+  height: 4px;
+  background: #e5e5e5;
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.upload-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 24px;
+  transition: background 0.2s;
+}
+.upload-btn:hover { background: #4f46e5; }
+.upload-btn:disabled { background: #ccc; cursor: not-allowed; }
+.status-bar {
+  margin-top: 24px;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+.status-dot.offline { background: #dc2626; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Anx Reader</h1>
+  <p class="subtitle">Drag & drop books here, or click to select files</p>
+
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-zone-icon">&#128218;</div>
+    <div class="drop-zone-text">Drop EPUB, PDF or TXT files here</div>
+    <div class="drop-zone-hint">Supported: epub, pdf, txt (max 500MB)</div>
+    <input type="file" id="fileInput" multiple accept=".epub,.pdf,.txt">
+  </div>
+
+  <button class="upload-btn" id="uploadBtn" style="display:none">
+    Upload Selected Files
+  </button>
+
+  <div class="file-list" id="fileList"></div>
+
+  <div class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Connected</span>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const uploadBtn = document.getElementById('uploadBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+let selectedFiles = [];
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+function handleFiles(fileListInput) {
+  selectedFiles = Array.from(fileListInput);
+  if (selectedFiles.length > 0) {
+    uploadBtn.style.display = 'block';
+    renderFileList();
+  }
+}
+
+function renderFileList() {
+  fileList.innerHTML = '';
+  selectedFiles.forEach((file, idx) => {
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.id = 'file-' + idx;
+    item.innerHTML = `
+      <span class="file-icon">${getIcon(file.name)}</span>
+      <div class="file-info">
+        <div class="file-name">${file.name}</div>
+        <div class="file-status" id="status-${idx}">${formatSize(file.size)}</div>
+        <div class="progress-bar" id="progress-${idx}" style="display:none">
+          <div class="progress-bar-fill" id="fill-${idx}"></div>
+        </div>
+      </div>
+    `;
+    fileList.appendChild(item);
+  });
+}
+
+function getIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'epub') return '&#128218;';
+  if (ext === 'pdf') return '&#128196;';
+  return '&#128221;';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+uploadBtn.addEventListener('click', async () => {
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = 'Uploading...';
+
+  for (let i = 0; i < selectedFiles.length; i++) {
+    await uploadFile(selectedFiles[i], i);
+  }
+
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = 'Upload Selected Files';
+  selectedFiles = [];
+  fileInput.value = '';
+  uploadBtn.style.display = 'none';
+  checkStatus();
+});
+
+async function uploadFile(file, idx) {
+  const statusEl = document.getElementById('status-' + idx);
+  const progressEl = document.getElementById('progress-' + idx);
+  const fillEl = document.getElementById('fill-' + idx);
+
+  statusEl.textContent = 'Uploading...';
+  statusEl.className = 'file-status uploading';
+  progressEl.style.display = 'block';
+  fillEl.style.width = '10%';
+
+  try {
+    const formData = new FormData();
+    formData.append('files', file);
+
+    const xhr = new XMLHttpRequest();
+    await new Promise((resolve, reject) => {
+      xhr.upload.addEventListener('progress', e => {
+        if (e.lengthComputable) {
+          fillEl.style.width = Math.round(e.loaded / e.total * 100) + '%';
+        }
+      });
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error('HTTP ' + xhr.status));
+        }
+      });
+      xhr.addEventListener('error', () => reject(new Error('Network error')));
+      xhr.open('POST', '/upload');
+      xhr.send(formData);
+    });
+
+    statusEl.textContent = 'Upload successful';
+    statusEl.className = 'file-status success';
+    fillEl.style.width = '100%';
+  } catch (e) {
+    statusEl.textContent = 'Failed: ' + e.message;
+    statusEl.className = 'file-status error';
+    fillEl.style.width = '0%';
+    fillEl.style.background = '#dc2626';
+  }
+}
+
+async function checkStatus() {
+  try {
+    const res = await fetch('/status');
+    const data = await res.json();
+    if (data.running) {
+      statusDot.className = 'status-dot';
+      statusText.textContent = 'Connected - Ready for uploads';
+    } else {
+      statusDot.className = 'status-dot offline';
+      statusText.textContent = 'Server stopped';
+    }
+  } catch {
+    statusDot.className = 'status-dot offline';
+    statusText.textContent = 'Disconnected';
+  }
+}
+checkStatus();
+</script>
+</body>
+</html>
