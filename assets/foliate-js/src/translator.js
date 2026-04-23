@@ -14,9 +14,10 @@ if (typeof window !== 'undefined') {
 // Translation function that calls Flutter's translation service
 const translate = async (text) => {
   try {
-    // Call Flutter's translation handler
       const result = await window.flutter_inappwebview.callHandler('translateText', text)
-      return result || `Translation failed: ${text}`
+      if (!result) return `Translation failed: ${text}`
+      // Strip reasoning tags from the result
+      return result.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
   } catch (error) {
     console.error('Translation failed:', error)
     return `Translation error: ${text}`
@@ -87,6 +88,18 @@ export class Translator {
     }
   }
 
+  // Report translation progress to Flutter
+  #reportProgress() {
+    try {
+      if (window.flutter_inappwebview) {
+        window.flutter_inappwebview.callHandler('translationProgress', {
+          pending: this.#translationQueue.length,
+          completed: this.observedElements.size - this.#translationQueue.length,
+        })
+      }
+    } catch (e) {}
+  }
+
   // Process queue using batch translation
   async #processQueue() {
     if (this.#isTranslating) return
@@ -106,6 +119,9 @@ export class Translator {
     }
 
     this.#isTranslating = false
+
+    // Report final completion
+    this.#reportProgress()
 
     // Process remaining queue if any
     if (this.#translationQueue.length > 0 && this.#translationMode !== TranslationMode.OFF) {
@@ -162,6 +178,7 @@ export class Translator {
     } catch (error) {
       console.warn('Translation failed after retries:', error)
     }
+    this.#reportProgress()
   }
 
   // Retry translation with exponential backoff
