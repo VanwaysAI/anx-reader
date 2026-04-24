@@ -4,6 +4,7 @@ import 'package:anx_reader/enums/lang_list.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/models/vocabulary_item.dart';
 import 'package:anx_reader/page/reading_page.dart';
+import 'package:anx_reader/service/dictionary/english_dictionary.dart';
 import 'package:anx_reader/service/translate/index.dart';
 import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/common/axis_flex.dart';
@@ -37,11 +38,15 @@ class _TranslationMenuState extends State<TranslationMenu> {
   bool _translationInitialized = false;
   bool _isAdded = false;
   bool _isAdding = false;
+  bool _isLoadingPronunciation = false;
+  EnglishDictionaryEntry? _dictionaryEntry;
+  int _dictionaryLookupToken = 0;
 
   @override
   void initState() {
     super.initState();
     _initializeTranslation();
+    _loadPronunciation();
     _loadVocabularyState();
   }
 
@@ -51,6 +56,9 @@ class _TranslationMenuState extends State<TranslationMenu> {
     if (oldWidget.content != widget.content) {
       _isAdded = false;
       _isAdding = false;
+      _dictionaryEntry = null;
+      _isLoadingPronunciation = false;
+      _loadPronunciation();
       _loadVocabularyState();
     }
   }
@@ -88,6 +96,30 @@ class _TranslationMenuState extends State<TranslationMenu> {
     });
   }
 
+  Future<void> _loadPronunciation() async {
+    final word = widget.content.trim();
+    final token = ++_dictionaryLookupToken;
+    if (!EnglishDictionaryService.isEnglishWord(word)) {
+      if (!mounted) return;
+      setState(() {
+        _dictionaryEntry = null;
+        _isLoadingPronunciation = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingPronunciation = true;
+    });
+
+    final entry = await EnglishDictionaryService.lookup(word);
+    if (!mounted || token != _dictionaryLookupToken) return;
+    setState(() {
+      _dictionaryEntry = entry;
+      _isLoadingPronunciation = false;
+    });
+  }
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
@@ -98,7 +130,11 @@ class _TranslationMenuState extends State<TranslationMenu> {
     if (_isAdding) return;
     final l10n = L10n.of(context);
 
-    if (_isAdded || await vocabularyDao.exists(widget.content)) {
+    final existing = await vocabularyDao.selectByWord(widget.content);
+    if (_isAdded || existing != null) {
+      if (existing != null) {
+        await _updateVocabularyPronunciation(existing);
+      }
       if (!mounted) return;
       setState(() {
         _isAdded = true;
@@ -123,6 +159,7 @@ class _TranslationMenuState extends State<TranslationMenu> {
     final sourceSentence = _extractSourceSentence(word, effectiveContextText);
     String? definition;
     String? sourceSentenceTranslation;
+    final dictionaryEntryFuture = EnglishDictionaryService.lookup(word);
     try {
       definition = await translateTextOnly(
         word,
@@ -145,13 +182,16 @@ class _TranslationMenuState extends State<TranslationMenu> {
     final now = DateTime.now();
     final translateToCode = Prefs().translateTo.code;
     final isChineseDefinition = translateToCode.startsWith('zh');
+    final dictionaryEntry = await dictionaryEntryFuture;
     final item = VocabularyItem(
       id: const Uuid().v4(),
       word: word,
-      phonetic: _extractPhonetic(definition),
+      phonetic: dictionaryEntry?.phonetic ?? _extractPhonetic(definition),
       definitionCn: isChineseDefinition ? definition : null,
       definitionEn: isChineseDefinition ? null : definition,
-      partOfSpeech: _extractPartOfSpeech(definition),
+      partOfSpeech:
+          _extractPartOfSpeech(definition) ?? dictionaryEntry?.partOfSpeech,
+      audioUrl: dictionaryEntry?.audioUrl,
       bookId: book.id.toString(),
       bookTitle: book.title,
       chapterId: player?.chapterHref,
@@ -190,6 +230,30 @@ class _TranslationMenuState extends State<TranslationMenu> {
       _isAdded = true;
     });
     AnxToast.show(l10n.vocabularyAddedToast);
+  }
+
+  Future<void> _updateVocabularyPronunciation(VocabularyItem item) async {
+    if ((item.phonetic?.trim().isNotEmpty ?? false) &&
+        (item.audioUrl?.trim().isNotEmpty ?? false)) {
+      return;
+    }
+
+    final entry = await EnglishDictionaryService.lookup(item.word);
+    final phonetic = entry?.phonetic;
+    final audioUrl = entry?.audioUrl;
+    if ((phonetic == null || phonetic.isEmpty) &&
+        (audioUrl == null || audioUrl.isEmpty)) {
+      return;
+    }
+
+    await vocabularyDao.updateItem(
+      item.copyWith(
+        phonetic: phonetic ?? item.phonetic,
+        audioUrl: audioUrl ?? item.audioUrl,
+        partOfSpeech: item.partOfSpeech ?? entry?.partOfSpeech,
+        updatedAt: DateTime.now(),
+      ),
+    );
   }
 
   String? get _effectiveContextText {
@@ -237,6 +301,45 @@ class _TranslationMenuState extends State<TranslationMenu> {
     if (_isAdding) return L10n.of(context).vocabularyAdding;
     if (_isAdded) return L10n.of(context).vocabularyAdded;
     return L10n.of(context).vocabularyAdd;
+  }
+
+  Widget _pronunciationLine(BuildContext context) {
+    final entry = _dictionaryEntry;
+    if (!_isLoadingPronunciation &&
+        (entry == null || (entry.phonetic?.trim().isEmpty ?? true))) {
+      return const SizedBox.shrink();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final textStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isLoadingPronunciation) ...[
+            SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text('IPA ...', style: textStyle),
+          ] else ...[
+            const Icon(Icons.record_voice_over_outlined, size: 14),
+            const SizedBox(width: 5),
+            Text(entry!.phonetic!, style: textStyle),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _langPicker(bool isFrom) {
@@ -310,6 +413,7 @@ class _TranslationMenuState extends State<TranslationMenu> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                _pronunciationLine(context),
                 const SizedBox(height: 8),
                 Column(
                   mainAxisSize: MainAxisSize.min,
