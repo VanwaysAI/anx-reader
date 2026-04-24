@@ -304,6 +304,7 @@ const setSelectionHandler = (view, doc, index) => {
     });
   } else { // Android
     let hasNativeSelectionStarted = false;
+    var androidDebounceTimerId = undefined;
 
     doc.addEventListener('pointerdown', () => {
       hasNativeSelectionStarted = false;
@@ -322,6 +323,13 @@ const setSelectionHandler = (view, doc, index) => {
         return;
       }
 
+      // If there's an active text selection, always handle it
+      const selRange = getSelectionRange(doc.getSelection());
+      if (selRange && selRange.toString().trim().length > 0) {
+        handleSelection(view, doc, index);
+        return;
+      }
+
       // If we haven't lost pointer control yet (no pointercancel),
       // this is the "early" long-press event during drag start.
       // We block it to prevent the custom menu from interfering with the drag.
@@ -334,6 +342,23 @@ const setSelectionHandler = (view, doc, index) => {
       // this contextmenu event is likely triggered by the system or user interaction
       // after the selection phase (e.g. on release). We handle it.
       handleSelection(view, doc, index);
+    });
+
+    // Handle double-tap selection (doesn't fire contextmenu)
+    doc.addEventListener('selectionchange', () => {
+      if (hasNativeSelectionStarted) return; // Let contextmenu handle drag case
+
+      const selRange = getSelectionRange(doc.getSelection());
+      if (!selRange) return;
+
+      clearTimeout(androidDebounceTimerId);
+      androidDebounceTimerId = setTimeout(() => {
+        // Only trigger if selection is still valid
+        const currentRange = getSelectionRange(doc.getSelection());
+        if (currentRange && currentRange.toString().trim().length > 0) {
+          handleSelection(view, doc, index);
+        }
+      }, 500);
     });
   }
   // doc.addEventListener('selectionchange', () => handleSelection(view, doc, index));
