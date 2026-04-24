@@ -34,13 +34,18 @@ export class Translator {
   #maxConcurrent = 3 // Maximum concurrent translations
   #requestDelay = 500 // Delay between requests in ms
   #cache = {} // Persistent translation cache, keyed by stable element identifiers
-  #rootMargin = '1600px' // ~3 pages ahead (default)
+  #cacheLoaded = null // Deferred promise for cache loading synchronization
   #maxCacheSize = 5000 // Maximum cache entries
+  #rootMargin = '1600px' // ~3 pages ahead (default)
   #separator = '\x1f' // Unit Separator for batch translation
   #maxBatchSize = 5 // Maximum paragraphs per batch
   #maxBatchChars = 3000 // Maximum total characters per batch
 
   constructor() {
+    // Create deferred promise for cache loading
+    let resolveCache
+    this.#cacheLoaded = new Promise(resolve => { resolveCache = resolve })
+    this._cacheResolve = resolveCache
     this.#initializeObserver()
   }
 
@@ -245,13 +250,16 @@ export class Translator {
       console.warn(`Invalid translation mode: ${mode}`)
       return
     }
-    
+
+    // Load cache before applying translations
+    await this.loadCache()
+
     const oldMode = this.#translationMode
     this.#translationMode = mode
-    
+
     if (oldMode !== mode) {
       // console.log(`Translation mode changed from ${oldMode} to ${mode}`)
-      
+
       if (mode === TranslationMode.OFF) {
         // Turn off translation
         this.#updateTranslationDisplay()
@@ -299,7 +307,9 @@ export class Translator {
     // console.log(`Total observed elements: ${this.observedElements.size}`)
 
     // Check cache for already-translated elements
-    this.#applyCachedTranslations()
+    this.#cacheLoaded.then(() => {
+      this.#applyCachedTranslations()
+    })
   }
 
   // Apply cached translations to newly loaded document
@@ -466,31 +476,28 @@ export class Translator {
 
   // Generate a stable cache key for an element
   #getCacheKey(element) {
-    // Primary: CFI (most precise)
-    try {
-      if (window.reader && window.reader.view) {
-        const cfi = window.reader.view.getCFIFromDomElement?.(element)
-        if (cfi) return cfi
+    // Primary: text content hash (most stable across DOM changes)
+    if (element.innerText) {
+      const text = element.innerText.trim()
+      if (text) {
+        // Normalize: lowercase, collapse whitespace, strip punctuation
+        const normalized = text.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ')
+        let hash = 0
+        for (let i = 0; i < normalized.length; i++) {
+          hash = ((hash << 5) - hash) + normalized.charCodeAt(i)
+          hash |= 0
+        }
+        return `t_${hash}`
       }
-    } catch (e) {}
+    }
 
-    // Fallback: stable structure path signature
+    // Fallback: DOM path signature
     const chapterId = this.#getChapterId()
     const pathSignature = this.#getElementPath(element)
     if (pathSignature) {
-      return `${chapterId}:${pathSignature}`
+      return `${chapterId}:p_${pathSignature}`
     }
 
-    // Last resort: text hash (least reliable)
-    if (element.innerText) {
-      let hash = 0
-      const text = element.innerText.trim().substring(0, 100)
-      for (let i = 0; i < text.length; i++) {
-        hash = ((hash << 5) - hash) + text.charCodeAt(i)
-        hash |= 0
-      }
-      return `${chapterId}:hash_${hash}`
-    }
     return null
   }
 
@@ -535,6 +542,12 @@ export class Translator {
       }
     }
 
+    // Save to sessionStorage for instant restoration on page reload
+    try {
+      sessionStorage.setItem('anx_translation_cache', JSON.stringify(this.#cache))
+    } catch (e) {}
+
+    // Also save to Flutter for cross-session persistence
     try {
       if (window.flutter_inappwebview) {
         const cacheJson = JSON.stringify(this.#cache)
@@ -547,16 +560,34 @@ export class Translator {
 
   // Load cache from Flutter on document ready
   async loadCache() {
+    // First try sessionStorage for instant restoration
+    try {
+      const cached = sessionStorage.getItem('anx_translation_cache')
+      if (cached) {
+        this.#cache = JSON.parse(cached)
+        console.log(`Loaded cache from sessionStorage: ${Object.keys(this.#cache).length} entries`)
+      }
+    } catch (e) {}
+
+    // Also load from Flutter (might have more recent data from other sessions)
     try {
       if (window.flutter_inappwebview) {
         const cacheJson = await window.flutter_inappwebview.callHandler('loadTranslationCache')
         if (cacheJson) {
-          this.#cache = JSON.parse(cacheJson)
-          console.log(`Translation cache loaded: ${Object.keys(this.#cache).length} entries`)
+          const flutterCache = JSON.parse(cacheJson)
+          // Merge: prefer Flutter cache over sessionStorage
+          this.#cache = { ...this.#cache, ...flutterCache }
+          console.log(`Merged cache from Flutter: ${Object.keys(this.#cache).length} total entries`)
         }
       }
     } catch (e) {
       console.warn('Failed to load translation cache:', e)
+    } finally {
+      // Signal that cache loading is complete (even if empty)
+      if (this._cacheResolve) {
+        this._cacheResolve()
+        this._cacheResolve = null
+      }
     }
   }
 

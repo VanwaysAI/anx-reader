@@ -983,16 +983,13 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
     // Initialize translation mode based on book-specific settings
     Future.delayed(const Duration(milliseconds: 300), () {
-      // Load translation cache from persistent storage
+      setTranslationMode(Prefs().getBookTranslationMode(widget.book.id));
+      // Configure root margin
       webViewController.evaluateJavascript(source: '''
-        if (window.translator && typeof window.translator.loadCache === 'function') {
-          window.translator.loadCache();
-        }
         if (window.translator && typeof window.translator.setRootMargin === 'function') {
           window.translator.setRootMargin('${Prefs().translationMargin}px');
         }
       ''');
-      setTranslationMode(Prefs().getBookTranslationMode(widget.book.id));
     });
   }
 
