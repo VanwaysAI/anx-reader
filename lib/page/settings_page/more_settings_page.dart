@@ -11,6 +11,7 @@ import 'package:anx_reader/page/settings_page/storege.dart';
 import 'package:anx_reader/page/settings_page/sync.dart';
 import 'package:anx_reader/page/settings_page/wireless_transfer.dart';
 import 'package:anx_reader/page/settings_page/translate.dart';
+import 'package:anx_reader/page/settings_page/vocabulary_page.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/widgets/settings/about.dart';
 import 'package:flutter/cupertino.dart';
@@ -126,6 +127,14 @@ class _SubMoreSettingsState extends State<SubMoreSettings> {
                 "sections": const TranslateSetting(),
                 "subtitles": [
                   L10n.of(context).settingsTranslate,
+                ],
+              },
+              {
+                "title": L10n.of(context).vocabularyTitle,
+                "icon": Icons.menu_book_outlined,
+                "sections": const VocabularyPage(),
+                "subtitles": [
+                  L10n.of(context).vocabularySubtitle,
                 ],
               },
               if (EnvVar.enableAIFeature)

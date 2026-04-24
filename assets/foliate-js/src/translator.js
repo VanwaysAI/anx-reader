@@ -11,15 +11,23 @@ if (typeof window !== 'undefined') {
   window.TranslationMode = TranslationMode
 }
 
+const isTranslationFailure = (value) => {
+  if (typeof value !== 'string' || value.trim().length === 0) return true
+  return value.startsWith('Translation failed:') || value.startsWith('Translation error:')
+}
+
 // Translation function that calls Flutter's translation service
 const translate = async (text) => {
   try {
     // Call Flutter's translation handler
-      const result = await window.flutter_inappwebview.callHandler('translateText', text)
-      return result || `Translation failed: ${text}`
+    const result = await window.flutter_inappwebview.callHandler('translateText', text)
+    if (isTranslationFailure(result)) {
+      throw new Error('Translation returned an empty or failed result')
+    }
+    return result
   } catch (error) {
     console.error('Translation failed:', error)
-    return `Translation error: ${text}`
+    throw error
   }
 }
 
@@ -39,6 +47,11 @@ export class Translator {
   #separator = '\x1f' // Unit Separator for batch translation
   #maxBatchSize = 5 // Maximum paragraphs per batch
   #maxBatchChars = 3000 // Maximum total characters per batch
+  #progressTotal = 0
+  #progressCompleted = 0
+  #progressFailed = 0
+  #progressIdleTimer = null
+  #persistCacheTimer = null
 
   constructor() {
     this.#initializeObserver()
@@ -82,9 +95,13 @@ export class Translator {
     const text = element.innerText?.trim()
     if (!text) return
 
+    if (this.#applyCachedTranslation(element, text)) return
+
     // Add to queue if not already queued
     if (!this.#translationQueue.find(item => item.element === element)) {
+      this.#startProgressItem()
       this.#translationQueue.push({ element, text })
+      this.#reportTranslationProgress(true)
     }
   }
 
@@ -127,18 +144,19 @@ export class Translator {
         const combinedText = batch.map(item => item.text).join(this.#separator)
         const combinedResult = await translate(combinedText)
         const translations = combinedResult.split(this.#separator)
+        if (translations.length !== batch.length) {
+          throw new Error(`Batch translation count mismatch: ${translations.length}/${batch.length}`)
+        }
 
         for (let i = 0; i < batch.length; i++) {
           const item = batch[i]
-          const translatedText = translations[i] !== undefined ? translations[i] : item.text
-          this.#applyTranslated(item.element, item.text, translatedText)
+          this.#applyTranslated(item.element, item.text, translations[i])
         }
       } else if (batch.length === 1) {
         const item = batch[0]
         const translatedText = await translate(item.text)
         this.#applyTranslated(item.element, item.text, translatedText)
       }
-      this.#persistCache()
     } catch (error) {
       console.warn('Batch translation failed, falling back to individual:', error)
       for (const item of batch) {
@@ -147,6 +165,7 @@ export class Translator {
           this.#applyTranslated(item.element, item.text, translatedText)
         } catch (e) {
           console.warn('Translation failed:', e)
+          this.#finishProgressItem(true)
         }
       }
     }
@@ -162,16 +181,99 @@ export class Translator {
       this.#applyTranslated(item.element, item.text, translatedText)
     } catch (error) {
       console.warn('Translation failed:', error)
+      this.#finishProgressItem(true)
     }
   }
 
   // Apply translated text and update cache
   #applyTranslated(element, originalText, translatedText) {
+    if (isTranslationFailure(translatedText)) {
+      this.#finishProgressItem(true)
+      return
+    }
+
     const cacheData = { originalText, translatedText }
     this.#translatedElements.set(element, cacheData)
     const cacheKey = this.#getCacheKey(element)
     if (cacheKey) this.#cache[cacheKey] = cacheData
     this.#applyTranslation(element, translatedText)
+    this.#schedulePersistCache()
+    this.#finishProgressItem(false)
+  }
+
+  #applyCachedTranslation(element, text) {
+    const cacheKey = this.#getCacheKey(element)
+    if (!cacheKey || !this.#cache[cacheKey]) return false
+
+    const cached = this.#cache[cacheKey]
+    if (cached.originalText !== text) return false
+
+    this.#translatedElements.set(element, cached)
+    this.#applyTranslation(element, cached.translatedText)
+    return true
+  }
+
+  #startProgressItem() {
+    if (this.#progressIdleTimer) {
+      clearTimeout(this.#progressIdleTimer)
+      this.#progressIdleTimer = null
+    }
+
+    if (
+      this.#progressTotal > 0 &&
+      this.#progressCompleted >= this.#progressTotal &&
+      !this.#isTranslating &&
+      this.#translationQueue.length === 0
+    ) {
+      this.#progressTotal = 0
+      this.#progressCompleted = 0
+      this.#progressFailed = 0
+    }
+
+    this.#progressTotal += 1
+  }
+
+  #finishProgressItem(failed) {
+    if (this.#progressTotal <= 0) return
+
+    this.#progressCompleted = Math.min(this.#progressCompleted + 1, this.#progressTotal)
+    if (failed) this.#progressFailed += 1
+    this.#reportTranslationProgress(true)
+
+    if (
+      this.#progressCompleted >= this.#progressTotal &&
+      this.#translationQueue.length === 0
+    ) {
+      if (this.#progressIdleTimer) clearTimeout(this.#progressIdleTimer)
+      this.#progressIdleTimer = setTimeout(() => {
+        if (this.#translationQueue.length === 0 && !this.#isTranslating) {
+          this.#reportTranslationProgress(false)
+        }
+      }, 600)
+    }
+  }
+
+  #reportTranslationProgress(active) {
+    try {
+      if (!window.flutter_inappwebview) return
+      window.flutter_inappwebview.callHandler('onTranslationProgress', {
+        active,
+        completed: this.#progressCompleted,
+        total: this.#progressTotal,
+        pending: this.#translationQueue.length,
+        failed: this.#progressFailed,
+        mode: this.#translationMode,
+      })
+    } catch (e) {}
+  }
+
+  #schedulePersistCache() {
+    if (this.#persistCacheTimer) return
+
+    this.#persistCacheTimer = setTimeout(() => {
+      this.#persistCacheTimer = null
+      this.#persistCache()
+    }, 250)
   }
 
   // Compare DOM position of two elements
@@ -207,6 +309,8 @@ export class Translator {
       console.warn(`Invalid translation mode: ${mode}`)
       return
     }
+
+    await this.loadCache()
     
     const oldMode = this.#translationMode
     this.#translationMode = mode
@@ -509,17 +613,25 @@ export class Translator {
 
   // Load cache from Flutter on document ready
   async loadCache() {
-    try {
-      if (window.flutter_inappwebview) {
-        const cacheJson = await window.flutter_inappwebview.callHandler('loadTranslationCache')
-        if (cacheJson) {
-          this.#cache = JSON.parse(cacheJson)
-          console.log(`Translation cache loaded: ${Object.keys(this.#cache).length} entries`)
+    if (this.#cacheLoadPromise) return this.#cacheLoadPromise
+
+    this.#cacheLoadPromise = (async () => {
+      try {
+        if (window.flutter_inappwebview) {
+          const cacheJson = await window.flutter_inappwebview.callHandler('loadTranslationCache')
+          if (cacheJson) {
+            this.#cache = JSON.parse(cacheJson)
+            console.log(`Translation cache loaded: ${Object.keys(this.#cache).length} entries`)
+            this.#applyCachedTranslations()
+          }
         }
+      } catch (e) {
+        console.warn('Failed to load translation cache:', e)
       }
-    } catch (e) {
-      console.warn('Failed to load translation cache:', e)
-    }
+      return this.#cache
+    })()
+
+    return this.#cacheLoadPromise
   }
 
   #applyTranslation(element, translatedText) {
@@ -711,17 +823,18 @@ export class Translator {
               const combinedText = batch.map(item => item.text).join(this.#separator)
               const combinedResult = await translate(combinedText)
               const translations = combinedResult.split(this.#separator)
+              if (translations.length !== batch.length) {
+                throw new Error(`Batch translation count mismatch: ${translations.length}/${batch.length}`)
+              }
               for (let i = 0; i < batch.length; i++) {
                 const item = batch[i]
-                const translatedText = translations[i] !== undefined ? translations[i] : item.text
-                this.#applyTranslated(item.element, item.text, translatedText)
+                this.#applyTranslated(item.element, item.text, translations[i])
               }
             } else {
               const item = batch[0]
               const translatedText = await translate(item.text)
               this.#applyTranslated(item.element, item.text, translatedText)
             }
-            this.#persistCache()
           } catch (error) {
             // Fallback to individual
             for (const item of batch) {
@@ -730,6 +843,7 @@ export class Translator {
                 this.#applyTranslated(item.element, item.text, translatedText)
               } catch (e) {
                 console.warn('Translation failed:', e)
+                this.#finishProgressItem(true)
               }
             }
           }
@@ -742,6 +856,7 @@ export class Translator {
             this.#applyTranslated(item.element, item.text, translatedText)
           } catch (e) {
             console.warn('Translation failed:', e)
+            this.#finishProgressItem(true)
           }
         }
 
@@ -794,11 +909,10 @@ export class Translator {
       }
     })
 
-    // Queue visible elements at the FRONT of the translation queue
+    // Queue visible elements. #queueTranslation applies cache before scheduling
+    // network work, so revisiting a page does not translate it again.
     for (const element of visibleElements) {
-      if (!this.#translatedElements.has(element) && element.innerText?.trim()) {
-        this.#translationQueue.unshift({ element, text: element.innerText.trim() })
-      }
+      this.#queueTranslation(element)
     }
 
     // Process the queue immediately

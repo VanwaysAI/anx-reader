@@ -13,7 +13,7 @@ import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // Current app database version
-const int currentDbVersion = 7;
+const int currentDbVersion = 9;
 
 const createBookSQL = '''
 CREATE TABLE tb_books (
@@ -95,6 +95,46 @@ CREATE TABLE tb_groups (
   update_time TEXT,
   FOREIGN KEY (parent_id) REFERENCES tb_groups(id)
 )
+''';
+
+const createVocabularySQL = '''
+CREATE TABLE tb_vocabulary (
+  id TEXT PRIMARY KEY,
+  word TEXT NOT NULL,
+  normalized_word TEXT NOT NULL UNIQUE,
+  lemma TEXT,
+  phonetic TEXT,
+  definition_cn TEXT,
+  definition_en TEXT,
+  part_of_speech TEXT,
+  audio_url TEXT,
+  book_id TEXT NOT NULL,
+  book_title TEXT,
+  chapter_id TEXT,
+  chapter_title TEXT,
+  source_sentence TEXT NOT NULL,
+  source_sentence_translation TEXT,
+  contextual_definition TEXT,
+  context_before TEXT,
+  context_after TEXT,
+  example_sentence TEXT,
+  example_translation TEXT,
+  position TEXT,
+  review_stage INTEGER NOT NULL DEFAULT 0,
+  next_review_at TEXT NOT NULL,
+  last_reviewed_at TEXT,
+  familiarity TEXT NOT NULL DEFAULT 'newWord',
+  correct_count INTEGER NOT NULL DEFAULT 0,
+  wrong_count INTEGER NOT NULL DEFAULT 0,
+  is_mastered INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+)
+''';
+
+const createVocabularyReviewIndexSQL = '''
+CREATE INDEX idx_vocabulary_next_review_at
+ON tb_vocabulary(next_review_at, is_mastered)
 ''';
 
 class DBHelper {
@@ -425,10 +465,54 @@ class DBHelper {
             VALUES (?, '...', 0, datetime('now'), datetime('now'))
           ''', [groupId]);
         }
+        continue case7;
+      case7:
+      case 7:
+        await db.execute(createVocabularySQL);
+        await db.execute(createVocabularyReviewIndexSQL);
+        break;
+      case 8:
+        await _addColumnIfMissing(
+          db,
+          'tb_vocabulary',
+          'source_sentence_translation',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          db,
+          'tb_vocabulary',
+          'contextual_definition',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          db,
+          'tb_vocabulary',
+          'example_sentence',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          db,
+          'tb_vocabulary',
+          'example_translation',
+          'TEXT',
+        );
     }
 
     if (oldVersion != 0 && Prefs().webdavStatus) {
       updatedDB = true;
+    }
+  }
+
+  Future<void> _addColumnIfMissing(
+    Database db,
+    String table,
+    String column,
+    String type,
+  ) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    final exists = columns.any((row) => row['name'] == column);
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column $type');
     }
   }
 }
