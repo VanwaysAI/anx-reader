@@ -10,6 +10,7 @@ import 'package:anx_reader/page/home_page/bookshelf_page.dart';
 import 'package:anx_reader/page/home_page/notes_page.dart';
 import 'package:anx_reader/page/home_page/settings_page.dart';
 import 'package:anx_reader/page/home_page/statistics_page.dart';
+import 'package:anx_reader/page/settings_page/vocabulary_page.dart';
 import 'package:anx_reader/service/receive_file/receive_share.dart';
 import 'package:anx_reader/service/vibration_service.dart';
 import 'package:anx_reader/utils/check_update.dart';
@@ -154,6 +155,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           'label': L10n.of(context).navBarNotes,
           'identifier': 'notes'
         },
+      if (Prefs().bottomNavigatorShowVocabulary)
+        {
+          'icon': Icons.menu_book_outlined,
+          'label': L10n.of(context).vocabularyTitle,
+          'identifier': 'vocabulary'
+        },
       {
         'icon': EvaIcons.settings_2,
         'label': L10n.of(context).navBarSettings,
@@ -180,6 +187,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         if (Prefs().bottomNavigatorShowAI && EnvVar.enableAIFeature)
           AiChatStream(),
         if (Prefs().bottomNavigatorShowNote) NotesPage(controller: controller),
+        if (Prefs().bottomNavigatorShowVocabulary) const VocabularyPage(),
         SettingsPage(controller: controller),
       ];
       return page[index];

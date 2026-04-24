@@ -18,7 +18,6 @@ import 'package:langchain_core/chat_models.dart';
 import 'package:langchain_core/prompts.dart';
 
 final CancelableLangchainRunner _runner = CancelableLangchainRunner();
-final AiRequestQueueManager _queueManager = AiRequestQueueManager.instance;
 
 // Global request timestamps list for RPM throttling
 final List<DateTime> _aiRequestTimestamps = [];

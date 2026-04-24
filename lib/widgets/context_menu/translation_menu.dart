@@ -1,10 +1,16 @@
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/dao/vocabulary.dart';
 import 'package:anx_reader/enums/lang_list.dart';
+import 'package:anx_reader/l10n/generated/L10n.dart';
+import 'package:anx_reader/models/vocabulary_item.dart';
+import 'package:anx_reader/page/reading_page.dart';
 import 'package:anx_reader/service/translate/index.dart';
+import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/common/axis_flex.dart';
 import 'package:flutter/material.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'dart:async';
+import 'package:uuid/uuid.dart';
 
 class TranslationMenu extends StatefulWidget {
   const TranslationMenu({
@@ -13,11 +19,13 @@ class TranslationMenu extends StatefulWidget {
     required this.decoration,
     required this.axis,
     this.contextText,
+    this.position,
   });
   final String content;
   final BoxDecoration decoration;
   final Axis axis;
   final String? contextText;
+  final String? position;
 
   @override
   State<TranslationMenu> createState() => _TranslationMenuState();
@@ -27,11 +35,24 @@ class _TranslationMenuState extends State<TranslationMenu> {
   Widget? _translationWidget;
   Timer? _debounceTimer;
   bool _translationInitialized = false;
+  bool _isAdded = false;
+  bool _isAdding = false;
 
   @override
   void initState() {
     super.initState();
     _initializeTranslation();
+    _loadVocabularyState();
+  }
+
+  @override
+  void didUpdateWidget(covariant TranslationMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.content != widget.content) {
+      _isAdded = false;
+      _isAdding = false;
+      _loadVocabularyState();
+    }
   }
 
   void _initializeTranslation() {
@@ -59,10 +80,163 @@ class _TranslationMenuState extends State<TranslationMenu> {
     });
   }
 
+  Future<void> _loadVocabularyState() async {
+    final existing = await vocabularyDao.selectByWord(widget.content);
+    if (!mounted) return;
+    setState(() {
+      _isAdded = existing != null;
+    });
+  }
+
   @override
   void dispose() {
     _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _addToVocabulary() async {
+    if (_isAdding) return;
+    final l10n = L10n.of(context);
+
+    if (_isAdded || await vocabularyDao.exists(widget.content)) {
+      if (!mounted) return;
+      setState(() {
+        _isAdded = true;
+      });
+      AnxToast.show(l10n.vocabularyAlreadyExists);
+      return;
+    }
+
+    final player = epubPlayerKey.currentState;
+    final book = player?.book;
+    final word = widget.content.trim();
+    if (book == null || word.isEmpty) {
+      AnxToast.show(l10n.commonFailed);
+      return;
+    }
+
+    setState(() {
+      _isAdding = true;
+    });
+
+    final effectiveContextText = _effectiveContextText;
+    final sourceSentence = _extractSourceSentence(word, effectiveContextText);
+    String? definition;
+    String? sourceSentenceTranslation;
+    try {
+      definition = await translateTextOnly(
+        word,
+        contextText: effectiveContextText,
+      );
+    } catch (_) {
+      definition = null;
+    }
+    try {
+      if (sourceSentence.isNotEmpty && sourceSentence != word) {
+        sourceSentenceTranslation = await translateTextOnly(
+          sourceSentence,
+          contextText: effectiveContextText,
+        );
+      }
+    } catch (_) {
+      sourceSentenceTranslation = null;
+    }
+
+    final now = DateTime.now();
+    final translateToCode = Prefs().translateTo.code;
+    final isChineseDefinition = translateToCode.startsWith('zh');
+    final item = VocabularyItem(
+      id: const Uuid().v4(),
+      word: word,
+      phonetic: _extractPhonetic(definition),
+      definitionCn: isChineseDefinition ? definition : null,
+      definitionEn: isChineseDefinition ? null : definition,
+      partOfSpeech: _extractPartOfSpeech(definition),
+      bookId: book.id.toString(),
+      bookTitle: book.title,
+      chapterId: player?.chapterHref,
+      chapterTitle: player?.chapterTitle,
+      sourceSentence: sourceSentence,
+      sourceSentenceTranslation: sourceSentenceTranslation,
+      contextualDefinition: definition,
+      exampleSentence: sourceSentence,
+      exampleTranslation: sourceSentenceTranslation,
+      position: widget.position,
+      reviewStage: 0,
+      nextReviewAt: now,
+      lastReviewedAt: null,
+      familiarity: VocabularyFamiliarity.newWord,
+      correctCount: 0,
+      wrongCount: 0,
+      isMastered: false,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    try {
+      await vocabularyDao.save(item);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isAdding = false;
+      });
+      AnxToast.show(l10n.commonFailed);
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isAdding = false;
+      _isAdded = true;
+    });
+    AnxToast.show(l10n.vocabularyAddedToast);
+  }
+
+  String? get _effectiveContextText {
+    return (widget.contextText?.trim().isEmpty ?? true)
+        ? null
+        : widget.contextText!.trim();
+  }
+
+  String _extractSourceSentence(String word, String? contextText) {
+    final text = contextText?.trim();
+    if (text == null || text.isEmpty) {
+      return word;
+    }
+
+    final lowerText = text.toLowerCase();
+    final index = lowerText.indexOf(word.toLowerCase());
+    if (index == -1) {
+      return text;
+    }
+
+    final sentenceStart = text.lastIndexOf(RegExp(r'[.!?。！？\n]'), index);
+    final sentenceEnd = text.indexOf(RegExp(r'[.!?。！？\n]'), index);
+    final start = sentenceStart == -1 ? 0 : sentenceStart + 1;
+    final end = sentenceEnd == -1 ? text.length : sentenceEnd + 1;
+    return text.substring(start, end).trim();
+  }
+
+  String? _extractPhonetic(String? definition) {
+    if (definition == null) return null;
+    final match =
+        RegExp(r'(/[^/\n]{1,48}/|\[[^\]\n]{1,48}\])').firstMatch(definition);
+    return match?.group(0);
+  }
+
+  String? _extractPartOfSpeech(String? definition) {
+    if (definition == null) return null;
+    final match = RegExp(
+      r'\b(n|v|adj|adv|prep|pron|conj|interj|abbr)\.',
+      caseSensitive: false,
+    ).firstMatch(definition);
+    return match?.group(0);
+  }
+
+  String _buttonLabel(BuildContext context) {
+    if (_isAdding) return L10n.of(context).vocabularyAdding;
+    if (_isAdded) return L10n.of(context).vocabularyAdded;
+    return L10n.of(context).vocabularyAdd;
   }
 
   Widget _langPicker(bool isFrom) {
@@ -160,6 +334,22 @@ class _TranslationMenuState extends State<TranslationMenu> {
                         _langPicker(false),
                         if (widget.axis == Axis.horizontal) const Spacer(),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _isAdding ? null : _addToVocabulary,
+                        icon: Icon(_isAdded
+                            ? Icons.check_circle_outline
+                            : Icons.library_add_outlined),
+                        label: Text(
+                          _buttonLabel(context),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
                   ],
                 ),

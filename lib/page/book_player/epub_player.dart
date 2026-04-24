@@ -5,11 +5,11 @@ import 'dart:ui';
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/dao/book.dart';
 import 'package:anx_reader/dao/book_note.dart';
+import 'package:anx_reader/enums/lang_list.dart';
 import 'package:anx_reader/enums/page_turn_mode.dart';
 import 'package:anx_reader/enums/reading_info.dart';
 import 'package:anx_reader/enums/translation_mode.dart';
 import 'package:anx_reader/enums/writing_mode.dart';
-import 'package:anx_reader/service/translate/index.dart' show TranslateService;
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/main.dart';
 import 'package:anx_reader/models/book.dart';
@@ -29,6 +29,7 @@ import 'package:anx_reader/providers/bookmark.dart';
 import 'package:anx_reader/providers/chapter_content_bridge.dart';
 import 'package:anx_reader/providers/current_reading.dart';
 import 'package:anx_reader/service/book_player/book_player_server.dart';
+import 'package:anx_reader/service/translate/index.dart';
 import 'package:anx_reader/providers/toc_search.dart';
 import 'package:anx_reader/service/tts/base_tts.dart';
 import 'package:anx_reader/service/tts/models/tts_sentence.dart';
@@ -104,8 +105,13 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   String? _lastSelectionContextText;
   bool _selectionClearLocked = false;
   bool _selectionClearPending = false;
-  int _translationPending = 0;
-  int _translationCompleted = 0;
+  late TranslationModeEnum _activeTranslationMode;
+  String? _translationTextCacheStorageKey;
+  Map<String, dynamic> _translationTextCache = {};
+  int _translationProgressCompleted = 0;
+  int _translationProgressTotal = 0;
+  int _translationProgressFailed = 0;
+  bool _translationProgressActive = false;
 
   // Scroll wheel debounce
   Timer? _scrollDebounceTimer;
@@ -136,20 +142,31 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       ''');
   }
 
-  void setTranslationMode(TranslationModeEnum mode) {
-    webViewController.evaluateJavascript(source: '''
+  Future<void> setTranslationMode(
+    TranslationModeEnum mode, {
+    bool restoreProgress = true,
+  }) async {
+    if (mode != _activeTranslationMode) {
+      await saveReadingProgress();
+    }
+
+    _activeTranslationMode = mode;
+    _resetTranslationProgress();
+
+    await webViewController.evaluateJavascript(source: '''
       if (typeof reader.view !== 'undefined' && reader.view.setTranslationMode) {
         reader.view.setTranslationMode('${mode.code}');
       }
       ''');
-  }
 
-  void _triggerVisibleTranslation() {
-    webViewController.evaluateJavascript(source: '''
-      if (window.translator && typeof window.translator.translateVisibleElements === 'function') {
-        window.translator.translateVisibleElements();
-      }
-      ''');
+    if (!restoreProgress || widget.cfi != null) return;
+
+    final savedCfi = _savedCfiForMode(mode);
+    if (savedCfi == null || savedCfi == cfi) return;
+
+    await Future.delayed(const Duration(milliseconds: 120));
+    if (!mounted) return;
+    goToCfi(savedCfi);
   }
 
   void _triggerCurrentPageTranslation() {
@@ -906,26 +923,48 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     controller.addJavaScriptHandler(
       handlerName: 'translateText',
       callback: (args) async {
-        try {
-          String text = args[0];
-          final service = Prefs().fullTextTranslateService;
-          final from = Prefs().fullTextTranslateFrom;
-          final to = Prefs().fullTextTranslateTo;
+        final text = args[0] as String;
+        final service = Prefs().fullTextTranslateService;
+        final from = Prefs().fullTextTranslateFrom;
+        final to = Prefs().fullTextTranslateTo;
+        final normalizedText = _normalizeTranslationText(text);
 
-          return await service.provider
+        try {
+          final cached = await _getCachedTranslationText(
+            service: service,
+            from: from,
+            to: to,
+            text: normalizedText,
+          );
+          if (cached != null) {
+            return cached;
+          }
+
+          final translatedText = await service.provider
               .translateTextOnly(text, from, to, isFullText: true);
+          await _setCachedTranslationText(
+            service: service,
+            from: from,
+            to: to,
+            text: normalizedText,
+            translatedText: translatedText,
+          );
+          return translatedText;
         } catch (e) {
           AnxLog.warning('Primary translation failed: $e, trying fallback');
-          // Fallback to Bing Web translation (no API key needed)
           try {
-            final text = args[0] as String;
-            final fallback = TranslateService.bingWeb.provider;
-            final from = Prefs().fullTextTranslateFrom;
-            final to = Prefs().fullTextTranslateTo;
-            final result = await fallback
+            final fallbackService = TranslateService.bingWeb;
+            final translatedText = await fallbackService.provider
                 .translateTextOnly(text, from, to, isFullText: true);
+            await _setCachedTranslationText(
+              service: service,
+              from: from,
+              to: to,
+              text: normalizedText,
+              translatedText: translatedText,
+            );
             AnxLog.info('Fallback translation succeeded');
-            return result;
+            return translatedText;
           } catch (fallbackError) {
             AnxLog.severe('Fallback translation also failed: $fallbackError');
             return 'Translation error: $e';
@@ -939,7 +978,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       callback: (args) async {
         try {
           final cacheJson = args[0] as String;
-          final cacheKey = 'translationCache_${widget.book.id}';
+          final cacheKey = _translationDomCacheStorageKey();
           Prefs().prefs.setString(cacheKey, cacheJson);
         } catch (e) {
           AnxLog.warning('Failed to save translation cache: $e');
@@ -950,7 +989,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
       handlerName: 'loadTranslationCache',
       callback: (args) async {
         try {
-          final cacheKey = 'translationCache_${widget.book.id}';
+          final cacheKey = _translationDomCacheStorageKey();
           final cacheJson = Prefs().prefs.getString(cacheKey);
           return cacheJson ?? '';
         } catch (e) {
@@ -959,18 +998,121 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
         }
       },
     );
-    // Translation progress handler
     controller.addJavaScriptHandler(
-      handlerName: 'translationProgress',
+      handlerName: 'onTranslationProgress',
       callback: (args) {
-        if (!mounted) return;
-        final data = args[0] as Map<dynamic, dynamic>;
+        if (args.isEmpty || !mounted) return;
+        final progress = args[0] as Map;
         setState(() {
-          _translationPending = data['pending'] as int? ?? 0;
-          _translationCompleted = data['completed'] as int? ?? 0;
+          _translationProgressActive = progress['active'] == true;
+          _translationProgressCompleted =
+              int.tryParse(progress['completed']?.toString() ?? '') ?? 0;
+          _translationProgressTotal =
+              int.tryParse(progress['total']?.toString() ?? '') ?? 0;
+          _translationProgressFailed =
+              int.tryParse(progress['failed']?.toString() ?? '') ?? 0;
         });
       },
     );
+  }
+
+  String _translationDomCacheStorageKey() {
+    final service = Prefs().fullTextTranslateService;
+    final from = Prefs().fullTextTranslateFrom;
+    final to = Prefs().fullTextTranslateTo;
+    return 'translationDomCache_${widget.book.id}_${service.name}_${from.code}_${to.code}';
+  }
+
+  String _translationTextCacheKey(
+    TranslateService service,
+    LangListEnum from,
+    LangListEnum to,
+  ) {
+    return 'translationTextCache_${widget.book.id}_${service.name}_${from.code}_${to.code}';
+  }
+
+  Future<void> _ensureTranslationTextCacheLoaded(
+    String storageKey,
+  ) async {
+    if (_translationTextCacheStorageKey == storageKey) return;
+
+    _translationTextCacheStorageKey = storageKey;
+    final cacheJson = Prefs().prefs.getString(storageKey);
+    if (cacheJson == null || cacheJson.isEmpty) {
+      _translationTextCache = {};
+      return;
+    }
+
+    try {
+      final decoded = jsonDecode(cacheJson);
+      _translationTextCache = decoded is Map<String, dynamic> ? decoded : {};
+    } catch (e) {
+      AnxLog.warning('Failed to load translation text cache: $e');
+      _translationTextCache = {};
+    }
+  }
+
+  Future<String?> _getCachedTranslationText({
+    required TranslateService service,
+    required LangListEnum from,
+    required LangListEnum to,
+    required String text,
+  }) async {
+    final storageKey = _translationTextCacheKey(service, from, to);
+    await _ensureTranslationTextCacheLoaded(storageKey);
+
+    final entry = _translationTextCache[_stableTranslationTextKey(text)];
+    if (entry is! Map) return null;
+    if (entry['text'] != text) return null;
+
+    final translation = entry['translation']?.toString();
+    if (translation == null || translation.trim().isEmpty) return null;
+    return translation;
+  }
+
+  Future<void> _setCachedTranslationText({
+    required TranslateService service,
+    required LangListEnum from,
+    required LangListEnum to,
+    required String text,
+    required String translatedText,
+  }) async {
+    if (text.isEmpty || translatedText.trim().isEmpty) return;
+    if (translatedText.startsWith('Translation error:')) return;
+    if (translatedText.startsWith('Translation failed:')) return;
+
+    final storageKey = _translationTextCacheKey(service, from, to);
+    await _ensureTranslationTextCacheLoaded(storageKey);
+
+    _translationTextCache[_stableTranslationTextKey(text)] = {
+      'text': text,
+      'translation': translatedText,
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
+
+    const maxCacheSize = 5000;
+    final keys = _translationTextCache.keys.toList(growable: false);
+    if (keys.length > maxCacheSize) {
+      for (final key in keys.take(keys.length - maxCacheSize)) {
+        _translationTextCache.remove(key);
+      }
+    }
+
+    Prefs().prefs.setString(storageKey, jsonEncode(_translationTextCache));
+  }
+
+  String _normalizeTranslationText(String text) {
+    return text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String _stableTranslationTextKey(String text) {
+    const int fnvPrime = 0x01000193;
+    int hash = 0x811c9dc5;
+    for (final codeUnit in text.codeUnits) {
+      hash ^= codeUnit;
+      hash = (hash * fnvPrime) & 0xffffffff;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
   }
 
   Future<void> onWebViewCreated(InAppWebViewController controller) async {
@@ -982,14 +1124,22 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     _registerChapterContentBridge();
 
     // Initialize translation mode based on book-specific settings
-    Future.delayed(const Duration(milliseconds: 300), () {
-      setTranslationMode(Prefs().getBookTranslationMode(widget.book.id));
-      // Configure root margin
-      webViewController.evaluateJavascript(source: '''
-        if (window.translator && typeof window.translator.setRootMargin === 'function') {
-          window.translator.setRootMargin('${Prefs().translationMargin}px');
-        }
+    Future.delayed(const Duration(milliseconds: 300), () async {
+      // Load translation cache from persistent storage
+      await webViewController.evaluateJavascript(source: '''
+        (async function() {
+          if (window.translator && typeof window.translator.loadCache === 'function') {
+            await window.translator.loadCache();
+          }
+          if (window.translator && typeof window.translator.setRootMargin === 'function') {
+            window.translator.setRootMargin('${Prefs().translationMargin}px');
+          }
+        })();
       ''');
+      await setTranslationMode(
+        Prefs().getBookTranslationMode(widget.book.id),
+        restoreProgress: false,
+      );
     });
   }
 
@@ -1029,6 +1179,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   @override
   void initState() {
     book = widget.book;
+    _activeTranslationMode = Prefs().getBookTranslationMode(widget.book.id);
     getThemeColor();
 
     contextMenu = ContextMenu(
@@ -1061,13 +1212,48 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
   Future<void> saveReadingProgress() async {
     if (cfi == '' || widget.cfi != null) return;
-    Book book = widget.book;
-    book.lastReadPosition = cfi;
+
+    Prefs().setBookTranslationProgress(
+      widget.book.id,
+      _activeTranslationMode,
+      cfi: cfi,
+      percentage: percentage,
+    );
+
+    final book = widget.book;
+    if (_activeTranslationMode == TranslationModeEnum.off) {
+      book.lastReadPosition = cfi;
+    }
     book.readingPercentage = percentage;
     await bookDao.updateBook(book);
     if (mounted) {
       ref.read(bookListProvider.notifier).refresh();
     }
+  }
+
+  String? _savedCfiForMode(TranslationModeEnum mode) {
+    final savedProgress = Prefs().getBookTranslationProgress(
+      widget.book.id,
+      mode,
+    );
+    if (savedProgress != null) return savedProgress.cfi;
+
+    if (mode == TranslationModeEnum.off &&
+        widget.book.lastReadPosition.isNotEmpty) {
+      return widget.book.lastReadPosition;
+    }
+
+    return null;
+  }
+
+  void _resetTranslationProgress() {
+    if (!mounted) return;
+    setState(() {
+      _translationProgressActive = false;
+      _translationProgressCompleted = 0;
+      _translationProgressTotal = 0;
+      _translationProgressFailed = 0;
+    });
   }
 
   @override
@@ -1168,43 +1354,6 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
                 children: buttons,
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTranslationProgressWidget() {
-    return Positioned(
-      top: 60,
-      right: 16,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  value: _translationPending > 0 ? null : 1.0,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                _translationPending > 0
-                    ? 'Translating $_translationPending...'
-                    : 'Translation complete',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
           ),
         ),
       ),
@@ -1345,6 +1494,81 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     );
   }
 
+  Widget translationProgressWidget() {
+    if (!_translationProgressActive || _translationProgressTotal <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    final progress = (_translationProgressCompleted / _translationProgressTotal)
+        .clamp(0.0, 1.0);
+    final label =
+        '${L10n.of(context).translationProgress} $_translationProgressCompleted/$_translationProgressTotal';
+    final top = MediaQuery.paddingOf(context).top + 8;
+
+    return Positioned(
+      top: top,
+      right: 12,
+      child: IgnorePointer(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 132),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainer
+                    .withValues(alpha: 0.78),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.22),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          value: progress,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                  if (_translationProgressFailed > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${L10n.of(context).translationProgressFailed}: $_translationProgressFailed',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget buildWebviewWithIOSWorkaround(
       BuildContext context, String url, String initialCfi) {
     final webView = InAppWebView(
@@ -1390,7 +1614,10 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
   Widget build(BuildContext context) {
     String uri = Uri.encodeComponent(widget.book.fileFullPath);
     String url = 'http://127.0.0.1:${Server().port}/book/$uri';
-    String initialCfi = widget.cfi ?? widget.book.lastReadPosition;
+    final initialMode = Prefs().getBookTranslationMode(widget.book.id);
+    String initialCfi = widget.cfi ??
+        _savedCfiForMode(initialMode) ??
+        widget.book.lastReadPosition;
 
     return Listener(
       onPointerSignal: (event) {
@@ -1402,8 +1629,8 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
           children: [
             buildWebviewWithIOSWorkaround(context, url, initialCfi),
             readingInfoWidget(),
+            translationProgressWidget(),
             if (showHistory) _buildHistoryCapsule(),
-            if (_translationPending > 0) _buildTranslationProgressWidget(),
             if (Prefs().openBookAnimation)
               SizedBox.expand(
                   child: IgnorePointer(
