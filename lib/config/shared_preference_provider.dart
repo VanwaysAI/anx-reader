@@ -1153,7 +1153,7 @@ class Prefs extends ChangeNotifier {
   }
 
   bool get bottomNavigatorShowVocabulary {
-    return prefs.getBool('bottomNavigatorShowVocabulary') ?? true;
+    return prefs.getBool('bottomNavigatorShowVocabulary') ?? false;
   }
 
   set bottomNavigatorShowStatistics(bool status) {

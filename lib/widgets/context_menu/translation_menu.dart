@@ -47,7 +47,9 @@ class _TranslationMenuState extends State<TranslationMenu> {
     super.initState();
     _initializeTranslation();
     _loadPronunciation();
-    _loadVocabularyState();
+    if (_isVocabularyEnabled) {
+      _loadVocabularyState();
+    }
   }
 
   @override
@@ -59,9 +61,13 @@ class _TranslationMenuState extends State<TranslationMenu> {
       _dictionaryEntry = null;
       _isLoadingPronunciation = false;
       _loadPronunciation();
-      _loadVocabularyState();
+      if (_isVocabularyEnabled) {
+        _loadVocabularyState();
+      }
     }
   }
+
+  bool get _isVocabularyEnabled => Prefs().bottomNavigatorShowVocabulary;
 
   void _initializeTranslation() {
     // Use addPostFrameCallback to ensure the UI is rendered first
@@ -127,6 +133,7 @@ class _TranslationMenuState extends State<TranslationMenu> {
   }
 
   Future<void> _addToVocabulary() async {
+    if (!_isVocabularyEnabled) return;
     if (_isAdding) return;
     final l10n = L10n.of(context);
 
@@ -392,6 +399,7 @@ class _TranslationMenuState extends State<TranslationMenu> {
   @override
   Widget build(BuildContext context) {
     // print('Building TranslationMenu');
+    final isVocabularyEnabled = _isVocabularyEnabled;
     return Expanded(
       child: AnimatedSize(
         duration: const Duration(milliseconds: 300),
@@ -439,22 +447,24 @@ class _TranslationMenuState extends State<TranslationMenu> {
                         if (widget.axis == Axis.horizontal) const Spacer(),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _isAdding ? null : _addToVocabulary,
-                        icon: Icon(_isAdded
-                            ? Icons.check_circle_outline
-                            : Icons.library_add_outlined),
-                        label: Text(
-                          _buttonLabel(context),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
+                    if (isVocabularyEnabled) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _isAdding ? null : _addToVocabulary,
+                          icon: Icon(_isAdded
+                              ? Icons.check_circle_outline
+                              : Icons.library_add_outlined),
+                          label: Text(
+                            _buttonLabel(context),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
