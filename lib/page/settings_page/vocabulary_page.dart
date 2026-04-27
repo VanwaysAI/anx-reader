@@ -2,6 +2,7 @@ import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/models/vocabulary_item.dart';
 import 'package:anx_reader/providers/vocabulary.dart';
+import 'package:anx_reader/service/dictionary/pronunciation_player.dart';
 import 'package:anx_reader/service/vocabulary_webdav_sync_service.dart';
 import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/common/container/filled_container.dart';
@@ -628,6 +629,7 @@ class _VocabularyExpandedDetails extends StatelessWidget {
           icon: Icons.record_voice_over_outlined,
           title: l10n.vocabularyPronunciation,
           body: _present(item.phonetic) ? item.phonetic! : '-',
+          trailing: _PronunciationButton(item: item),
         ),
         _DetailBlock(
           icon: Icons.auto_stories_outlined,
@@ -725,11 +727,13 @@ class _DetailBlock extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.body,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
   final String body;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -756,6 +760,7 @@ class _DetailBlock extends StatelessWidget {
                         ),
                   ),
                 ),
+                if (trailing != null) trailing!,
               ],
             ),
             const SizedBox(height: 8),
@@ -763,6 +768,34 @@ class _DetailBlock extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PronunciationButton extends StatelessWidget {
+  const _PronunciationButton({required this.item});
+
+  final VocabularyItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.volume_up_outlined, size: 18),
+      visualDensity: VisualDensity.compact,
+      splashRadius: 18,
+      tooltip: L10n.of(context).vocabularyPronunciation,
+      onPressed: () async {
+        try {
+          await PronunciationPlayer().play(
+            text: item.word,
+            audioUrl: item.audioUrl,
+          );
+        } catch (_) {
+          if (context.mounted) {
+            AnxToast.show(L10n.of(context).commonFailed);
+          }
+        }
+      },
     );
   }
 }

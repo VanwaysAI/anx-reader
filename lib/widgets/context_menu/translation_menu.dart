@@ -4,6 +4,7 @@ import 'package:anx_reader/enums/lang_list.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/page/reading_page.dart';
 import 'package:anx_reader/service/dictionary/english_dictionary.dart';
+import 'package:anx_reader/service/dictionary/pronunciation_player.dart';
 import 'package:anx_reader/service/translate/index.dart';
 import 'package:anx_reader/service/vocabulary_capture_service.dart';
 import 'package:anx_reader/utils/toast/common.dart';
@@ -184,6 +185,21 @@ class _TranslationMenuState extends State<TranslationMenu> {
     return L10n.of(context).vocabularyAdd;
   }
 
+  Future<void> _playPronunciation() async {
+    final word = widget.content.trim();
+    if (word.isEmpty) return;
+
+    try {
+      await PronunciationPlayer().play(
+        text: word,
+        audioUrl: _dictionaryEntry?.audioUrl,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AnxToast.show(L10n.of(context).commonFailed);
+    }
+  }
+
   Widget _pronunciationLine(BuildContext context) {
     final entry = _dictionaryEntry;
     if (!_isLoadingPronunciation &&
@@ -199,26 +215,33 @@ class _TranslationMenuState extends State<TranslationMenu> {
 
     return Padding(
       padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_isLoadingPronunciation) ...[
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text('IPA ...', style: textStyle),
-          ] else ...[
-            const Icon(Icons.record_voice_over_outlined, size: 14),
-            const SizedBox(width: 5),
-            Text(entry!.phonetic!, style: textStyle),
-          ],
-        ],
+      child: InkWell(
+        onTap: _isLoadingPronunciation ? null : _playPronunciation,
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_isLoadingPronunciation) ...[
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text('IPA ...', style: textStyle),
+              ] else ...[
+                const Icon(Icons.record_voice_over_outlined, size: 14),
+                const SizedBox(width: 5),
+                Text(entry!.phonetic!, style: textStyle),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

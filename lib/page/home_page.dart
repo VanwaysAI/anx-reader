@@ -161,12 +161,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           'label': L10n.of(context).navBarNotes,
           'identifier': 'notes'
         },
-      if (Prefs().bottomNavigatorShowVocabulary)
-        {
-          'icon': Icons.menu_book_outlined,
-          'label': L10n.of(context).vocabularyTitle,
-          'identifier': 'vocabulary'
-        },
       {
         'icon': EvaIcons.settings_2,
         'label': L10n.of(context).navBarSettings,
@@ -190,10 +184,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         BookshelfPage(controller: controller),
         if (Prefs().bottomNavigatorShowStatistics)
           StatisticPage(controller: controller),
+        if (Prefs().bottomNavigatorShowVocabulary) const VocabularyPage(),
         if (Prefs().bottomNavigatorShowAI && EnvVar.enableAIFeature)
           AiChatStream(),
         if (Prefs().bottomNavigatorShowNote) NotesPage(controller: controller),
-        if (Prefs().bottomNavigatorShowVocabulary) const VocabularyPage(),
         SettingsPage(controller: controller),
       ];
       return page[index];
