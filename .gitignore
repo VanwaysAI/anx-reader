@@ -35,6 +35,8 @@ migrate_working_dir/
 /android/build/
 /assets/foliate-js/build/
 /assets/foliate-js/docs/
+/linux/flutter/generated_plugins.cmake
+/windows/flutter/generated_plugins.cmake
 **/.omc/
 *.arb.tmp
 
