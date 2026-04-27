@@ -10,7 +10,6 @@ import 'package:anx_reader/utils/toast/common.dart';
 import 'package:anx_reader/widgets/common/axis_flex.dart';
 import 'package:flutter/material.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
-import 'dart:async';
 
 class TranslationMenu extends StatefulWidget {
   const TranslationMenu({
@@ -33,8 +32,6 @@ class TranslationMenu extends StatefulWidget {
 
 class _TranslationMenuState extends State<TranslationMenu> {
   Widget? _translationWidget;
-  Timer? _debounceTimer;
-  bool _translationInitialized = false;
   bool _isAdded = false;
   bool _isAdding = false;
   bool _isLoadingPronunciation = false;
@@ -59,7 +56,9 @@ class _TranslationMenuState extends State<TranslationMenu> {
       _isAdding = false;
       _dictionaryEntry = null;
       _isLoadingPronunciation = false;
+      _translationWidget = null;
       _loadPronunciation();
+      _initializeTranslation();
       if (_isVocabularyEnabled) {
         _loadVocabularyState();
       }
@@ -69,28 +68,24 @@ class _TranslationMenuState extends State<TranslationMenu> {
   bool get _isVocabularyEnabled => Prefs().bottomNavigatorShowVocabulary;
 
   void _initializeTranslation() {
-    // Use addPostFrameCallback to ensure the UI is rendered first
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _translationInitialized) return;
+    final effectiveContextText = (widget.contextText?.trim().isEmpty ?? true)
+        ? null
+        : widget.contextText;
+    final word = widget.content.trim();
+    final preferredService = Prefs().translateService;
 
-      // Debounce: Delay the translation call to ensure context has stopped updating
-      _debounceTimer?.cancel();
-      _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-        if (!mounted || _translationInitialized) return;
-
-        setState(() {
-          final effectiveContextText =
-              (widget.contextText?.trim().isEmpty ?? true)
-                  ? null
-                  : widget.contextText;
-          _translationWidget = translateText(
+    _translationWidget = preferredService.isWebView &&
+            EnglishDictionaryService.isEnglishWord(word)
+        ? _FastSingleWordTranslation(
+            word: word,
+            contextText: effectiveContextText,
+            preferredService: preferredService,
+            fastService: resolveFastTextTranslateService(preferredService),
+          )
+        : translateText(
             widget.content,
             contextText: effectiveContextText,
           );
-          _translationInitialized = true;
-        });
-      });
-    });
   }
 
   Future<void> _loadVocabularyState() async {
@@ -127,7 +122,6 @@ class _TranslationMenuState extends State<TranslationMenu> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -354,4 +348,116 @@ class _TranslationMenuState extends State<TranslationMenu> {
       ),
     );
   }
+}
+
+class _FastSingleWordTranslation extends StatefulWidget {
+  const _FastSingleWordTranslation({
+    required this.word,
+    required this.contextText,
+    required this.preferredService,
+    required this.fastService,
+  });
+
+  final String word;
+  final String? contextText;
+  final TranslateService preferredService;
+  final TranslateService? fastService;
+
+  @override
+  State<_FastSingleWordTranslation> createState() =>
+      _FastSingleWordTranslationState();
+}
+
+class _FastSingleWordTranslationState
+    extends State<_FastSingleWordTranslation> {
+  late Future<_FastSingleWordData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _FastSingleWordTranslation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.word != widget.word ||
+        oldWidget.contextText != widget.contextText ||
+        oldWidget.preferredService != widget.preferredService ||
+        oldWidget.fastService != widget.fastService) {
+      _future = _load();
+    }
+  }
+
+  Future<_FastSingleWordData> _load() async {
+    final dictionaryFuture = EnglishDictionaryService.lookup(widget.word);
+    String? translatedText;
+
+    final fastService = widget.fastService;
+    if (fastService != null) {
+      try {
+        translatedText = await translateTextOnlyCached(
+          widget.word,
+          service: fastService,
+          contextText: widget.contextText,
+        );
+      } catch (_) {
+        translatedText = null;
+      }
+    }
+
+    final dictionaryEntry = await dictionaryFuture;
+    return _FastSingleWordData(
+      dictionaryEntry: dictionaryEntry,
+      translatedText: translatedText,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_FastSingleWordData>(
+      future: _future,
+      builder: (context, snapshot) {
+        final data = snapshot.data;
+        final translatedText = data?.translatedText?.trim();
+        final dictionaryEntry = data?.dictionaryEntry;
+        final definitionEn = dictionaryEntry?.definitionEn?.trim();
+        final partOfSpeech = dictionaryEntry?.partOfSpeech?.trim();
+
+        if (translatedText != null && translatedText.isNotEmpty) {
+          return Text(translatedText);
+        }
+
+        if (definitionEn != null && definitionEn.isNotEmpty) {
+          final prefix = (partOfSpeech != null && partOfSpeech.isNotEmpty)
+              ? '$partOfSpeech '
+              : '';
+          return Text('$prefix$definitionEn');
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 20,
+            child: Center(child: Text('...')),
+          );
+        }
+
+        return translateText(
+          widget.word,
+          service: widget.preferredService,
+          contextText: widget.contextText,
+        );
+      },
+    );
+  }
+}
+
+class _FastSingleWordData {
+  const _FastSingleWordData({
+    required this.dictionaryEntry,
+    required this.translatedText,
+  });
+
+  final EnglishDictionaryEntry? dictionaryEntry;
+  final String? translatedText;
 }
