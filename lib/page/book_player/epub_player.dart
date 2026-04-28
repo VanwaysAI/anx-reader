@@ -1067,6 +1067,11 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
     final translation = entry['translation']?.toString();
     if (translation == null || translation.trim().isEmpty) return null;
+    if (_isFailedTranslationText(translation)) {
+      _translationTextCache.remove(_stableTranslationTextKey(text));
+      Prefs().prefs.setString(storageKey, jsonEncode(_translationTextCache));
+      return null;
+    }
     return translation;
   }
 
@@ -1078,8 +1083,7 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
     required String translatedText,
   }) async {
     if (text.isEmpty || translatedText.trim().isEmpty) return;
-    if (translatedText.startsWith('Translation error:')) return;
-    if (translatedText.startsWith('Translation failed:')) return;
+    if (_isFailedTranslationText(translatedText)) return;
 
     final storageKey = _translationTextCacheKey(service, from, to);
     await _ensureTranslationTextCacheLoaded(storageKey);
@@ -1103,6 +1107,17 @@ class EpubPlayerState extends ConsumerState<EpubPlayer>
 
   String _normalizeTranslationText(String text) {
     return text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  bool _isFailedTranslationText(String text) {
+    final normalized = text.trim().toLowerCase();
+    if (normalized.isEmpty || normalized == '...') return true;
+    return normalized.startsWith('translation error:') ||
+        normalized.startsWith('translation failed:') ||
+        normalized.startsWith('error:') ||
+        normalized.startsWith('failed:') ||
+        (normalized.contains('api key') && normalized.contains('please set')) ||
+        (normalized.contains('api key') && normalized.contains('invalid'));
   }
 
   String _stableTranslationTextKey(String text) {

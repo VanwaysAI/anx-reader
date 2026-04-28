@@ -13,7 +13,14 @@ if (typeof window !== 'undefined') {
 
 const isTranslationFailure = (value) => {
   if (typeof value !== 'string' || value.trim().length === 0) return true
-  return value.startsWith('Translation failed:') || value.startsWith('Translation error:')
+  const normalized = value.trim().toLowerCase()
+  return normalized === '...'
+    || normalized.startsWith('translation failed:')
+    || normalized.startsWith('translation error:')
+    || normalized.startsWith('error:')
+    || normalized.startsWith('failed:')
+    || (normalized.includes('api key') && normalized.includes('please set'))
+    || (normalized.includes('api key') && normalized.includes('invalid'))
 }
 
 const sanitizeTranslationResult = (value) => {
@@ -171,6 +178,7 @@ export class Translator {
           this.#applyTranslated(item.element, item.text, translatedText)
         } catch (e) {
           console.warn('Translation failed:', e)
+          this.#applyTranslationError(item.element, item.text)
           this.#finishProgressItem(true)
         }
       }
@@ -187,6 +195,7 @@ export class Translator {
       this.#applyTranslated(item.element, item.text, translatedText)
     } catch (error) {
       console.warn('Translation failed:', error)
+      this.#applyTranslationError(item.element, item.text)
       this.#finishProgressItem(true)
     }
   }
@@ -215,6 +224,7 @@ export class Translator {
   // Apply translated text and update cache
   #applyTranslated(element, originalText, translatedText) {
     if (isTranslationFailure(translatedText)) {
+      this.#applyTranslationError(element, originalText)
       this.#finishProgressItem(true)
       return
     }
@@ -234,10 +244,61 @@ export class Translator {
 
     const cached = this.#cache[cacheKey]
     if (cached.originalText !== text) return false
+    if (isTranslationFailure(cached.translatedText)) {
+      delete this.#cache[cacheKey]
+      this.#schedulePersistCache()
+      return false
+    }
 
     this.#translatedElements.set(element, cached)
     this.#applyTranslation(element, cached.translatedText)
     return true
+  }
+
+  #applyTranslationError(element, originalText) {
+    this.#translatedElements.delete(element)
+
+    const cacheKey = this.#getCacheKey(element)
+    if (cacheKey && this.#cache[cacheKey]) {
+      delete this.#cache[cacheKey]
+      this.#schedulePersistCache()
+    }
+
+    const existingTranslation = element.querySelector('.translated-text')
+    if (existingTranslation) {
+      existingTranslation.remove()
+    }
+
+    const wrapper = document.createElement('div')
+    wrapper.className = 'translated-text translated-error'
+    wrapper.setAttribute('data-translation-mark', '1')
+
+    const message = document.createElement('span')
+    message.className = 'translated-error-message'
+    message.textContent = 'Translation failed'
+    wrapper.appendChild(message)
+
+    const retryButton = document.createElement('button')
+    retryButton.type = 'button'
+    retryButton.className = 'translated-error-retry'
+    retryButton.textContent = 'Retry'
+    retryButton.style.marginLeft = '8px'
+    retryButton.addEventListener('click', async () => {
+      retryButton.disabled = true
+      retryButton.textContent = 'Retrying...'
+      try {
+        const translatedText = await this.#translateWithRetry(originalText)
+        this.#applyTranslated(element, originalText, translatedText)
+      } catch (error) {
+        console.warn('Retry translation failed:', error)
+        retryButton.disabled = false
+        retryButton.textContent = 'Retry'
+      }
+    })
+    wrapper.appendChild(retryButton)
+
+    this.#restoreOriginalText(element)
+    element.parentNode.insertBefore(wrapper, element.nextSibling)
   }
 
   #startProgressItem() {
@@ -554,6 +615,7 @@ export class Translator {
       this.#applyTranslation(element, translatedText)
     } catch (error) {
       console.warn('Translation failed:', error)
+      this.#applyTranslationError(element, text)
     }
   }
 
@@ -619,6 +681,12 @@ export class Translator {
 
   // Persist cache to Flutter for storage across sessions
   #persistCache() {
+    for (const [key, value] of Object.entries(this.#cache)) {
+      if (!value || isTranslationFailure(value.translatedText)) {
+        delete this.#cache[key]
+      }
+    }
+
     // Enforce cache size limit
     const keys = Object.keys(this.#cache)
     if (keys.length > this.#maxCacheSize) {
@@ -647,7 +715,14 @@ export class Translator {
         if (window.flutter_inappwebview) {
           const cacheJson = await window.flutter_inappwebview.callHandler('loadTranslationCache')
           if (cacheJson) {
-            this.#cache = JSON.parse(cacheJson)
+            const decoded = JSON.parse(cacheJson)
+            this.#cache = Object.fromEntries(
+              Object.entries(decoded || {}).filter(([, value]) =>
+                value &&
+                typeof value === 'object' &&
+                !isTranslationFailure(value.translatedText)
+              )
+            )
             console.log(`Translation cache loaded: ${Object.keys(this.#cache).length} entries`)
             this.#applyCachedTranslations()
           }
@@ -870,6 +945,7 @@ export class Translator {
                 this.#applyTranslated(item.element, item.text, translatedText)
               } catch (e) {
                 console.warn('Translation failed:', e)
+                this.#applyTranslationError(item.element, item.text)
                 this.#finishProgressItem(true)
               }
             }
@@ -883,6 +959,7 @@ export class Translator {
             this.#applyTranslated(item.element, item.text, translatedText)
           } catch (e) {
             console.warn('Translation failed:', e)
+            this.#applyTranslationError(item.element, item.text)
             this.#finishProgressItem(true)
           }
         }
@@ -992,6 +1069,7 @@ export class Translator {
       return true
     } catch (error) {
       console.warn('Translation failed:', error)
+      this.#applyTranslationError(paragraphElement, text)
       return false
     }
   }
