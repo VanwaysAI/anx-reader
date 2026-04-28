@@ -126,9 +126,13 @@ export class Translator {
 
     this.#isTranslating = true
 
-    // In bilingual mode, translate individually to ensure 1:1 paragraph pairing
-    // In translation-only mode, batch translate for efficiency
-    const useBatch = this.#translationMode === TranslationMode.TRANSLATION_ONLY
+    // In translation-only and bilingual mode, prefer batch translation for
+    // efficiency, but bilingual mode must preserve strict 1:1 paragraph pairing.
+    // Any batch result that cannot be split back to the exact paragraph count
+    // is discarded and retried paragraph-by-paragraph.
+    const useBatch =
+      this.#translationMode === TranslationMode.TRANSLATION_ONLY ||
+      this.#translationMode === TranslationMode.BILINGUAL
 
     if (useBatch) {
       await this.#processBatch()
@@ -144,7 +148,8 @@ export class Translator {
     }
   }
 
-  // Process a batch of paragraphs for translation-only mode
+  // Process a batch of paragraphs. Bilingual mode uses the same batching path,
+  // but only accepts results that split back to an exact 1:1 paragraph mapping.
   async #processBatch() {
     const batch = this.#buildBatch()
     if (batch.length === 0) return
@@ -156,10 +161,7 @@ export class Translator {
       if (batch.length > 1) {
         const combinedText = batch.map(item => item.text).join(this.#separator)
         const combinedResult = await translate(combinedText)
-        const translations = combinedResult.split(this.#separator)
-        if (translations.length !== batch.length) {
-          throw new Error(`Batch translation count mismatch: ${translations.length}/${batch.length}`)
-        }
+        const translations = this.#splitBatchResult(combinedResult, batch.length)
 
         for (let i = 0; i < batch.length; i++) {
           const item = batch[i]
@@ -183,6 +185,22 @@ export class Translator {
         }
       }
     }
+  }
+
+  #splitBatchResult(combinedResult, expectedCount) {
+    const translations = combinedResult
+      .split(this.#separator)
+      .map(text => text.trim())
+
+    if (translations.length !== expectedCount) {
+      throw new Error(`Batch translation count mismatch: ${translations.length}/${expectedCount}`)
+    }
+
+    if (translations.some(text => !text || isTranslationFailure(text))) {
+      throw new Error('Batch translation contains empty or failed segments')
+    }
+
+    return translations
   }
 
   // Process individual paragraphs for bilingual mode (1:1 pairing)
@@ -910,7 +928,9 @@ export class Translator {
   // Process queue completely and wait for all translations
   async #processQueueAndWait() {
     this.#isTranslating = true
-    const useBatch = this.#translationMode === TranslationMode.TRANSLATION_ONLY
+    const useBatch =
+      this.#translationMode === TranslationMode.TRANSLATION_ONLY ||
+      this.#translationMode === TranslationMode.BILINGUAL
 
     try {
       while (this.#translationQueue.length > 0 && this.#translationMode !== TranslationMode.OFF) {
@@ -924,10 +944,7 @@ export class Translator {
             if (batch.length > 1) {
               const combinedText = batch.map(item => item.text).join(this.#separator)
               const combinedResult = await translate(combinedText)
-              const translations = combinedResult.split(this.#separator)
-              if (translations.length !== batch.length) {
-                throw new Error(`Batch translation count mismatch: ${translations.length}/${batch.length}`)
-              }
+              const translations = this.#splitBatchResult(combinedResult, batch.length)
               for (let i = 0; i < batch.length; i++) {
                 const item = batch[i]
                 this.#applyTranslated(item.element, item.text, translations[i])
