@@ -46,6 +46,7 @@ class _TranslationMenuState extends State<TranslationMenu> {
     _loadPronunciation();
     if (_isVocabularyEnabled) {
       _loadVocabularyState();
+      _warmVocabularyCapture();
     }
   }
 
@@ -62,11 +63,25 @@ class _TranslationMenuState extends State<TranslationMenu> {
       _initializeTranslation();
       if (_isVocabularyEnabled) {
         _loadVocabularyState();
+        _warmVocabularyCapture();
       }
     }
   }
 
   bool get _isVocabularyEnabled => Prefs().bottomNavigatorShowVocabulary;
+
+  void _warmVocabularyCapture() {
+    final player = epubPlayerKey.currentState;
+    final book = player?.book;
+    final word = widget.content.trim();
+    if (book == null || word.isEmpty) return;
+
+    VocabularyCaptureService.warmCaptureData(
+      word: word,
+      contextText: _effectiveContextText,
+      translateToCode: Prefs().translateTo.code,
+    );
+  }
 
   void _initializeTranslation() {
     final effectiveContextText = (widget.contextText?.trim().isEmpty ?? true)
@@ -145,7 +160,7 @@ class _TranslationMenuState extends State<TranslationMenu> {
 
     VocabularyCaptureResult result;
     try {
-      result = await VocabularyCaptureService.capture(
+      result = await VocabularyCaptureService.captureQuick(
         word: word,
         bookId: book.id.toString(),
         bookTitle: book.title,

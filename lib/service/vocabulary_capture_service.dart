@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/dao/vocabulary.dart';
 import 'package:anx_reader/models/vocabulary_item.dart';
@@ -24,6 +26,121 @@ class VocabularyCaptureResult {
 
 class VocabularyCaptureService {
   VocabularyCaptureService._();
+
+  static final Map<String, _VocabularyCaptureDraft> _draftCache = {};
+  static final Map<String, Future<_VocabularyCaptureDraft?>> _draftTasks = {};
+  static const int _maxDraftCacheSize = 200;
+
+  static Future<VocabularyCaptureResult> captureQuick({
+    required String word,
+    required String bookId,
+    String? bookTitle,
+    String? chapterId,
+    String? chapterTitle,
+    String? contextText,
+    String? position,
+    VocabularyTranslationLookup? translateLookup,
+    Future<EnglishDictionaryEntry?> Function(String word)? dictionaryLookup,
+    String? translateToCode,
+    DateTime? now,
+  }) async {
+    final trimmedWord = word.trim();
+    if (trimmedWord.isEmpty) {
+      throw ArgumentError('word must not be empty');
+    }
+
+    final currentTime = now ?? DateTime.now();
+    final effectiveContextText = _normalizeOptionalText(contextText);
+    final sourceSentence = extractSourceSentence(
+      trimmedWord,
+      effectiveContextText,
+    );
+    final contextWindow = extractContextWindow(
+      trimmedWord,
+      effectiveContextText,
+      sourceSentence,
+    );
+    final resolvedTranslateToCode = translateToCode ?? Prefs().translateTo.code;
+    final existing = await vocabularyDao.selectByWord(trimmedWord);
+    final draftKey = _draftCacheKey(
+      word: trimmedWord,
+      contextText: effectiveContextText,
+      translateToCode: resolvedTranslateToCode,
+    );
+    final cachedDraft = _draftCache[draftKey];
+    final baseItem = _composeItem(
+      existing: existing,
+      word: trimmedWord,
+      bookId: bookId,
+      bookTitle: bookTitle,
+      chapterId: chapterId,
+      chapterTitle: chapterTitle,
+      sourceSentence: cachedDraft?.sourceSentence ?? sourceSentence,
+      sourceSentenceTranslation: cachedDraft?.sourceSentenceTranslation,
+      contextualDefinition: cachedDraft?.contextualDefinition,
+      contextBefore: cachedDraft?.contextBefore ?? contextWindow.before,
+      contextAfter: cachedDraft?.contextAfter ?? contextWindow.after,
+      position: position,
+      dictionaryEntry: cachedDraft?.dictionaryEntry,
+      translateToCode: resolvedTranslateToCode,
+      now: currentTime,
+    );
+
+    final result =
+        await _persistComposedItem(existing: existing, item: baseItem);
+    if (cachedDraft == null) {
+      unawaited(
+        _enrichStoredItem(
+          existing: result.item,
+          translateLookup: translateLookup ?? translateTextOnly,
+          dictionaryLookup: dictionaryLookup ?? EnglishDictionaryService.lookup,
+          translateToCode: resolvedTranslateToCode,
+        ),
+      );
+    }
+    return result;
+  }
+
+  static void warmCaptureData({
+    required String word,
+    String? contextText,
+    VocabularyTranslationLookup? translateLookup,
+    Future<EnglishDictionaryEntry?> Function(String word)? dictionaryLookup,
+    String? translateToCode,
+  }) {
+    final trimmedWord = word.trim();
+    if (trimmedWord.isEmpty) return;
+
+    final effectiveContextText = _normalizeOptionalText(contextText);
+    final resolvedTranslateToCode = translateToCode ?? Prefs().translateTo.code;
+    final key = _draftCacheKey(
+      word: trimmedWord,
+      contextText: effectiveContextText,
+      translateToCode: resolvedTranslateToCode,
+    );
+
+    if (_draftCache.containsKey(key) || _draftTasks.containsKey(key)) {
+      return;
+    }
+
+    final task = _buildDraft(
+      word: trimmedWord,
+      contextText: effectiveContextText,
+      translator: translateLookup ?? translateTextOnly,
+      lookupDictionary: dictionaryLookup ?? EnglishDictionaryService.lookup,
+    );
+    _draftTasks[key] = task;
+    unawaited(() async {
+      try {
+        final draft = await task;
+        if (draft != null) {
+          _rememberDraft(key, draft);
+        }
+      } finally {
+        _draftTasks.remove(key);
+      }
+    }());
+  }
 
   static Future<VocabularyCaptureResult> capture({
     required String word,
@@ -58,25 +175,7 @@ class VocabularyCaptureService {
     final lookupDictionary =
         dictionaryLookup ?? EnglishDictionaryService.lookup;
     final existing = await vocabularyDao.selectByWord(trimmedWord);
-
-    final dictionaryEntryFuture = lookupDictionary(trimmedWord);
-    final wordDefinition = await _safeTranslate(
-      translator,
-      trimmedWord,
-      contextText: effectiveContextText,
-    );
-
-    String? sourceSentenceTranslation;
-    if (sourceSentence.isNotEmpty && sourceSentence != trimmedWord) {
-      sourceSentenceTranslation = await _safeTranslate(
-        translator,
-        sourceSentence,
-        contextText: effectiveContextText,
-      );
-    }
-
-    final dictionaryEntry = await dictionaryEntryFuture;
-    final item = _composeItem(
+    final item = await _buildEnrichedItem(
       existing: existing,
       word: trimmedWord,
       bookId: bookId,
@@ -84,39 +183,17 @@ class VocabularyCaptureService {
       chapterId: chapterId,
       chapterTitle: chapterTitle,
       sourceSentence: sourceSentence,
-      sourceSentenceTranslation: sourceSentenceTranslation,
-      contextualDefinition: wordDefinition,
       contextBefore: contextWindow.before,
       contextAfter: contextWindow.after,
       position: position,
-      dictionaryEntry: dictionaryEntry,
+      translator: translator,
+      lookupDictionary: lookupDictionary,
       translateToCode: translateToCode ?? Prefs().translateTo.code,
+      contextText: effectiveContextText,
       now: currentTime,
     );
 
-    if (existing == null) {
-      await vocabularyDao.save(item);
-      return VocabularyCaptureResult(
-        item: item,
-        created: true,
-        updated: false,
-      );
-    }
-
-    if (_hasDiff(existing, item)) {
-      await vocabularyDao.updateItem(item);
-      return VocabularyCaptureResult(
-        item: item,
-        created: false,
-        updated: true,
-      );
-    }
-
-    return VocabularyCaptureResult(
-      item: existing,
-      created: false,
-      updated: false,
-    );
+    return _persistComposedItem(existing: existing, item: item);
   }
 
   static String extractSourceSentence(String word, String? contextText) {
@@ -311,6 +388,240 @@ class VocabularyCaptureService {
     }
   }
 
+  static Future<_VocabularyCaptureDraft?> _buildDraft({
+    required String word,
+    required String? contextText,
+    required VocabularyTranslationLookup translator,
+    required Future<EnglishDictionaryEntry?> Function(String word)
+        lookupDictionary,
+  }) async {
+    final sourceSentence = extractSourceSentence(word, contextText);
+    final contextWindow =
+        extractContextWindow(word, contextText, sourceSentence);
+
+    final dictionaryEntryFuture = lookupDictionary(word);
+    final wordDefinitionFuture = _safeTranslate(
+      translator,
+      word,
+      contextText: contextText,
+    );
+    final sourceSentenceTranslationFuture =
+        sourceSentence.isNotEmpty && sourceSentence != word
+            ? _safeTranslate(
+                translator,
+                sourceSentence,
+                contextText: contextText,
+              )
+            : Future<String?>.value(null);
+
+    final dictionaryEntry = await dictionaryEntryFuture;
+    final wordDefinition = await wordDefinitionFuture;
+    final sourceSentenceTranslation = await sourceSentenceTranslationFuture;
+
+    if (dictionaryEntry == null &&
+        !_isPresent(wordDefinition) &&
+        !_isPresent(sourceSentenceTranslation)) {
+      return null;
+    }
+
+    return _VocabularyCaptureDraft(
+      sourceSentence: sourceSentence,
+      sourceSentenceTranslation: sourceSentenceTranslation,
+      contextualDefinition: wordDefinition,
+      contextBefore: contextWindow.before,
+      contextAfter: contextWindow.after,
+      dictionaryEntry: dictionaryEntry,
+    );
+  }
+
+  static Future<VocabularyItem> _buildEnrichedItem({
+    required VocabularyItem? existing,
+    required String word,
+    required String bookId,
+    required String? bookTitle,
+    required String? chapterId,
+    required String? chapterTitle,
+    required String sourceSentence,
+    required String? contextBefore,
+    required String? contextAfter,
+    required String? position,
+    required VocabularyTranslationLookup translator,
+    required Future<EnglishDictionaryEntry?> Function(String word)
+        lookupDictionary,
+    required String translateToCode,
+    required String? contextText,
+    required DateTime now,
+    _VocabularyCaptureDraft? draft,
+  }) async {
+    if (draft != null) {
+      return _composeItem(
+        existing: existing,
+        word: word,
+        bookId: bookId,
+        bookTitle: bookTitle,
+        chapterId: chapterId,
+        chapterTitle: chapterTitle,
+        sourceSentence: draft.sourceSentence,
+        sourceSentenceTranslation: draft.sourceSentenceTranslation,
+        contextualDefinition: draft.contextualDefinition,
+        contextBefore: draft.contextBefore,
+        contextAfter: draft.contextAfter,
+        position: position,
+        dictionaryEntry: draft.dictionaryEntry,
+        translateToCode: translateToCode,
+        now: now,
+      );
+    }
+
+    final dictionaryEntryFuture = lookupDictionary(word);
+    final wordDefinitionFuture = _safeTranslate(
+      translator,
+      word,
+      contextText: contextText,
+    );
+    final sourceSentenceTranslationFuture =
+        sourceSentence.isNotEmpty && sourceSentence != word
+            ? _safeTranslate(
+                translator,
+                sourceSentence,
+                contextText: contextText,
+              )
+            : Future<String?>.value(null);
+
+    final dictionaryEntry = await dictionaryEntryFuture;
+    final wordDefinition = await wordDefinitionFuture;
+    final sourceSentenceTranslation = await sourceSentenceTranslationFuture;
+
+    return _composeItem(
+      existing: existing,
+      word: word,
+      bookId: bookId,
+      bookTitle: bookTitle,
+      chapterId: chapterId,
+      chapterTitle: chapterTitle,
+      sourceSentence: sourceSentence,
+      sourceSentenceTranslation: sourceSentenceTranslation,
+      contextualDefinition: wordDefinition,
+      contextBefore: contextBefore,
+      contextAfter: contextAfter,
+      position: position,
+      dictionaryEntry: dictionaryEntry,
+      translateToCode: translateToCode,
+      now: now,
+    );
+  }
+
+  static Future<void> _enrichStoredItem({
+    required VocabularyItem existing,
+    required VocabularyTranslationLookup translateLookup,
+    required Future<EnglishDictionaryEntry?> Function(String word)
+        dictionaryLookup,
+    required String translateToCode,
+  }) async {
+    try {
+      final mergedContext = _mergeContextText(existing);
+      final draftKey = _draftCacheKey(
+        word: existing.word,
+        contextText: mergedContext,
+        translateToCode: translateToCode,
+      );
+      final draft = _draftCache[draftKey] ??
+          await _draftTasks[draftKey] ??
+          await _buildDraft(
+            word: existing.word,
+            contextText: mergedContext,
+            translator: translateLookup,
+            lookupDictionary: dictionaryLookup,
+          );
+      if (draft != null) {
+        _rememberDraft(draftKey, draft);
+      }
+
+      final enriched = await _buildEnrichedItem(
+        existing: existing,
+        word: existing.word,
+        bookId: existing.bookId,
+        bookTitle: existing.bookTitle,
+        chapterId: existing.chapterId,
+        chapterTitle: existing.chapterTitle,
+        sourceSentence: existing.sourceSentence,
+        contextBefore: existing.contextBefore,
+        contextAfter: existing.contextAfter,
+        position: existing.position,
+        translator: translateLookup,
+        lookupDictionary: dictionaryLookup,
+        translateToCode: translateToCode,
+        contextText: mergedContext,
+        now: DateTime.now(),
+        draft: draft,
+      );
+
+      if (_hasDiff(existing, enriched)) {
+        await vocabularyDao.updateItem(enriched);
+      }
+    } catch (_) {
+      // Keep add-to-vocabulary responsive even if background enrichment fails.
+    }
+  }
+
+  static Future<VocabularyCaptureResult> _persistComposedItem({
+    required VocabularyItem? existing,
+    required VocabularyItem item,
+  }) async {
+    if (existing == null) {
+      await vocabularyDao.save(item);
+      return VocabularyCaptureResult(
+        item: item,
+        created: true,
+        updated: false,
+      );
+    }
+
+    if (_hasDiff(existing, item)) {
+      await vocabularyDao.updateItem(item);
+      return VocabularyCaptureResult(
+        item: item,
+        created: false,
+        updated: true,
+      );
+    }
+
+    return VocabularyCaptureResult(
+      item: existing,
+      created: false,
+      updated: false,
+    );
+  }
+
+  static String? _mergeContextText(VocabularyItem item) {
+    final segments = [
+      item.contextBefore,
+      item.sourceSentence,
+      item.contextAfter,
+    ].where((segment) => _isPresent(segment)).map((segment) => segment!.trim());
+
+    final merged = segments.join(' ').trim();
+    return merged.isEmpty ? null : merged;
+  }
+
+  static String _draftCacheKey({
+    required String word,
+    required String? contextText,
+    required String translateToCode,
+  }) {
+    final normalizedWord = VocabularyItem.normalizeWord(word);
+    final normalizedContext =
+        contextText?.trim().replaceAll(RegExp(r'\s+'), ' ') ?? '';
+    return '$translateToCode|$normalizedWord|$normalizedContext';
+  }
+
+  static void _rememberDraft(String key, _VocabularyCaptureDraft draft) {
+    if (_draftCache.length >= _maxDraftCacheSize) {
+      _draftCache.remove(_draftCache.keys.first);
+    }
+    _draftCache[key] = draft;
+  }
+
   static bool _hasDiff(VocabularyItem left, VocabularyItem right) {
     return left.copyWith(updatedAt: right.updatedAt).toJson().toString() !=
         right.toJson().toString();
@@ -355,4 +666,22 @@ class VocabularyContextWindow {
 
   final String? before;
   final String? after;
+}
+
+class _VocabularyCaptureDraft {
+  const _VocabularyCaptureDraft({
+    required this.sourceSentence,
+    required this.sourceSentenceTranslation,
+    required this.contextualDefinition,
+    required this.contextBefore,
+    required this.contextAfter,
+    required this.dictionaryEntry,
+  });
+
+  final String sourceSentence;
+  final String? sourceSentenceTranslation;
+  final String? contextualDefinition;
+  final String? contextBefore;
+  final String? contextAfter;
+  final EnglishDictionaryEntry? dictionaryEntry;
 }

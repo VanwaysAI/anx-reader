@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/page/reading_page.dart';
+import 'package:anx_reader/utils/platform_utils.dart';
 import 'package:anx_reader/widgets/common/axis_flex.dart';
 import 'package:anx_reader/widgets/context_menu/excerpt_menu.dart';
 import 'package:anx_reader/widgets/context_menu/reader_note_menu.dart';
@@ -154,7 +155,9 @@ Future<void> showContextMenu(
       onClose: onClose,
       menuConstraints: menuConstraints,
       initialPlacement: initialPlacement,
-      showTranslationDefault: !isNewNote && Prefs().autoTranslateSelection,
+      showTranslationDefault: !isNewNote &&
+          Prefs().autoTranslateSelection &&
+          !AnxPlatform.isAndroid,
       horizontalMargin: horizontalMargin,
       verticalMargin: verticalMargin,
       gap: gap,
