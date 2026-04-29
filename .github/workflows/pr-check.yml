@@ -23,14 +23,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.pr_number == '' }}
         uses: actions/checkout@v4
-
-      - name: Checkout pull request
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number != '' }}
-        uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ inputs.pr_number }}/merge
 
       - name: Read Flutter version
         id: flutter_version
@@ -48,6 +41,12 @@ jobs:
 
       - name: Verify Flutter version
         run: flutter --version | grep "Flutter ${{ steps.flutter_version.outputs.version }}"
+
+      - name: Checkout pull request
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number != '' }}
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pr_number }}/merge
 
       - name: Get dependencies
         run: |
