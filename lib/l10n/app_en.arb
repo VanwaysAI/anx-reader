@@ -904,5 +904,18 @@
   "aiChatFontSize": "Font Size",
   "aiModelSwitchTitle": "Switch Model",
   "aiModelEnterManually": "Enter model name",
-  "aiModelOrSelectBelow": "Or select from list:"
+  "aiModelOrSelectBelow": "Or select from list:",
+  "searchDisplayMode": "Search Display Mode",
+  "searchDefaultEngine": "Default Search Engine",
+  "searchDisplayModePopup": "Popup (in-app overlay)",
+  "searchDisplayModeFullScreen": "Full Screen (in-app)",
+  "searchDisplayModeExternal": "External Browser",
+  "searchAddEngine": "Add Custom Engine",
+  "searchManageEngines": "Custom Engines",
+  "searchEngineName": "Engine Name",
+  "searchEngineNameRequired": "Please enter an engine name",
+  "searchEngineUrlTemplate": "URL Template",
+  "searchEngineUrlRequired": "Please enter a URL template",
+  "searchEngineUrlInvalid": "URL must contain a search query placeholder and use http/https",
+  "searchEngineAdded": "Search engine added"
 }
