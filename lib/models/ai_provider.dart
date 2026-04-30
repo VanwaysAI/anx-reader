@@ -37,7 +37,7 @@ abstract class AiProvider with _$AiProvider {
     @Default([]) List<AiApiKey> apiKeys, // List of API keys
     @Default('') String model, // Current selected model
     @Default(AiReasoningEffort.auto)
-    AiReasoningEffort reasoningEffort, // OpenAI reasoning effort
+    AiReasoningEffort reasoningEffort, // AI reasoning effort
     @Default(0) int keyIndex, // Current round-robin key index
     DateTime? createdAt, // Creation time
     DateTime? updatedAt, // Last update time

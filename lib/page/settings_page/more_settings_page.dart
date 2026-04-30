@@ -9,7 +9,9 @@ import 'package:anx_reader/page/settings_page/reading.dart';
 import 'package:anx_reader/page/settings_page/settings_page.dart';
 import 'package:anx_reader/page/settings_page/storege.dart';
 import 'package:anx_reader/page/settings_page/sync.dart';
+import 'package:anx_reader/page/settings_page/wireless_transfer.dart';
 import 'package:anx_reader/page/settings_page/translate.dart';
+import 'package:anx_reader/page/settings_page/vocabulary_page.dart';
 import 'package:anx_reader/utils/env_var.dart';
 import 'package:anx_reader/widgets/settings/about.dart';
 import 'package:flutter/cupertino.dart';
@@ -102,6 +104,15 @@ class _SubMoreSettingsState extends State<SubMoreSettings> {
                 ],
               },
               {
+                "title": L10n.of(context).settingsWirelessTransfer,
+                "icon": Icons.wifi_outlined,
+                "sections": const WirelessTransferPage(),
+                "subtitles": [
+                  L10n.of(context).settingsWirelessTransferStatus,
+                  L10n.of(context).settingsWirelessTransferAddress,
+                ],
+              },
+              {
                 "title": L10n.of(context).settingsNarrate,
                 "icon": EvaIcons.headphones,
                 "sections": const NarrateSettings(),
@@ -118,6 +129,15 @@ class _SubMoreSettingsState extends State<SubMoreSettings> {
                   L10n.of(context).settingsTranslate,
                 ],
               },
+              if (Prefs().bottomNavigatorShowVocabulary)
+                {
+                  "title": L10n.of(context).vocabularyTitle,
+                  "icon": Icons.menu_book_outlined,
+                  "sections": const VocabularyPage(),
+                  "subtitles": [
+                    L10n.of(context).vocabularySubtitle,
+                  ],
+                },
               if (EnvVar.enableAIFeature)
                 {
                   "title": L10n.of(context).settingsAi,

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/page/reading_page.dart';
+import 'package:anx_reader/utils/platform_utils.dart';
 import 'package:anx_reader/widgets/common/axis_flex.dart';
 import 'package:anx_reader/widgets/context_menu/excerpt_menu.dart';
 import 'package:anx_reader/widgets/context_menu/reader_note_menu.dart';
@@ -26,6 +27,10 @@ Future<void> showContextMenu(
     {String? contextText}) async {
   final playerKey = epubPlayerKey.currentState;
   if (playerKey == null) return;
+  final mediaQuery = MediaQuery.of(context);
+  final overlay = Overlay.of(context);
+  final secondaryContainerColor =
+      Theme.of(context).colorScheme.secondaryContainer;
   bool isNewNote = false;
 
   if (Prefs().autoMarkSelection && annoId == null) {
@@ -55,7 +60,6 @@ Future<void> showContextMenu(
       epubPlayerKey.currentContext?.findRenderObject() as RenderBox?;
   final renderBoxSize = renderBox?.size;
 
-  final mediaQuery = MediaQuery.of(context);
   final double screenHeight = renderBoxSize?.height ?? mediaQuery.size.height;
   final double screenWidth = renderBoxSize?.width ?? mediaQuery.size.width;
   final double keyboardInset = mediaQuery.viewInsets.bottom;
@@ -118,14 +122,12 @@ Future<void> showContextMenu(
   }
 
   final decoration = BoxDecoration(
-    color: Prefs().eInkMode
-        ? Colors.white
-        : Theme.of(context).colorScheme.secondaryContainer,
+    color: Prefs().eInkMode ? Colors.white : secondaryContainerColor,
     borderRadius: BorderRadius.circular(10),
     boxShadow: [
       if (!Prefs().eInkMode)
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withValues(alpha: 0.1),
           spreadRadius: 5,
           blurRadius: 7,
           offset: const Offset(0, 3),
@@ -153,7 +155,9 @@ Future<void> showContextMenu(
       onClose: onClose,
       menuConstraints: menuConstraints,
       initialPlacement: initialPlacement,
-      showTranslationDefault: !isNewNote && Prefs().autoTranslateSelection,
+      showTranslationDefault: !isNewNote &&
+          Prefs().autoTranslateSelection &&
+          !AnxPlatform.isAndroid,
       horizontalMargin: horizontalMargin,
       verticalMargin: verticalMargin,
       gap: gap,
@@ -161,7 +165,7 @@ Future<void> showContextMenu(
     );
   });
 
-  Overlay.of(context).insert(playerKey.contextMenuEntry!);
+  overlay.insert(playerKey.contextMenuEntry!);
 }
 
 class _MenuPlacement {
@@ -520,6 +524,7 @@ class _ContextMenuOverlayState extends State<_ContextMenuOverlay>
                                   onNoteCreated: _handleNoteCreated,
                                   axis: widget.axis,
                                   reverse: _reverse,
+                                  contextText: widget.contextText,
                                 ),
                               ],
                             ),
@@ -552,6 +557,7 @@ class _ContextMenuOverlayState extends State<_ContextMenuOverlay>
                                 decoration: widget.decoration,
                                 axis: widget.axis,
                                 contextText: widget.contextText,
+                                position: widget.annoCfi,
                               ),
                             ],
                           ),

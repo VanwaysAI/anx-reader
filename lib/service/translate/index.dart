@@ -14,6 +14,8 @@ import 'package:anx_reader/utils/log/common.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+final Map<String, String> _selectionTranslationCache = {};
+
 enum TranslateService {
   bingWeb,
   googleWeb,
@@ -232,4 +234,97 @@ Future<String> translateTextOnly(String text,
     to,
     contextText: contextText,
   );
+}
+
+bool supportsFastTextTranslation(TranslateService service) {
+  return !service.isWebView;
+}
+
+TranslateService? resolveFastTextTranslateService(TranslateService preferred) {
+  if (supportsFastTextTranslation(preferred)) {
+    return preferred;
+  }
+
+  const fallbacks = [
+    TranslateService.microsoftApi,
+    TranslateService.googleApi,
+    TranslateService.deepl,
+  ];
+
+  for (final service in fallbacks) {
+    if (_hasUsableTranslateConfig(service)) {
+      return service;
+    }
+  }
+  return null;
+}
+
+Future<String> translateTextOnlyCached(
+  String text, {
+  TranslateService? service,
+  String? contextText,
+}) async {
+  service ??= Prefs().translateService;
+  final from = Prefs().translateFrom;
+  final to = Prefs().translateTo;
+  final cacheKey = _selectionTranslationCacheKey(
+    service: service,
+    from: from,
+    to: to,
+    text: text,
+    contextText: contextText,
+  );
+
+  final cached = _selectionTranslationCache[cacheKey];
+  if (cached != null && cached.trim().isNotEmpty) {
+    return cached;
+  }
+
+  final translated = await service.provider.translateTextOnly(
+    text,
+    from,
+    to,
+    contextText: contextText,
+  );
+
+  if (translated.trim().isNotEmpty && translated != '...') {
+    _selectionTranslationCache[cacheKey] = translated;
+  }
+  return translated;
+}
+
+bool _hasUsableTranslateConfig(TranslateService service) {
+  final config = Prefs().getTranslateServiceConfig(service);
+  if (config == null) return false;
+
+  switch (service) {
+    case TranslateService.microsoftApi:
+    case TranslateService.googleApi:
+    case TranslateService.deepl:
+      return (config['api_key']?.toString().trim().isNotEmpty ?? false);
+    case TranslateService.ai:
+      return true;
+    case TranslateService.bingWeb:
+    case TranslateService.googleWeb:
+      return false;
+  }
+}
+
+String _selectionTranslationCacheKey({
+  required TranslateService service,
+  required LangListEnum from,
+  required LangListEnum to,
+  required String text,
+  required String? contextText,
+}) {
+  final normalizedText = text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  final normalizedContext =
+      contextText?.trim().replaceAll(RegExp(r'\s+'), ' ') ?? '';
+  return [
+    service.name,
+    from.code,
+    to.code,
+    normalizedText,
+    normalizedContext,
+  ].join('|');
 }
