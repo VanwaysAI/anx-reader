@@ -2,6 +2,7 @@ import 'package:anx_reader/config/shared_preference_provider.dart';
 import 'package:anx_reader/dao/book.dart';
 import 'package:anx_reader/l10n/generated/L10n.dart';
 import 'package:anx_reader/models/md5_statistics.dart';
+import 'package:anx_reader/page/settings_page/search_engines.dart';
 import 'package:anx_reader/page/settings_page/subpage/chapter_split_rules_page.dart';
 import 'package:anx_reader/page/settings_page/subpage/log_page.dart';
 import 'package:anx_reader/page/changelog_screen.dart';

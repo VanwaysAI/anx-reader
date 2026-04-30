@@ -5,7 +5,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "de": [
@@ -14,7 +27,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "es": [
@@ -23,7 +49,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "fr": [
@@ -32,7 +71,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "it": [
@@ -41,7 +93,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "ja": [
@@ -50,7 +115,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "ko": [
@@ -59,7 +137,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "pt": [
@@ -68,7 +159,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "ro": [
@@ -77,7 +181,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "ru": [
@@ -86,7 +203,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "tr": [
@@ -95,7 +225,20 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "zh": [
@@ -107,13 +250,42 @@
     "settingsAiProviderReasoningEffortHigh"
   ],
 
+  "zh_CN": [
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
+  ],
+
   "zh_LZH": [
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ],
 
   "zh_TW": [
@@ -122,6 +294,19 @@
     "settingsAiProviderReasoningEffortAuto",
     "settingsAiProviderReasoningEffortLow",
     "settingsAiProviderReasoningEffortMedium",
-    "settingsAiProviderReasoningEffortHigh"
+    "settingsAiProviderReasoningEffortHigh",
+    "searchDisplayMode",
+    "searchDefaultEngine",
+    "searchDisplayModePopup",
+    "searchDisplayModeFullScreen",
+    "searchDisplayModeExternal",
+    "searchAddEngine",
+    "searchManageEngines",
+    "searchEngineName",
+    "searchEngineNameRequired",
+    "searchEngineUrlTemplate",
+    "searchEngineUrlRequired",
+    "searchEngineUrlInvalid",
+    "searchEngineAdded"
   ]
 }
