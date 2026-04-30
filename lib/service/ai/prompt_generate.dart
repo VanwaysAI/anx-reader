@@ -110,8 +110,18 @@ PromptTemplatePayload generatePromptTranslate(
   final prompt = Prefs().getAiPrompt(AiPrompts.translate);
   final normalized = _normalizePrompt(prompt);
   final template = ChatPromptTemplate.fromPromptMessages([
-    HumanChatMessagePromptTemplate.fromTemplate(normalized),
+    SystemChatMessagePromptTemplate.fromTemplate(normalized),
+    HumanChatMessagePromptTemplate.fromTemplate(
+      '''
+Source text:
+{{text}}
+
+Reader context:
+{{contextText}}
+''',
+    ),
   ]);
+  final isSingleWord = !text.contains(' ') && text.trim().length <= 30;
   return PromptTemplatePayload(
     template: template,
     variables: {
@@ -119,6 +129,7 @@ PromptTemplatePayload generatePromptTranslate(
       'to_locale': toLocale,
       'from_locale': fromLocale,
       'contextText': (contextText ?? '').trim(),
+      'isSingleWord': isSingleWord.toString(),
     },
     identifier: AiPrompts.translate,
   );
@@ -129,7 +140,8 @@ PromptTemplatePayload generatePromptFullTextTranslate(
   final prompt = Prefs().getAiPrompt(AiPrompts.fullTextTranslate);
   final normalized = _normalizePrompt(prompt);
   final template = ChatPromptTemplate.fromPromptMessages([
-    HumanChatMessagePromptTemplate.fromTemplate(normalized),
+    SystemChatMessagePromptTemplate.fromTemplate(normalized),
+    HumanChatMessagePromptTemplate.fromTemplate('{{text}}'),
   ]);
   return PromptTemplatePayload(
     template: template,

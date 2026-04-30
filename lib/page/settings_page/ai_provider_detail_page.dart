@@ -307,6 +307,10 @@ class _AiProviderDetailPageState extends ConsumerState<AiProviderDetailPage> {
                 child: Text(l10n.settingsAiProviderReasoningEffortAuto),
               ),
               DropdownMenuItem(
+                value: AiReasoningEffort.off,
+                child: Text(l10n.settingsAiProviderReasoningEffortOff),
+              ),
+              DropdownMenuItem(
                 value: AiReasoningEffort.low,
                 child: Text(l10n.settingsAiProviderReasoningEffortLow),
               ),

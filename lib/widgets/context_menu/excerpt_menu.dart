@@ -21,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 class ExcerptMenu extends StatefulWidget {
   final String annoCfi;
   final String annoContent;
+  final String? contextText;
   final int? id;
   final Function() onClose;
   final bool footnote;
@@ -37,6 +38,7 @@ class ExcerptMenu extends StatefulWidget {
     super.key,
     required this.annoCfi,
     required this.annoContent,
+    this.contextText,
     this.id,
     required this.onClose,
     required this.footnote,
@@ -310,12 +312,23 @@ class ExcerptMenuState extends State<ExcerptMenu> {
             icon: const Icon(EvaIcons.globe),
             text: L10n.of(context).contextMenuSearch,
           ),
-          // toggle translation menu
+          // toggle translation menu (word/text translation overlay)
           IconAndText(
             compact: true,
             onTap: widget.toggleTranslationMenu,
             icon: const Icon(Icons.translate),
             text: L10n.of(context).contextMenuTranslate,
+          ),
+          // paragraph translation (inline insert below original)
+          IconAndText(
+            compact: true,
+            onTap: () {
+              widget.onClose();
+              epubPlayerKey.currentState
+                  ?.translateSelectedParagraph(cfi: widget.annoCfi);
+            },
+            icon: const Icon(Icons.text_fields),
+            text: L10n.of(context).contextMenuParagraphTranslate,
           ),
           // narrate
           IconAndText(

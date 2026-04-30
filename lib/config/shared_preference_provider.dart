@@ -171,7 +171,7 @@ class Prefs extends ChangeNotifier {
   }
 
   Color get themeColor {
-    int colorValue = prefs.getInt('themeColor') ?? Colors.blue.value;
+    int colorValue = prefs.getInt('themeColor') ?? Colors.blue.toARGB32();
     return Color(colorValue);
   }
 
@@ -1149,6 +1149,15 @@ class Prefs extends ChangeNotifier {
     return prefs.getBool('bottomNavigatorShowNote') ?? true;
   }
 
+  set bottomNavigatorShowVocabulary(bool status) {
+    prefs.setBool('bottomNavigatorShowVocabulary', status);
+    notifyListeners();
+  }
+
+  bool get bottomNavigatorShowVocabulary {
+    return prefs.getBool('bottomNavigatorShowVocabulary') ?? false;
+  }
+
   set bottomNavigatorShowStatistics(bool status) {
     prefs.setBool('bottomNavigatorShowStatistics', status);
     notifyListeners();
@@ -1591,6 +1600,62 @@ class Prefs extends ChangeNotifier {
     bookTranslationModes = modes;
   }
 
+  Map<String, dynamic> get bookTranslationProgresses {
+    final progressesJson = prefs.getString('bookTranslationProgresses');
+    if (progressesJson == null) return {};
+
+    try {
+      final decoded = jsonDecode(progressesJson);
+      return decoded is Map<String, dynamic> ? decoded : {};
+    } catch (e) {
+      AnxLog.warning('Failed to decode book translation progresses: $e');
+      return {};
+    }
+  }
+
+  set bookTranslationProgresses(Map<String, dynamic> progresses) {
+    prefs.setString('bookTranslationProgresses', jsonEncode(progresses));
+    notifyListeners();
+  }
+
+  ({String cfi, double percentage})? getBookTranslationProgress(
+    int bookId,
+    TranslationModeEnum mode,
+  ) {
+    final progress = bookTranslationProgresses[_bookProgressKey(bookId, mode)];
+    if (progress is! Map) return null;
+
+    final cfi = progress['cfi']?.toString() ?? '';
+    if (cfi.isEmpty) return null;
+
+    return (
+      cfi: cfi,
+      percentage:
+          double.tryParse(progress['percentage']?.toString() ?? '') ?? 0.0,
+    );
+  }
+
+  void setBookTranslationProgress(
+    int bookId,
+    TranslationModeEnum mode, {
+    required String cfi,
+    required double percentage,
+  }) {
+    if (cfi.isEmpty) return;
+
+    final progresses = bookTranslationProgresses;
+    progresses[_bookProgressKey(bookId, mode)] = {
+      'cfi': cfi,
+      'percentage': percentage,
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
+    bookTranslationProgresses = progresses;
+  }
+
+  String _bookProgressKey(int bookId, TranslationModeEnum mode) {
+    return '$bookId:${mode.code}';
+  }
+
   bool get allowMixWithOtherAudio {
     return prefs.getBool('allowMixWithOtherAudio') ?? false;
   }
@@ -1733,6 +1798,49 @@ class Prefs extends ChangeNotifier {
     if (selectedSearchEngineId == id) {
       selectedSearchEngineId = SearchEngine.builtinEngines.first.id;
     }
+  }
+  // Wireless Transfer settings
+  int get wirelessTransferAutoShutdown {
+    return prefs.getInt('wirelessTransferAutoShutdown') ?? 600; // 10 minutes
+  }
+
+  set wirelessTransferAutoShutdown(int seconds) {
+    prefs.setInt('wirelessTransferAutoShutdown', seconds);
+    notifyListeners();
+  }
+
+  int get wirelessTransferPort {
+    return prefs.getInt('wirelessTransferPort') ?? 8080;
+  }
+
+  set wirelessTransferPort(int port) {
+    prefs.setInt('wirelessTransferPort', port);
+    notifyListeners();
+  }
+
+  // Translation margin: how many pages ahead to pre-translate (in pixels)
+  // 800px ≈ 1.5 pages, 1600px ≈ 3 pages, 2400px ≈ 5 pages
+  int get translationMargin {
+    return prefs.getInt('translationMargin') ?? 1600; // 3 pages default
+  }
+
+  set translationMargin(int px) {
+    prefs.setInt('translationMargin', px);
+    notifyListeners();
+  }
+
+  // AI Fallback provider
+  String? get aiFallbackProvider {
+    return prefs.getString('aiFallbackProvider');
+  }
+
+  set aiFallbackProvider(String? providerId) {
+    if (providerId != null) {
+      prefs.setString('aiFallbackProvider', providerId);
+    } else {
+      prefs.remove('aiFallbackProvider');
+    }
+    notifyListeners();
   }
 }
 

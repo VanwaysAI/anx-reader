@@ -44,11 +44,22 @@ class LangchainAiConfig {
   }
 
   ChatAnthropicOptions toAnthropicOptions() {
+    final thinking = reasoningEffort.toAnthropicThinking();
+    final thinkingBudget =
+        thinking is ChatAnthropicThinkingEnabled ? thinking.budgetTokens : null;
+    final configuredMaxTokens = maxTokens;
+    final effectiveMaxTokens = thinkingBudget == null
+        ? configuredMaxTokens
+        : (configuredMaxTokens == null || configuredMaxTokens <= thinkingBudget
+            ? thinkingBudget + 1024
+            : configuredMaxTokens);
+
     return ChatAnthropicOptions(
       model: model.isEmpty ? null : model,
-      temperature: temperature,
-      topP: topP,
-      maxTokens: maxTokens,
+      temperature: thinkingBudget == null ? temperature : null,
+      topP: thinkingBudget == null ? topP : (topP == null ? null : 0.95),
+      maxTokens: effectiveMaxTokens,
+      thinking: thinking,
     );
   }
 
@@ -239,9 +250,23 @@ extension on AiReasoningEffort {
   ChatOpenAIReasoningEffort? toOpenAiReasoningEffort() {
     return switch (this) {
       AiReasoningEffort.auto => null,
+      AiReasoningEffort.off => null,
       AiReasoningEffort.low => ChatOpenAIReasoningEffort.low,
       AiReasoningEffort.medium => ChatOpenAIReasoningEffort.medium,
       AiReasoningEffort.high => ChatOpenAIReasoningEffort.high,
+    };
+  }
+
+  ChatAnthropicThinking? toAnthropicThinking() {
+    return switch (this) {
+      AiReasoningEffort.auto => null,
+      AiReasoningEffort.off => const ChatAnthropicThinking.disabled(),
+      AiReasoningEffort.low =>
+        const ChatAnthropicThinking.enabled(budgetTokens: 1024),
+      AiReasoningEffort.medium =>
+        const ChatAnthropicThinking.enabled(budgetTokens: 4096),
+      AiReasoningEffort.high =>
+        const ChatAnthropicThinking.enabled(budgetTokens: 8192),
     };
   }
 }

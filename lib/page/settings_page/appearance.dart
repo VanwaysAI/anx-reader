@@ -266,6 +266,15 @@ class _AppearanceSettingState extends State<AppearanceSetting> {
                 });
               },
             ),
+            SettingsTile.switchTile(
+              title: Text(L10n.of(context).vocabularyTitle),
+              initialValue: Prefs().bottomNavigatorShowVocabulary,
+              onToggle: (bool value) {
+                setState(() {
+                  Prefs().bottomNavigatorShowVocabulary = value;
+                });
+              },
+            ),
           ],
         ),
       ],
@@ -317,7 +326,7 @@ Future<void> showColorPickerDialog(BuildContext context) async {
           TextButton(
             child: Text(L10n.of(context).commonOk),
             onPressed: () {
-              prefsProvider.saveThemeToPrefs(pickedColor.value);
+              prefsProvider.saveThemeToPrefs(pickedColor.toARGB32());
               Navigator.of(context).pop();
             },
           ),
