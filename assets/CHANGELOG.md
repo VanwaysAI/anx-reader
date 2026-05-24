@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.15.0
+- Feat(search): Add in-app search results with configurable search engine and display modes (#894)
+- Feat(ai): Add configurable delay threshold for auto-summary when reopening a book (#922)
+
+- Feat(search): 支持应用内搜索结果显示，可配置搜索引擎和显示方式 (#894)
+- Feat(ai): 新增自动摘要延迟阈值配置，可控制重新打开书籍时的摘要触发时机 (#922)
+
 ## 1.14.0
 - Fix(translate): Remove legacy Microsoft reverse-engineered translation service and migrate saved full-text translation preference to Microsoft Azure API
 - Fix(l10n): Remove legacy Microsoft translation localization entries
