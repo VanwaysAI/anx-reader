@@ -193,6 +193,22 @@ class _AdvancedSettingState extends State<AdvancedSetting> {
           ],
         ),
         SettingsSection(
+          title: Text(L10n.of(context).searchManageEngines),
+          tiles: [
+            SettingsTile.navigation(
+              leading: const Icon(Icons.search),
+              title: Text(L10n.of(context).searchManageEngines),
+              onPressed: (_) {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(
+                    builder: (context) => const SearchEnginesSetting(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        SettingsSection(
           title: Text(L10n.of(context).hints),
           tiles: [
             SettingsTile.navigation(
