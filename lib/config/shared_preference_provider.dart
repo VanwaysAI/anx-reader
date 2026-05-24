@@ -954,6 +954,25 @@ class Prefs extends ChangeNotifier {
     return prefs.getBool('autoSummaryPreviousContent') ?? false;
   }
 
+  set autoSummaryDelayLevel(int level) {
+    prefs.setInt('autoSummaryDelayLevel', level.clamp(0, 5));
+    notifyListeners();
+  }
+
+  int get autoSummaryDelayLevel {
+    return prefs.getInt('autoSummaryDelayLevel') ?? 0;
+  }
+
+  DateTime? getLastAutoSummaryTimestamp(int bookId) {
+    final str = prefs.getString('lastAutoSummaryTimestamp_$bookId');
+    if (str == null) return null;
+    return DateTime.tryParse(str);
+  }
+
+  void setLastAutoSummaryTimestamp(int bookId, DateTime time) {
+    prefs.setString('lastAutoSummaryTimestamp_$bookId', time.toIso8601String());
+  }
+
   set autoAdjustReadingTheme(bool status) {
     prefs.setBool('autoAdjustReadingTheme', status);
     notifyListeners();
