@@ -247,6 +247,13 @@ class _OtherSettingsState extends State<OtherSettings> {
                 children: [
                   Row(
                     children: [
+                      SizedBox(
+                        width: 56,
+                        child: Text(
+                          delayLabels[Prefs().autoSummaryDelayLevel],
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
                       Expanded(
                         child: Slider(
                           min: 0,
