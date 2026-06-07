@@ -1,5 +1,6 @@
 {
   "ar": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -23,6 +24,7 @@
   ],
 
   "de": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -46,6 +48,7 @@
   ],
 
   "es": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -69,6 +72,7 @@
   ],
 
   "fr": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -92,6 +96,7 @@
   ],
 
   "it": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -115,6 +120,7 @@
   ],
 
   "ja": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -138,6 +144,7 @@
   ],
 
   "ko": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -161,6 +168,7 @@
   ],
 
   "pt": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -184,6 +192,7 @@
   ],
 
   "ro": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -207,6 +216,7 @@
   ],
 
   "ru": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -230,6 +240,7 @@
   ],
 
   "tr": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -262,6 +273,7 @@
   ],
 
   "zh_LZH": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",
@@ -285,6 +297,7 @@
   ],
 
   "zh_TW": [
+    "bookDetailFileFormat",
     "settingsAiProviderReasoningEffort",
     "settingsAiProviderReasoningEffortHelp",
     "settingsAiProviderReasoningEffortAuto",

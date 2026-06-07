@@ -1,11 +1,13 @@
 # Changelog
 
 ## 1.15.0
+- Fix(bookshelf): Show book file format in detail metadata so users can see the extension inside the app (#910)
 - Feat(network): Add global HTTP proxy support in advanced settings (#838) Thanks @dddXzz
 - Feat(network): Add HTTP proxy connectivity test feature (#838) Thanks @dddXzz
 - Fix(reader): Fix Android selection auto-page turn — continuous turns and missed turns when dragging across pages (#875) Thanks @addtion99
 - Fix(l10n): Update Russian translation (#874) Thanks @Xapitonov
 
+- Fix(bookshelf): 在书籍详情元数据中显示文件格式，方便用户在应用内查看扩展名 (#910)
 - Feat(network): 新增全局 HTTP 代理支持，可在高级设置中配置代理服务器地址和端口 (#838) 感谢 @dddXzz
 - Feat(network): 新增代理连接测试功能 (#838) 感谢 @dddXzz
 - Fix(reader): 修复 Android 选区跨页自动翻页的连续翻页与漏翻问题 (#875) 感谢 @addtion99
