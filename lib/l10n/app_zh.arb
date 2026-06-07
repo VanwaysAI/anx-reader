@@ -159,6 +159,7 @@
   "bookDetailNthBook": "{count, plural, other{第{count}本读的书}}",
   "bookDetailLastReadDate": "上次阅读",
   "bookDetailImportDate": "首次导入",
+  "bookDetailFileFormat": "文件格式：",
   "readingPageReadingInfo": "阅读信息",
   "readingPageReadingInfoChapterTitle": "章节标题",
   "readingPageReadingInfoBattery": "电量",
