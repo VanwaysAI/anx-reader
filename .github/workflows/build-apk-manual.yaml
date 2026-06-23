@@ -32,11 +32,34 @@ jobs:
       - name: Generate l10n
         run: flutter gen-l10n
 
-      - name: Build APK
-        run: flutter build apk --debug
+      - name: Build Release APK (unsigned)
+        run: |
+          flutter build apk --release --split-per-abi
+          
+      - name: Rename APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          mv app-arm64-v8a-release.apk Anx-Reader-MiMo-arm64.apk || true
+          mv app-armeabi-v7a-release.apk Anx-Reader-MiMo-armeabi.apk || true
+          mv app-x86_64-release.apk Anx-Reader-MiMo-x86_64.apk || true
 
-      - name: Upload APK
+      - name: Upload ARM64 APK
         uses: actions/upload-artifact@v4
         with:
-          name: anx-reader-mimo-tts
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: anx-reader-mimo-arm64
+          path: build/app/outputs/flutter-apk/Anx-Reader-MiMo-arm64.apk
+          if-no-files-found: warn
+
+      - name: Upload ARM APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: anx-reader-mimo-armeabi
+          path: build/app/outputs/flutter-apk/Anx-Reader-MiMo-armeabi.apk
+          if-no-files-found: warn
+
+      - name: Upload x86_64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: anx-reader-mimo-x86_64
+          path: build/app/outputs/flutter-apk/Anx-Reader-MiMo-x86_64.apk
+          if-no-files-found: warn
