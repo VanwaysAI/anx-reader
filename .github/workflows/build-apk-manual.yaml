@@ -32,7 +32,22 @@ jobs:
       - name: Generate l10n
         run: flutter gen-l10n
 
-      - name: Build Release APK (unsigned)
+      - name: Create debug keystore for signing
+        run: |
+          keytool -genkey -v -keystore android/app/debug.keystore \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -alias androiddebugkey \
+            -storepass android -keypass android \
+            -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, S=Debug, C=US"
+          
+          cat > android/key.properties << PROPS
+          storePassword=android
+          keyPassword=android
+          keyAlias=androiddebugkey
+          storeFile=debug.keystore
+          PROPS
+
+      - name: Build Release APK
         run: |
           flutter build apk --release --split-per-abi
           
