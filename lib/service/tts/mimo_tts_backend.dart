@@ -74,6 +74,24 @@ class MimoTtsProvider extends TtsServiceProvider {
         type: ConfigItemType.text,
         defaultValue: '',
       ),
+      ConfigItem(
+        key: 'reading_mode',
+        label: '朗读模式',
+        description: '逐句模式：每次朗读一句，高亮精准；段落模式：合并多句朗读，更自然',
+        type: ConfigItemType.select,
+        defaultValue: 'sentence',
+        options: [
+          {'value': 'sentence', 'label': '逐句朗读'},
+          {'value': 'paragraph', 'label': '段落朗读'},
+        ],
+      ),
+      ConfigItem(
+        key: 'paragraph_sentences',
+        label: '段落句子数',
+        description: '段落模式下每次合并的句子数量（2-10）',
+        type: ConfigItemType.number,
+        defaultValue: '5',
+      ),
     ];
   }
 
@@ -95,6 +113,8 @@ class MimoTtsProvider extends TtsServiceProvider {
       'model': config['model'] ?? _defaultModel,
       'voice': config['voice'] ?? _defaultVoice,
       'instructions': config['instructions'] ?? '',
+      'reading_mode': config['reading_mode'] ?? 'sentence',
+      'paragraph_sentences': config['paragraph_sentences'] ?? '5',
     };
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:anx_reader/config/shared_preference_provider.dart';
+import 'package:anx_reader/service/tts/mimo_tts_backend.dart';
 import 'package:anx_reader/page/reading_page.dart';
 import 'package:anx_reader/service/tts/base_tts.dart';
 import 'package:anx_reader/service/tts/tts_service.dart';
@@ -221,15 +222,37 @@ class OnlineTts extends BaseTts {
 
         // Create placeholder segments in ORDER first
         final newSegments = <TtsSegment>[];
-        for (final sentence in sentences) {
-          if (_shouldStop) break;
-          final key = _segmentKey(sentence);
-          if (_bufferKeys.contains(key)) continue;
+        
+        // 检查是否是段落模式
+        final ttsService = Prefs().ttsService;
+        final isParagraphMode = ttsService == 'mimo' && 
+            backend is MimoTtsProvider && 
+            (backend as MimoTtsProvider).getConfig()['reading_mode'] == 'paragraph';
+        
+        if (isParagraphMode) {
+          // 段落模式：sentences 已经是合并后的，直接创建 segment
+          for (final sentence in sentences) {
+            if (_shouldStop) break;
+            final key = _segmentKey(sentence);
+            if (_bufferKeys.contains(key)) continue;
 
-          _bufferKeys.add(key);
-          final segment = TtsSegment(sentence: sentence);
-          newSegments.add(segment);
-          _buffer.add(segment); // Add in order!
+            _bufferKeys.add(key);
+            final segment = TtsSegment(sentence: sentence);
+            newSegments.add(segment);
+            _buffer.add(segment); // Add in order!
+          }
+        } else {
+          // 逐句模式：正常创建
+          for (final sentence in sentences) {
+            if (_shouldStop) break;
+            final key = _segmentKey(sentence);
+            if (_bufferKeys.contains(key)) continue;
+
+            _bufferKeys.add(key);
+            final segment = TtsSegment(sentence: sentence);
+            newSegments.add(segment);
+            _buffer.add(segment); // Add in order!
+          }
         }
 
         // Now fetch audio in batches to limit concurrency
@@ -255,8 +278,22 @@ class OnlineTts extends BaseTts {
     if (state == null) return [];
 
     try {
+      // 检查是否是段落模式
+      final ttsService = Prefs().ttsService;
+      final isParagraphMode = ttsService == 'mimo' && 
+          backend is MimoTtsProvider && 
+          (backend as MimoTtsProvider).getConfig()['reading_mode'] == 'paragraph';
+      
+      int actualCount = count;
+      if (isParagraphMode) {
+        // 段落模式下，获取更多句子用于合并
+        final paragraphSentences = int.tryParse(
+            (backend as MimoTtsProvider).getConfig()['paragraph_sentences']?.toString() ?? '5') ?? 5;
+        actualCount = count * paragraphSentences;
+      }
+
       final sentences = await state.ttsCollectDetails(
-        count: count,
+        count: actualCount,
         includeCurrent: _buffer.isEmpty && _currentSegment == null,
       );
 
@@ -267,6 +304,31 @@ class OnlineTts extends BaseTts {
         if (!_bufferKeys.contains(key)) {
           newSentences.add(s);
         }
+      }
+
+      // 段落模式：合并句子
+      if (isParagraphMode && newSentences.isNotEmpty) {
+        final paragraphSentences = int.tryParse(
+            (backend as MimoTtsProvider).getConfig()['paragraph_sentences']?.toString() ?? '5') ?? 5;
+        final mergedSentences = <TtsSentence>[];
+        
+        for (var i = 0; i < newSentences.length; i += paragraphSentences) {
+          final end = (i + paragraphSentences).clamp(0, newSentences.length);
+          final chunk = newSentences.sublist(i, end);
+          if (chunk.isEmpty) continue;
+          
+          // 合并文本
+          final mergedText = chunk.map((s) => s.text).join('，');
+          // 使用第一个句子的 cfi 作为高亮位置
+          final mergedCfi = chunk.first.cfi;
+          
+          mergedSentences.add(TtsSentence(
+            text: mergedText,
+            cfi: mergedCfi,
+          ));
+        }
+        
+        return mergedSentences;
       }
 
       // Note: We do NOT call getNextTextFunction here.
@@ -287,14 +349,27 @@ class OnlineTts extends BaseTts {
     // Capture the version at the start of fetching
     final targetVersion = segment.fetchVersion;
 
+    // 检查是否是段落模式
+    final ttsService = Prefs().ttsService;
+    final isParagraphMode = ttsService == 'mimo' && 
+        backend is MimoTtsProvider && 
+        (backend as MimoTtsProvider).getConfig()['reading_mode'] == 'paragraph';
+
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       if (_shouldStop) return;
       if (segment.isReady) return;
 
       try {
+        String textToSpeak = segment.sentence.text;
+        
+        // 段落模式：合并多个句子
+        if (isParagraphMode && segment.sentences != null && segment.sentences!.isNotEmpty) {
+          textToSpeak = segment.sentences!.map((s) => s.text).join('，');
+        }
+
         final bytes = await backend
             .speak(
-              segment.sentence.text,
+              textToSpeak,
               null,
               rate,
               pitch,
