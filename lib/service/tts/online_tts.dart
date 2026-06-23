@@ -212,47 +212,24 @@ class OnlineTts extends BaseTts {
           continue;
         }
 
-        // Collect sentences from the reader
-        final sentences = await _collectSentences(neededCount);
+        // Collect segments from the reader
+        final segments = await _collectSegments(neededCount);
 
-        if (sentences.isEmpty) {
+        if (segments.isEmpty) {
           await Future.delayed(const Duration(milliseconds: 100));
           continue;
         }
 
-        // Create placeholder segments in ORDER first
+        // Add segments to buffer in ORDER
         final newSegments = <TtsSegment>[];
-        
-        // 检查是否是段落模式
-        final ttsService = Prefs().ttsService;
-        final isParagraphMode = ttsService == 'mimo' && 
-            backend is MimoTtsProvider && 
-            (backend as MimoTtsProvider).getConfig()['reading_mode'] == 'paragraph';
-        
-        if (isParagraphMode) {
-          // 段落模式：sentences 已经是合并后的，直接创建 segment
-          for (final sentence in sentences) {
-            if (_shouldStop) break;
-            final key = _segmentKey(sentence);
-            if (_bufferKeys.contains(key)) continue;
+        for (final segment in segments) {
+          if (_shouldStop) break;
+          final key = _segmentKey(segment.sentence);
+          if (_bufferKeys.contains(key)) continue;
 
-            _bufferKeys.add(key);
-            final segment = TtsSegment(sentence: sentence);
-            newSegments.add(segment);
-            _buffer.add(segment); // Add in order!
-          }
-        } else {
-          // 逐句模式：正常创建
-          for (final sentence in sentences) {
-            if (_shouldStop) break;
-            final key = _segmentKey(sentence);
-            if (_bufferKeys.contains(key)) continue;
-
-            _bufferKeys.add(key);
-            final segment = TtsSegment(sentence: sentence);
-            newSegments.add(segment);
-            _buffer.add(segment); // Add in order!
-          }
+          _bufferKeys.add(key);
+          newSegments.add(segment);
+          _buffer.add(segment); // Add in order!
         }
 
         // Now fetch audio in batches to limit concurrency
@@ -273,7 +250,7 @@ class OnlineTts extends BaseTts {
     }
   }
 
-  Future<List<TtsSentence>> _collectSentences(int count) async {
+  Future<List<TtsSegment>> _collectSegments(int count) async {
     final state = epubPlayerKey.currentState;
     if (state == null) return [];
 
@@ -310,7 +287,7 @@ class OnlineTts extends BaseTts {
       if (isParagraphMode && newSentences.isNotEmpty) {
         final paragraphSentences = int.tryParse(
             (backend as MimoTtsProvider).getConfig()['paragraph_sentences']?.toString() ?? '5') ?? 5;
-        final mergedSentences = <TtsSentence>[];
+        final mergedSegments = <TtsSegment>[];
         
         for (var i = 0; i < newSentences.length; i += paragraphSentences) {
           final end = (i + paragraphSentences).clamp(0, newSentences.length);
@@ -322,20 +299,30 @@ class OnlineTts extends BaseTts {
           // 使用第一个句子的 cfi 作为高亮位置
           final mergedCfi = chunk.first.cfi;
           
-          mergedSentences.add(TtsSentence(
+          final mergedSentence = TtsSentence(
             text: mergedText,
             cfi: mergedCfi,
-          ));
+          );
+          
+          // 创建 segment，保存原始句子
+          final segment = TtsSegment(
+            sentence: mergedSentence,
+            sentences: chunk,
+          );
+          
+          mergedSegments.add(segment);
         }
         
-        return mergedSentences;
+        return mergedSegments;
       }
 
-      // Note: We do NOT call getNextTextFunction here.
-      // Advancing the reader position should only happen in the player loop
-      // after playback completes, to avoid interfering with highlighting.
+      // 逐句模式：正常创建 segments
+      final segments = <TtsSegment>[];
+      for (final sentence in newSentences) {
+        segments.add(TtsSegment(sentence: sentence));
+      }
 
-      return newSentences;
+      return segments;
     } catch (e) {
       AnxLog.severe('Collect sentences error: $e');
       return [];
