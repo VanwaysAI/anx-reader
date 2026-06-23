@@ -104,3 +104,25 @@ git remote add upstream https://github.com/Anxcye/anx-reader.git
 git fetch upstream
 git merge upstream/develop
 ```
+
+## 更新日志
+
+### 2026-06-23 MiMo TTS 改进
+
+1. **Voice 列表更新**：根据小米文档添加了预置音色
+   - 中文：冰糖、茉莉、苏打、白桦
+   - 英文：Mia、Chloe、Milo、Dean
+   - 默认：mimo_default
+
+2. **配置字段**：
+   - Voice：预置音色选择
+   - Instructions：语音风格指令（语速、情绪、音色等）
+
+3. **请求格式修复**：
+   - 使用 `audio.voice` 参数传递音色
+   - user 消息用于风格控制
+   - assistant 消息用于要朗读的文本
+
+4. **UI 修复**：
+   - 修复下拉菜单使用 `value` 而不是 `initialValue`
+   - 解决切换 TTS 服务无响应的问题
