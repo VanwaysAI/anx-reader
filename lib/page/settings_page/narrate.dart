@@ -426,7 +426,7 @@ class _NarrateSettingsState extends ConsumerState<NarrateSettings>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: DropdownButtonFormField<String>(
-        initialValue: currentServiceId,
+        value: currentServiceId,
         decoration: InputDecoration(
           labelText: L10n.of(context).settingsNarrateTtsService,
           border: OutlineInputBorder(),

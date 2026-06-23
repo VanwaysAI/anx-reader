@@ -21,6 +21,7 @@ class MimoTtsProvider extends TtsServiceProvider {
   static const String _defaultUrl =
       'https://token-plan-cn.xiaomimimo.com/v1/chat/completions';
   static const String _defaultModel = 'mimo-v2.5-tts';
+  static const String _defaultVoice = 'mimo_default';
 
   @override
   TtsService get service => TtsService.mimo;
@@ -35,8 +36,8 @@ class MimoTtsProvider extends TtsServiceProvider {
         key: 'tip',
         label: '说明',
         type: ConfigItemType.tip,
-        defaultValue: '小米 MiMo TTS 服务，请填入 API Key 和模型名称。',
-        link: '',
+        defaultValue: '小米 MiMo TTS 服务。支持预置音色和风格控制。',
+        link: 'https://mimo.mi.com/docs/zh-CN/quick-start/usage-guide/audio/speech-synthesis-v2.5',
       ),
       ConfigItem(
         key: 'url',
@@ -59,6 +60,20 @@ class MimoTtsProvider extends TtsServiceProvider {
         type: ConfigItemType.text,
         defaultValue: _defaultModel,
       ),
+      ConfigItem(
+        key: 'voice',
+        label: 'Voice',
+        description: '预置音色名称',
+        type: ConfigItemType.text,
+        defaultValue: _defaultVoice,
+      ),
+      ConfigItem(
+        key: 'instructions',
+        label: 'Instructions',
+        description: '语音风格指令（可选，如：语速、情绪、音色等）',
+        type: ConfigItemType.text,
+        defaultValue: '',
+      ),
     ];
   }
 
@@ -70,12 +85,16 @@ class MimoTtsProvider extends TtsServiceProvider {
         'url': _defaultUrl,
         'key': '',
         'model': _defaultModel,
+        'voice': _defaultVoice,
+        'instructions': '',
       };
     }
     return {
       'url': config['url'] ?? _defaultUrl,
       'key': config['key'] ?? '',
       'model': config['model'] ?? _defaultModel,
+      'voice': config['voice'] ?? _defaultVoice,
+      'instructions': config['instructions'] ?? '',
     };
   }
 
@@ -91,19 +110,26 @@ class MimoTtsProvider extends TtsServiceProvider {
     final String url = config['url']?.toString().trim() ?? _defaultUrl;
     final String? key = config['key']?.toString();
     final String model = config['model']?.toString().trim() ?? _defaultModel;
+    final String resolvedVoice = resolveVoice(voice);
+    final String? instructions = config['instructions']?.toString();
 
     if (key == null || key.isEmpty) {
       throw Exception('MiMo TTS config missing (key)');
     }
 
-    // 构建 instructions
-    final instructions = _buildInstructions(rate, pitch);
+    // 构建 user 消息（风格指令）
+    final userContent = _buildUserContent(instructions, rate, pitch);
 
-    // MiMo TTS 使用 chat completions 格式，需要 assistant role
-    final messages = [
-      {'role': 'user', 'content': instructions},
-      {'role': 'assistant', 'content': text},
-    ];
+    // 构建请求体
+    final body = {
+      'model': model,
+      'audio': {'voice': resolvedVoice},
+      'messages': [
+        if (userContent.isNotEmpty)
+          {'role': 'user', 'content': userContent},
+        {'role': 'assistant', 'content': text},
+      ],
+    };
 
     final response = await http.post(
       Uri.parse(url),
@@ -111,10 +137,7 @@ class MimoTtsProvider extends TtsServiceProvider {
         'Authorization': 'Bearer $key',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({
-        'model': model,
-        'messages': messages,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 200) {
@@ -152,16 +175,19 @@ class MimoTtsProvider extends TtsServiceProvider {
 
       // 如果无法解析，返回整个响应体让用户看到错误
       throw Exception(
-          'MiMo TTS: 无法解析响应格式。Response: ${response.body.substring(0, 200)}');
+          'MiMo TTS: 无法解析响应格式。Response: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}');
     }
 
     throw Exception(
         'MiMo TTS failed: ${response.statusCode} ${response.body}');
   }
 
-  String _buildInstructions(double rate, double pitch) {
+  String _buildUserContent(
+      String? instructions, double rate, double pitch) {
     final buffer = StringBuffer();
-    buffer.writeln('请用自然流畅的语调朗读以下文本。');
+    if (instructions != null && instructions.trim().isNotEmpty) {
+      buffer.writeln(instructions.trim());
+    }
     if (rate != 1.0) {
       buffer.writeln('语速: ${rate.toStringAsFixed(1)}倍速');
     }
@@ -173,9 +199,53 @@ class MimoTtsProvider extends TtsServiceProvider {
 
   @override
   Future<List<TtsVoice>> getVoices() async {
-    // MiMo TTS 可能不需要指定 voice，返回一个默认的
+    // 根据小米文档返回预置音色列表
     return const [
-      TtsVoice(shortName: 'default', name: 'Default', locale: 'zh-CN'),
+      TtsVoice(
+          shortName: 'mimo_default',
+          name: 'MiMo-默认',
+          locale: 'zh-CN',
+          gender: 'unknown'),
+      TtsVoice(
+          shortName: '冰糖',
+          name: '冰糖',
+          locale: 'zh-CN',
+          gender: 'female'),
+      TtsVoice(
+          shortName: '茉莉',
+          name: '茉莉',
+          locale: 'zh-CN',
+          gender: 'female'),
+      TtsVoice(
+          shortName: '苏打',
+          name: '苏打',
+          locale: 'zh-CN',
+          gender: 'male'),
+      TtsVoice(
+          shortName: '白桦',
+          name: '白桦',
+          locale: 'zh-CN',
+          gender: 'male'),
+      TtsVoice(
+          shortName: 'Mia',
+          name: 'Mia',
+          locale: 'en-US',
+          gender: 'female'),
+      TtsVoice(
+          shortName: 'Chloe',
+          name: 'Chloe',
+          locale: 'en-US',
+          gender: 'female'),
+      TtsVoice(
+          shortName: 'Milo',
+          name: 'Milo',
+          locale: 'en-US',
+          gender: 'male'),
+      TtsVoice(
+          shortName: 'Dean',
+          name: 'Dean',
+          locale: 'en-US',
+          gender: 'male'),
     ];
   }
 
@@ -185,16 +255,25 @@ class MimoTtsProvider extends TtsServiceProvider {
     if (voiceData is Map<String, dynamic>) {
       return TtsVoice.fromMap(voiceData);
     }
-    return const TtsVoice(shortName: 'default', name: 'Default', locale: 'zh-CN');
+    return const TtsVoice(
+        shortName: 'mimo_default',
+        name: 'MiMo-默认',
+        locale: 'zh-CN',
+        gender: 'unknown');
   }
 
   @override
   String getSelectedVoice() {
-    return 'default';
+    final config = getConfig();
+    final voice = config['voice']?.toString() ?? '';
+    if (voice.isNotEmpty) return voice;
+    return _defaultVoice;
   }
 
   @override
   void setSelectedVoice(String voice) {
-    // MiMo 不需要设置 voice
+    final config = getConfig();
+    config['voice'] = voice;
+    saveConfig(config);
   }
 }
