@@ -224,10 +224,30 @@ class OnlineTts extends BaseTts {
         final newSegments = <TtsSegment>[];
         for (final segment in segments) {
           if (_shouldStop) break;
-          final key = _segmentKey(segment.sentence);
-          if (_bufferKeys.contains(key)) continue;
-
-          _bufferKeys.add(key);
+          
+          // 段落模式下，记录所有原始句子的 keys
+          if (segment.sentences != null && segment.sentences!.isNotEmpty) {
+            bool alreadyBuffered = false;
+            for (final s in segment.sentences!) {
+              final key = _segmentKey(s);
+              if (_bufferKeys.contains(key)) {
+                alreadyBuffered = true;
+                break;
+              }
+            }
+            if (alreadyBuffered) continue;
+            
+            // 添加所有原始句子的 keys
+            for (final s in segment.sentences!) {
+              _bufferKeys.add(_segmentKey(s));
+            }
+          } else {
+            // 逐句模式
+            final key = _segmentKey(segment.sentence);
+            if (_bufferKeys.contains(key)) continue;
+            _bufferKeys.add(key);
+          }
+          
           newSegments.add(segment);
           _buffer.add(segment); // Add in order!
         }
@@ -347,12 +367,8 @@ class OnlineTts extends BaseTts {
       if (segment.isReady) return;
 
       try {
-        String textToSpeak = segment.sentence.text;
-        
-        // 段落模式：合并多个句子
-        if (isParagraphMode && segment.sentences != null && segment.sentences!.isNotEmpty) {
-          textToSpeak = segment.sentences!.map((s) => s.text).join('，');
-        }
+        // 直接使用 segment.sentence.text，因为在 _collectSegments 中已经合并过了
+        final textToSpeak = segment.sentence.text;
 
         final bytes = await backend
             .speak(
