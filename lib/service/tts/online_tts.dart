@@ -261,16 +261,16 @@ class OnlineTts extends BaseTts {
           backend is MimoTtsProvider && 
           (backend as MimoTtsProvider).getConfig()['reading_mode'] == 'paragraph';
       
-      int actualCount = count;
+      // 获取句子数量：段落模式下需要更多句子用于合并
+      int fetchCount = count;
       if (isParagraphMode) {
-        // 段落模式下，获取更多句子用于合并
         final paragraphSentences = int.tryParse(
             (backend as MimoTtsProvider).getConfig()['paragraph_sentences']?.toString() ?? '5') ?? 5;
-        actualCount = count * paragraphSentences;
+        fetchCount = count * paragraphSentences;
       }
 
       final sentences = await state.ttsCollectDetails(
-        count: actualCount,
+        count: fetchCount,
         includeCurrent: _buffer.isEmpty && _currentSegment == null,
       );
 
@@ -433,7 +433,11 @@ class OnlineTts extends BaseTts {
         // Handle silent segment
         if (segment.isSilent) {
           await Future.delayed(const Duration(milliseconds: 100));
-          await getNextTextFunction();
+          // 段落模式下需要跳过多个句子
+          final sentencesToSkip = segment.sentences?.length ?? 1;
+          for (var i = 0; i < sentencesToSkip; i++) {
+            await getNextTextFunction();
+          }
           _currentSegment = null;
           continue;
         }
@@ -453,8 +457,12 @@ class OnlineTts extends BaseTts {
         _currentSegment = null;
 
         // Advance reader position
+        // 段落模式下需要跳过多个句子
         if (!_shouldStop) {
-          await getNextTextFunction();
+          final sentencesToSkip = segment.sentences?.length ?? 1;
+          for (var i = 0; i < sentencesToSkip; i++) {
+            await getNextTextFunction();
+          }
         }
       }
     } catch (e) {
