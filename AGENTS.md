@@ -151,3 +151,42 @@ git merge upstream/develop
 - 段落模式仅支持 MiMo TTS
 - 其他 TTS 服务仍使用逐句模式
 - 段落太长可能影响响应速度
+
+### 2026-06-23 段落模式深度修复
+
+**修复的问题：**
+
+1. **跳过段落问题**
+   - 原因：`actualCount = count * paragraphSentences` 导致获取句子过多
+   - 修复：重命名为 `fetchCount`，限制最大值为 50
+
+2. **章节末尾跳过问题**
+   - 原因：段落模式下只调用一次 `getNextTextFunction()`
+   - 修复：根据 `segment.sentences?.length` 调用多次
+
+3. **重复文本合并**
+   - 原因：`_fetchAudioForSegment` 中重复合并句子
+   - 修复：直接使用 `segment.sentence.text`
+
+4. **_bufferKeys 管理错误**
+   - 原因：段落模式下只记录合并后句子的 key
+   - 修复：记录所有原始句子的 keys
+
+5. **未使用变量**
+   - 移除 `_fetchAudioForSegment` 中未使用的 `isParagraphMode` 变量
+
+**代码流程：**
+```
+_startPrefetcher
+  → _collectSegments(count)
+    → 段落模式：fetchCount = min(count * paragraphSentences, 50)
+    → 获取 fetchCount 个句子
+    → 过滤已缓冲句子
+    → 合并成段落 segments
+  → 添加到 buffer，记录所有原始句子 keys
+  → _fetchAudioForSegment
+    → 直接使用 segment.sentence.text（已合并）
+  → _startPlayer
+    → 播放音频
+    → 跳过 segment.sentences.length 个句子
+```
