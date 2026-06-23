@@ -283,10 +283,13 @@ class OnlineTts extends BaseTts {
       
       // 获取句子数量：段落模式下需要更多句子用于合并
       int fetchCount = count;
+      int paragraphSentences = 1;
       if (isParagraphMode) {
-        final paragraphSentences = int.tryParse(
+        paragraphSentences = int.tryParse(
             (backend as MimoTtsProvider).getConfig()['paragraph_sentences']?.toString() ?? '5') ?? 5;
         fetchCount = count * paragraphSentences;
+        // 限制 fetchCount，避免获取过多句子导致章节边界问题
+        fetchCount = fetchCount.clamp(0, 50);
       }
 
       final sentences = await state.ttsCollectDetails(
@@ -316,7 +319,7 @@ class OnlineTts extends BaseTts {
           
           // 合并文本
           final mergedText = chunk.map((s) => s.text).join('，');
-          // 使用第一个句子的 cfi 作为高亮位置
+          // 使用第一个句子的 cfi 作为高亮位置（保持当前位置）
           final mergedCfi = chunk.first.cfi;
           
           final mergedSentence = TtsSentence(
@@ -355,12 +358,6 @@ class OnlineTts extends BaseTts {
 
     // Capture the version at the start of fetching
     final targetVersion = segment.fetchVersion;
-
-    // 检查是否是段落模式
-    final ttsService = Prefs().ttsService;
-    final isParagraphMode = ttsService == 'mimo' && 
-        backend is MimoTtsProvider && 
-        (backend as MimoTtsProvider).getConfig()['reading_mode'] == 'paragraph';
 
     for (var attempt = 0; attempt <= _maxRetries; attempt++) {
       if (_shouldStop) return;
