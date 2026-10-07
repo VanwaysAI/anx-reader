@@ -19,6 +19,9 @@ class MimoTtsProvider extends TtsServiceProvider {
   MimoTtsProvider._internal();
 
   static const String _defaultUrl =
+      'https://api.xiaomimimo.com/v1/chat/completions';
+  /// 旧端点（已弃用），用于配置迁移
+  static const String _legacyUrl =
       'https://token-plan-cn.xiaomimimo.com/v1/chat/completions';
   static const String _defaultModel = 'mimo-v2.5-tts';
   static const String _defaultVoice = 'mimo_default';
@@ -107,6 +110,13 @@ class MimoTtsProvider extends TtsServiceProvider {
         'instructions': '',
       };
     }
+    var url = config['url']?.toString() ?? _defaultUrl;
+    // 旧端点迁移到新端点
+    if (url == _legacyUrl) {
+      url = _defaultUrl;
+      config['url'] = url;
+      Prefs().saveOnlineTtsConfig(serviceId, config);
+    }
     return {
       'url': config['url'] ?? _defaultUrl,
       'key': config['key'] ?? '',
@@ -143,7 +153,7 @@ class MimoTtsProvider extends TtsServiceProvider {
     // 构建请求体
     final body = {
       'model': model,
-      'audio': {'voice': resolvedVoice},
+      'audio': {'format': 'wav', 'voice': resolvedVoice},
       'messages': [
         if (userContent.isNotEmpty)
           {'role': 'user', 'content': userContent},
