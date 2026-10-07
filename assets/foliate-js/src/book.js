@@ -140,17 +140,60 @@ const buildRangeContextText = (range) => {
   return contextText;
 };
 
+const isWordChar = (ch) => !!ch && /[A-Za-z0-9\u00C0-\u024F\u3400-\u9FFF\uF900-\uFAFF]/.test(ch);
+
+/** CEF OSR hit-testing can place carets one glyph inside word edges. */
+const expandRangeForCefHitTest = (range) => {
+  const r = range.cloneRange();
+  try {
+    if (r.startContainer.nodeType === Node.TEXT_NODE && r.startOffset > 0) {
+      const text = r.startContainer.textContent || '';
+      const prev = text[r.startOffset - 1];
+      const curr = text[r.startOffset] ?? '';
+      if (isWordChar(prev) && isWordChar(curr)) {
+        r.setStart(r.startContainer, r.startOffset - 1);
+      }
+    }
+    if (r.endContainer.nodeType === Node.TEXT_NODE) {
+      const text = r.endContainer.textContent || '';
+      if (r.endOffset < text.length && r.endOffset > 0) {
+        const last = text[r.endOffset - 1];
+        const next = text[r.endOffset];
+        if (isWordChar(last) && isWordChar(next)) {
+          r.setEnd(r.endContainer, r.endOffset + 1);
+        }
+      }
+    }
+  } catch (_) {}
+  return r;
+};
+
 const handleSelection = (view, doc, index) => {
   const selection = doc.getSelection();
-  const range = getSelectionRange(selection);
+  let range = getSelectionRange(selection);
 
   if (!range) return;
+
+  // Linux CEF: nudge endpoints that landed one char inside a word.
+  const isLinuxDesktop = typeof navigator !== 'undefined'
+    && /Linux/i.test(navigator.platform || '')
+    && !/Android/i.test(navigator.userAgent || '');
+  if (isLinuxDesktop) {
+    range = expandRangeForCefHitTest(range);
+    try {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } catch (_) {}
+  }
 
   const position = getPosition(range);
   const cfi = view.getCFI(index, range);
   const lang = 'en-US'
 
-  let text = selection.toString();
+  let text = range.toString();
+  if (!text) {
+    text = selection.toString();
+  }
   if (!text) {
     const newSelection = range.startContainer.ownerDocument.getSelection();
     newSelection.removeAllRanges();
@@ -256,13 +299,52 @@ const setSelectionHandler = (view, doc, index) => {
     if (!hasActiveSelection) return;
     hasActiveSelection = false;
     lastPointerUpRange = null;
-    doc.__anxSelectionClearedAt = Date.now();
-    doc.__anxSuppressClick = true;
+    // Programmatic clearSelection (menu onClose) must not suppress clicks.
+    if (window.__anxProgrammaticClear) {
+      doc.__anxSelectionClearedAt = 0;
+      doc.__anxSuppressClick = false;
+    } else {
+      // User dismiss click: suppress only for the remainder of this event turn
+      // (so the same click does not page-turn). Clear on the next macrotask —
+      // otherwise if click-view never ran (handler bailed while selection was
+      // still a Range), the *next* center click is wrongly eaten.
+      doc.__anxSelectionClearedAt = Date.now();
+      doc.__anxSuppressClick = true;
+      setTimeout(() => {
+        doc.__anxSuppressClick = false;
+        doc.__anxSelectionClearedAt = 0;
+      }, 0);
+    }
     stopAutoPageSession(view);
     callFlutter('onSelectionCleared');
   };
 
   doc.addEventListener('selectionchange', handleSelectionStateChange);
+
+  // Page-turn keys must turn pages even while text is selected.
+  // Without this, the WebView uses arrows to pan/extend selection (#966).
+  doc.addEventListener('keydown', (e) => {
+    const nextKeys = new Set(['ArrowRight', 'ArrowDown', 'PageDown', ' ']);
+    const prevKeys = new Set(['ArrowLeft', 'ArrowUp', 'PageUp']);
+    if (!nextKeys.has(e.key) && !prevKeys.has(e.key)) return;
+    // Allow shortcuts with modifiers other than Shift (e.g. Ctrl+Arrow)
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    const selection = doc.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      selection.removeAllRanges();
+    }
+    if (typeof window.clearSelection === 'function') {
+      try { window.clearSelection(); } catch (_) {}
+    }
+    if (nextKeys.has(e.key)) {
+      nextPage();
+    } else {
+      prevPage();
+    }
+  }, true);
 
   const rangesEqual = (a, b) => (
     a.startContainer === b.startContainer
@@ -369,8 +451,21 @@ const setSelectionHandler = (view, doc, index) => {
         handleSelection(view, doc, index);
       }, 600);
     });
+  } else if (!/Android/i.test(navigator.userAgent)) {
+    // Desktop Linux (CEF/Chromium) and other non-Android desktops.
+    // navigator.platform is like "Linux x86_64", so the Win/Mac branches miss it and
+    // it used to fall into the Android path — which only listens for contextmenu /
+    // pointercancel and never fires handleSelection on mouse drag pointerup.
+    doc.addEventListener('contextmenu', e => {
+      e.preventDefault();
+    });
+    doc.addEventListener('pointerup', () => {
+      if (shouldSkipPointerUp()) return;
+      handleSelection(view, doc, index);
+    });
   } else { // Android
     let hasNativeSelectionStarted = false;
+    let longPressSettleTimer;
 
     doc.addEventListener('pointerdown', () => {
       hasNativeSelectionStarted = false;
@@ -394,12 +489,25 @@ const setSelectionHandler = (view, doc, index) => {
       // We block it to prevent the custom menu from interfering with the drag.
       if (!hasNativeSelectionStarted) {
         e.preventDefault();
+        // A long-press released without dragging gets no second contextmenu, and the
+        // touch is cancelled so there is no pointerup either. Open the menu once the
+        // selection has stayed unchanged for a moment; a drag changes it and is
+        // handled by the release event below instead.
+        const pressed = getSelectionRange(doc.getSelection())?.cloneRange();
+        clearTimeout(longPressSettleTimer);
+        longPressSettleTimer = setTimeout(() => {
+          const current = getSelectionRange(doc.getSelection());
+          if (!pressed || !current || !rangesEqual(pressed, current)) return;
+          if (shouldSkipPointerUp()) return;
+          handleSelection(view, doc, index);
+        }, 600);
         return;
       }
 
       // If we have entered native selection mode (pointercancel happened),
       // this contextmenu event is likely triggered by the system or user interaction
       // after the selection phase (e.g. on release). We handle it.
+      if (shouldSkipPointerUp()) return;
       handleSelection(view, doc, index);
     });
   }
@@ -699,6 +807,9 @@ const getCSS = ({ fontSize,
     }
 
     body {
+        /* Force user writing-mode over EPUB body rules (e.g. vertical-rl in template_rv.css).
+           html alone is not enough: body has its own writing-mode from the book stylesheet. */
+        ${writingModeCSS}
         background: none !important;
         background-color: transparent;
         padding: 0;
@@ -1330,12 +1441,14 @@ class Reader {
 
     if (this.#doc?.__anxSuppressClick) {
       this.#doc.__anxSuppressClick = false;
+      this.#doc.__anxSelectionClearedAt = 0;
       return
     }
 
-    // debounce for 200ms after selection cleared
+    // Same-turn debounce after selection cleared (setTimeout(0) clears this).
     const lastClearedAt = this.#doc?.__anxSelectionClearedAt ?? 0
-    if (lastClearedAt && Date.now() - lastClearedAt < 200) {
+    if (lastClearedAt && Date.now() - lastClearedAt < 50) {
+      this.#doc.__anxSelectionClearedAt = 0;
       return
     }
 
@@ -1847,7 +1960,22 @@ window.showContextMenu = () => {
 
 window.getSelection = () => reader.getSelection()
 
-window.clearSelection = () => reader.view.deselect()
+window.clearSelection = () => {
+  window.__anxProgrammaticClear = true
+  try { reader.view.deselect() } finally { window.__anxProgrammaticClear = false }
+}
+window.__anxResetClickSuppress = () => {
+  try {
+    const docs = [document]
+    document.querySelectorAll('iframe').forEach((f) => {
+      try { if (f.contentDocument) docs.push(f.contentDocument) } catch (_) {}
+    })
+    for (const d of docs) {
+      d.__anxSuppressClick = false
+      d.__anxSelectionClearedAt = 0
+    }
+  } catch (_) {}
+}
 
 window.addAnnotation = (annotation) => reader.addAnnotation(annotation)
 
